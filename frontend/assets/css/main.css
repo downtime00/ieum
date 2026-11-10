@@ -1,0 +1,292 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles for elderly-friendly UI */
+body {
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+button {
+  min-height: 48px;
+  min-width: 48px;
+}
+
+input, select {
+  min-height: 48px;
+  font-size: 18px;
+}
+
+/* 어르신 모드: 큰 글씨 + 고대비 (WCAG AA) */
+.senior-mode {
+  font-size: 22px;
+}
+
+.senior-mode body {
+  font-size: 22px;
+}
+
+.senior-mode h1 {
+  font-size: 2.75rem;
+}
+
+.senior-mode h2 {
+  font-size: 2.25rem;
+}
+
+.senior-mode h3 {
+  font-size: 1.75rem;
+}
+
+.senior-mode button,
+.senior-mode a {
+  min-height: 56px;
+}
+
+.senior-mode input,
+.senior-mode select {
+  min-height: 56px;
+  font-size: 22px;
+}
+
+/* 고대비: 텍스트 명도를 높이고 배경과 명확히 구분 */
+.senior-mode .text-gray-600,
+.senior-mode .text-gray-500 {
+  color: #1f2937;
+}
+
+.senior-mode .bg-gray-50 {
+  background-color: #ffffff;
+}
+
+.senior-mode .bg-white {
+  border: 2px solid #d1d5db;
+}
+
+/* 네이버 지도 정보창 글자 확대 (어르신 가독성) */
+.naver-info-window,
+.iw_header,
+.iw_streetview,
+#infowindow {
+  font-size: 16px;
+}
+
+/* 페이지 전환: 책 넘기듯 3D 페이지 넘김 효과 */
+.book-bg {
+  background:
+    radial-gradient(ellipse at center, #fafaf8 0%, #f1efe9 100%);
+}
+
+/* 양쪽 페이지 가장자리 — 책장/종이 느낌의 세로 장식 (넓은 화면에서만 표시) */
+.book-edge {
+  display: none;
+}
+@media (min-width: 1280px) {
+  .book-edge {
+    display: block;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    width: 90px;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .book-edge-left {
+    left: 0;
+    background:
+      linear-gradient(90deg, rgba(68, 64, 60, 0.08) 0%, rgba(68, 64, 60, 0.03) 40%, transparent 100%),
+      repeating-linear-gradient(180deg, transparent 0 46px, rgba(120, 113, 108, 0.05) 46px 48px);
+    border-right: 1px solid rgba(120, 113, 108, 0.10);
+  }
+  .book-edge-right {
+    right: 0;
+    background:
+      linear-gradient(-90deg, rgba(68, 64, 60, 0.08) 0%, rgba(68, 64, 60, 0.03) 40%, transparent 100%),
+      repeating-linear-gradient(180deg, transparent 0 46px, rgba(120, 113, 108, 0.05) 46px 48px);
+    border-left: 1px solid rgba(120, 113, 108, 0.10);
+  }
+}
+
+/* 페이지 전환: 좌우로 넘기듯 부드럽게 미끄러지며 나타남 */
+.page-enter-active {
+  transition:
+    opacity 0.45s ease,
+    transform 0.45s cubic-bezier(0.33, 1, 0.68, 1),
+    filter 0.45s ease;
+  transform-origin: center center;
+  will-change: transform, opacity;
+}
+.page-leave-active {
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s cubic-bezier(0.5, 0, 0.7, 0.4),
+    filter 0.3s ease;
+  transform-origin: center center;
+  will-change: transform, opacity;
+}
+.page-enter-from {
+  opacity: 0;
+  transform: translateX(48px) scale(0.98);
+  filter: blur(3px);
+}
+.page-leave-to {
+  opacity: 0;
+  transform: translateX(-48px) scale(0.98);
+  filter: blur(2px);
+}
+.page-enter-to,
+.page-leave-from {
+  filter: blur(0);
+}
+
+/* 카드 등장 애니메이션 (아래에서 부드럽게 올라옴) */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-up {
+  animation: fade-up 0.5s ease both;
+}
+
+/* 카드 호버 시 살짝 떠오르는 효과 */
+.hover-lift {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-4px);
+}
+
+/* 자동 좌우 스크롤 (마키) — 대시보드 상위 콘텐츠 등 */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.marquee-track {
+  animation: marquee 32s linear infinite;
+  will-change: transform;
+}
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none;
+  }
+}
+.senior-mode .marquee-track {
+  animation: none;
+}
+
+/* ── 노년층 UX 가이드 반영 ─────────────────────────────
+   1) 모션 감소: OS 설정(prefers-reduced-motion) 또는 시니어 모드에서는
+      페이지 넘김/등장 애니메이션을 모두 끔 (Apple HIG 모션감소 권장)
+   2) 큰 글꼴 모드: 가로 나열 대신 세로 스택으로 재배치해 가독성 확보
+   3) 본문 줄간격/자간 확보
+────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 시니어 모드: 애니메이션 최소화 (페이지 넘김 포함) */
+.senior-mode .page-enter-active,
+.senior-mode .page-leave-active {
+  transition: opacity 0.2s ease !important;
+}
+.senior-mode .page-enter-from,
+.senior-mode .page-leave-to {
+  transform: none !important;
+  filter: none !important;
+}
+.senior-mode .animate-fade-up,
+.senior-mode .hover-lift {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* 시니어 모드: 본문 가독성 — 줄간격 확보, 어절 단위 줄바꿈 */
+.senior-mode body {
+  line-height: 1.8;
+  letter-spacing: normal;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+.senior-mode p,
+.senior-mode dd,
+.senior-mode li,
+.senior-mode span {
+  font-weight: 500;
+}
+
+/* 시니어 모드: 카드 가로배치(이미지+텍스트)를 세로 스택으로 */
+.senior-mode article .flex:has(> img),
+.senior-mode .culture-card-row {
+  flex-direction: column;
+}
+.senior-mode article .flex:has(> img) img {
+  width: 100%;
+  height: 12rem;
+}
+
+/* 검색 결과 강조 표시 */
+mark {
+  background-color: #fde68a;
+  color: inherit;
+  padding: 0 2px;
+  border-radius: 3px;
+}
+
+/* 고급스러운 타이포그래피 디테일 */
+h1, h2, h3 {
+  letter-spacing: -0.01em;
+}
+
+::selection {
+  background-color: #dbeafe;
+  color: #1e3a8a;
+}
+
+/* 키보드 포커스 가시성 */
+:focus-visible {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 2px;
+}
+
+/* 브랜드 배너: 딥 네이비 + 샴페인 골드 글로우 */
+.brand-banner {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  background:
+    radial-gradient(120% 140% at 85% -10%, rgba(251, 191, 36, 0.13) 0%, transparent 45%),
+    radial-gradient(90% 120% at -10% 110%, rgba(99, 102, 241, 0.28) 0%, transparent 50%),
+    linear-gradient(135deg, #0b1120 0%, #111c36 50%, #1c2b52 100%);
+  box-shadow:
+    0 20px 40px -18px rgba(8, 12, 28, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+.brand-banner::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  pointer-events: none;
+}

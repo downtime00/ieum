@@ -1,0 +1,51 @@
+## Phase 7 - 알림 & 가족 공유 ✅
+
+### 구현 완료 항목:
+- ✅ Notification Entity 및 CRUD API 구현
+- ✅ Family Member 관리 기능 (가족 등록/조회/삭제)
+- ✅ 가족 공유 알림 로직 구현
+- ✅ NotificationsModule 과 FamilyModule 생성 완료
+
+### 주요 API:
+
+**Notification:**
+```bash
+# 알림 생성
+POST /notifications
+{ title, body, type, userId }
+
+# 사용자 알림 목록 조회
+GET /notifications/user/:userId
+
+# 알림 읽음 처리
+POST /notifications/:id/read
+
+# 구독 관심사 설정
+POST /interests
+{ contentId, category }
+```
+
+**Family:**
+```bash
+# 가족 등록
+POST /family/:userId/members
+{ name, relation }
+
+# 가족 목록 조회
+GET /family/:userId/members
+
+# 가족 삭제
+DELETE /family/:userId/members/:memberId
+
+# 가족에게 알림 발송
+GET /family/:userId/notify/:contentUrl
+```
+
+---
+
+## Phase 8 - 추천 시스템 강화 🔜
+
+**차량 계획:**
+- AI 기반 개인화 추천 (머신러닝)
+- 협업 필터링 적용
+- 지역 기반 콘텐츠 우선 노출

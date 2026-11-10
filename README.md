@@ -1,0 +1,1054 @@
+# 이음 (IEUM) - 지역생활 정보 플랫폼 v2
+
+## 🎯 프로젝트 소개
+
+**이음 (IEUM)** 은 지역 주민의 생활정보를 통합한 스마트 플랫폼입니다.
+문화콘텐츠, 지역사회 정보, 가족 중심 서비스, 실시간 알림 등을 제공하여
+지역 삶의 질을 향상시키는 것을 목표로 합니다.
+
+---
+
+## 🚀 빠른 시작 (처음 사용자용)
+
+### 전제 조건
+
+- **Node.js**: v20.12.0 이상 (v20.19+ 권장)
+- **npm**: 10.5.0 이상
+- **PostgreSQL**: 15 이상 (Docker 사용 시 자동 설치)
+- **Git**: 프로젝트 클론용
+
+### 1️⃣ 프로젝트 클론
+
+```bash
+git clone <repository-url>
+cd IEUM
+```
+
+### 2️⃣ 백엔드 설치 및 실행
+
+```bash
+cd backend
+
+# 의존성 설치
+npm install
+
+# 환경 변수 설정
+cp .env.example .env
+
+# (선택 사항) .env 파일 수정
+# nano .env
+
+# 데이터베이스 마이그레이션
+npm run migration:run
+
+# 개발 서버 실행
+npm run start:dev
+```
+
+백엔드가 `http://localhost:3000`에서 실행됩니다.
+
+### 3️⃣ 프론트엔드 설치 및 실행
+
+```bash
+cd frontend
+
+# 의존성 설치
+npm install
+
+# 개발 서버 실행
+npm run dev
+```
+
+프론트엔드가 `http://localhost:3000`에서 실행됩니다.
+
+### 4️⃣ Docker로 전체 환경 실행 (추천)
+
+```bash
+cd backend
+
+# 모든 서비스 시작 (PostgreSQL, Redis, Backend)
+docker-compose up -d
+
+# 상태 확인
+docker-compose ps
+
+# 로그 확인
+docker-compose logs -f
+```
+
+### 5️⃣ 접속 테스트
+
+- **프론트엔드**: http://localhost:3000
+- **백엔드 API**: http://localhost:3001
+- **API 문서 (Swagger)**: http://localhost:3001/api-docs
+
+### ✅ 설치 확인
+
+```bash
+# 백엔드 건강 상태 확인
+curl http://localhost:3001/health
+
+# 프론트엔드 접속
+# 브라우저에서 http://localhost:3000 열기
+```
+
+### 🤖 자동 설치 스크립트 (추천)
+
+모든 설치 과정을 자동으로 실행하려면:
+
+```bash
+# 프로젝트 루트에서 실행
+./setup.sh
+```
+
+이 스크립트는 다음을 자동으로 수행합니다:
+- Node.js 버전 확인
+- 백엔드 의존성 설치 및 빌드
+- 프론트엔드 의존성 설치 및 빌드
+- .env 파일 생성
+- Docker 설치 확인
+
+### 🎮 서버 관리 스크립트
+
+프로젝트 루트의 쉘 스크립트를 사용하여 서버를 쉽게 관리할 수 있습니다:
+
+```bash
+# 설치
+./setup.sh
+
+# 개발 서버 시작 (백엔드 + 프론트엔드)
+./start.sh dev
+
+# Docker로 시작
+./start.sh docker
+
+# 개발 서버 중지
+./stop.sh dev
+
+# Docker 중지
+./stop.sh docker
+
+# 상태 확인
+./status.sh
+```
+
+**스크립트 기능:**
+- `setup.sh` - 자동 설치
+- `run.sh` - 원클릭 실행 (Redis + 백엔드 API + 프론트엔드 동시 시작, Ctrl+C로 전체 종료)
+- `start.sh` - 서버 시작 (dev/prod/docker/db/backend/frontend 모드)
+- `stop.sh` - 서버 중지 (dev/docker/all 모드)
+- `status.sh` - 서버 상태 확인 (프로세스, 포트, DB 연결)
+
+---
+
+## 🏗️ 아키텍처
+
+```bash
+┌─────────────────────────────────────────────┐
+│           NestJS Backend (Node.js)          │
+├─────────────────────────────────────────────┤
+│ - Auth Module (JWT, Refresh Token)          │
+│ - Users & Organizations CRUD                │
+│ - Content Collection & Management           │
+│ - Family & Community Service                │
+│ - Notification Service                      │
+│ - Recommendation System                     │
+│ - WebSocket Real-time Push                  │
+└─────────────────────────────────────────────┘
+```
+
+---
+
+## 📁 디렉토리 구조
+
+```bash
+IEUM/
+├── backend/
+│   ├── src/
+│   │   ├── auth/                 # 인증 모듈
+│   │   ├── users/               # 사용자 관리
+│   │   ├── organizations/       # 기관 관리
+│   │   ├── contents/            # 콘텐츠 관리
+│   │   ├── family/              # 가족 단위 서비스
+│   │   ├── notifications/       # 알림 시스템
+│   │   ├── recommendations/     # 추천 시스템
+│   │   ├── admin/               # 관리자 모듈
+│   │   ├── events/              # 이벤트 모듈
+│   │   ├── logs/                # 로그 시스템
+│   │   ├── common/              # 공통 유틸리티
+│   │   │   ├── logger/          # 로깅
+│   │   │   ├── validation/      # Zod 검증
+│   │   │   └── middleware/      # 미들웨어
+│   │   └── migrations/          # DB 마이그레이션
+│   ├── logs/                    # 로그 파일 (자동 생성)
+│   ├── package.json
+│   └── README.md
+└── docs/                        # 설계 문서
+```
+
+---
+
+## 🚀 개발된 기능별 Phase 분기
+
+### ✅ **Phase 1 - 인증 및 사용자 모듈**
+- JWT 기반 인증 (OAuth2, Refresh Token)
+- 소셜 로그인 연동 (카카오, 네이버 등)
+- 사용자 CRUD API
+
+### ✅ **Phase 2 - 기관 관리 및 검색**
+- 기관 등록/조회/연결
+- 지역별 기관 필터링
+- 키워드 검색 기능
+
+### ✅ **Phase 3 - 콘텐츠 수집 시스템**
+- 외부 API 연동 (문화포털 등)
+- 자동 콘텐츠 수집 스케줄러
+- 중복 콘텐츠 필터링
+
+### ✅ **Phase 4 - 데이터 수집 및 가공**
+- 배치 데이터 수집 로직
+- 문화정보 카테고리 분류
+- 키워드 추출 및 태깅
+
+### ✅ **Phase 5 - 추천 시스템 (초기)**
+- 지역 기반 콘텐츠 필터링
+- 카테고리/키워드 결합 추천
+- 유사 콘텐츠 제안
+
+---
+
+## 🎨 Tailwind CSS 적용 완료!
+
+**✅ 설치 완료:**
+- Tailwind CSS v3.4.0 설치
+- PostCSS 및 Autoprefixer 구성
+- 사용자 정의 CSS 파일 포함 (노인 친화적 UI)
+
+**✨ 사용 방법:**
+```vue
+<template>
+  <div class="container mx-auto p-4">
+    <h1 class="text-2xl font-bold text-center">안녕하세요!</h1>
+    <button class="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded">
+      클릭하기
+    </button>
+  </div>
+</template>
+```
+
+**📚 전체 스타일링 가이드:** [Tailwind 공식 문서](https://tailwindcss.com/docs)
+
+---
+
+## ✅ Zod 스키마 적용 완료!
+
+**🔍 적용 범위:**
+- 모든 DTO에 Zod 스키마 적용 완료
+- class-validator에서 Zod로 마이그레이션
+- ZodValidationPipe를 통한 요청 검증
+- 타입 안전성 강화
+
+**📝 적용된 모듈:**
+- Auth: login, refresh token DTO
+- Users: create, update, interests DTO
+- Organizations: create, update, query DTO
+- Contents: create, update DTO
+- Notifications: push message, subscribe DTO
+- Admin: create notice DTO
+- Family: create, update, remove member DTO
+
+---
+
+### ✅ **Phase 6 - 가족 단위 서비스**
+- 가족 레지스터 관리
+- 가족원 추가/연락처 공유
+- 가족 중심 콘텐츠 제공
+
+### ✅ **Phase 7 - 알림 시스템**
+- Push 알림 API 통합
+- 알림 템플릿 관리
+- 읽음/미읽음 상태 추적
+
+### ✅ **Phase 8 - WebSocket 실시간 알림 (완료)**
+- Socket.IO NestJS 모듈 통합 (`@nestjs/platform-socket.io`, `@nestjs/websockets`)  
+- Redis Pub/Sub 을 활용한 브로드캐스팅 시스템  
+- 알림 유형별 방 관리 (지역/카테고리 기반)  
+- 재연결 로직 및 오프라인 메시지 큐  
+
+**사용 방법:**
+```typescript
+// WebSocket 이벤트 구독
+socket.emit('notification:new', { type: 'urgent', message: '새로운 알림!' });
+
+// 브로드캐스팅 (특정 방 전체)
+socket.broadcast.to('all').emit('alert:fire', { severity: 'high' });
+```
+
+### ✅ **Phase 9 - 이벤트 참여 기능**
+- 이벤트 참여 신청/취소
+- 참여 상태 관리 (REGISTERED, ATTENDED, CANCELLED, COMPLETED)
+- 사용자별/콘텐츠별 참여 목록 조회
+- 참여자 수 추적
+- 콘텐츠 타입 지원 (GENERAL, EVENT, NOTICE, PROGRAM)
+
+### ✅ **Phase 10 - 관리자 대시보드**
+- 전체 통계 (사용자, 콘텐츠, 참여, 공지사항 수)
+- 이벤트 참여 상태별 통계
+- 콘텐츠 타입별 통계
+- 최근 사용자/콘텐츠 목록
+- 사용자 활동 통계
+- 인기 콘텐츠 순위
+- 일별 통계 (최근 7일)
+
+### ✅ **Phase 11 - 특정 사용자 푸시 알림**
+- 특정 사용자 그룹에 일괄 푸시 알림 전송
+- 사용자 ID 목록 기반 타겟팅
+- 푸시 알림 타입 지원 (INFO, ANNOUNCEMENT, ALERT, CONTENT, FAMILY)
+- WebSocket 실시간 알림 브로드캐스팅 지원
+- 알림 전송 로깅 및 추적
+
+### ✅ **Phase 12 - 관리자 등록 페이지**
+- 관리자 생성 기능 (ADMIN, SUPER_ADMIN 역할)
+- 이메일 중복 검증
+- 비밀번호 해싱 (bcrypt)
+- 관리자 목록 조회
+- 관리자 역할 변경
+- 관리자 소프트 삭제
+- 프론트엔드 관리자 등록 페이지
+
+### ✅ **Phase 13 - 로그 히스토리 시스템**
+- Winston 기반 파일 로깅 (일별 로테이션)
+- 데이터베이스 로그 저장 (PostgreSQL)
+- HTTP 요청/응답 로깅 미들웨어
+- 로그 레벨별 통계 (ERROR, WARN, INFO, DEBUG)
+- 컨텍스트별 로그 필터링
+- 날짜 범위 기반 로그 검색
+- 일별 로그 통계 (최근 30일)
+- 오래된 로그 자동 삭제 기능
+- 프론트엔드 로그 조회 페이지
+
+### ✅ **Phase 14 - 관리자 활동 내역 시스템**
+- 관리자 활동 내역 DB 저장 (AdminActivity 엔티티)
+- 다양한 관리자 행동 타입 (ADMIN, REVIEWER, CONTENT, EVENT, NOTICE, ORGANIZATION, NOTIFICATION, LOG 관리)
+- 활동 내역 조회 (전체, 특정 관리자, 특정 행동)
+- 활동 내역 통계 (행동별 카운트)
+- 검수 요청 생성/승인/거절 기능
+- REVIEWER 권한 부여/해제
+- 콘텐츠 승인/거절 처리
+- 이벤트 CRUD 기능
+- IP 주소 및 UserAgent 기록
+
+### ✅ **Phase 15 - 이메일 로그인/회원가입**
+- 이메일/비밀번호 로그인 기능
+- 이메일 회원가입 기능
+- 비밀번호 bcrypt 해싱
+- 이메일 중복 검증
+- 사용자 상태 확인 (ACTIVE/DELETED)
+- SNS 로그인과 병행 가능
+- Zod 스키마 검증
+- 프론트엔드 로그인/회원가입 페이지
+
+---
+
+## 📊 기술 스택
+
+| 기술 | 버전 | 사용 목적 |
+|------|------|----------|
+| NestJS | v10+ | 프레임워크 |
+| TypeScript | - | 타입 안전성 |
+| PostgreSQL | v16+ | 관계형 DB |
+| TypeORM | v0.3+ | ORM |
+| Redis | - | 캐싱, 세션 |
+| JWT | - | 인증 |
+| Swagger | - | API 문서화 |
+| Socket.IO | - | 실시간 통신 |
+
+---
+
+## 🔧 환경 변수 (.env)
+
+### 📝 .env.example 생성 및 복사 방법:
+```bash
+cp .env.example .env
+# 또는 수동으로 아래 내용을 .env 에 기록하세요:
+# DATABASE_URL=postgresql://postgres:password@localhost:5432/ieum
+# REDIS_HOST=localhost
+# JWT_SECRET=your_jwt_secret_key
+# KAKAO_CLIENT_ID=your_kakao_client_id
+# LOG_LEVEL=info  # error, warn, info, debug, verbose
+```
+
+---
+
+## 📜 DB 마이그레이션
+
+### 1️⃣ Migration 생성 및 적용
+```bash
+cd backend
+npx typeorm-ts-node-commonjs migration:create src/migrations/CreateAllTables
+npm run typeorm migration:run
+```
+
+### 2️⃣ 마이그레이션 파일 위치
+- `src/migrations/` 폴더 확인
+- 자동으로 실행됨 (TypeORM Migration)
+
+---
+
+## 🧪 로컬 개발 환경 설정
+
+1. `.env.example` 를 복사해서 `.env` 생성
+2. 필요한 환경 변수 채워넣기
+3. ```bash
+   cd backend && npm install && npm run start:dev
+   ```
+
+4. [http://localhost:3000/api](http://localhost:3000/api) 에서 API 테스트
+5. Swagger UI: [http://localhost:3000/docs](http://localhost:3000/docs)
+
+---
+
+## 📈 API 엔드포인트
+
+### 인증
+- `POST /auth/login` - 로그인
+- `POST /auth/refresh` - 토큰 갱신
+- `POST /auth/kakao/callback` - 카카오 로그인
+- `POST /auth/email/login` - 이메일 로그인
+- `POST /auth/email/register` - 이메일 회원가입
+
+### 사용자
+- `GET /users` - 모든 사용자 조회
+- `GET /users/:id` - 사용자 상세
+- `POST /users` - 사용자 생성
+- `PUT /users/:id` - 사용자 수정
+
+### 기관
+- `GET /organizations` - 모든 기관
+- `GET /organizations/type/:type` - 기관 타입별 조회
+- `POST /organizations/subscribe/:orgId` - 기관 구독
+
+### 콘텐츠
+- `GET /contents` - 콘텐츠 목록
+- `GET /contents/recommendations` - 추천 콘텐츠
+- `GET /contents/area/:areaCode` - 지역별 콘텐츠
+
+### 관리자
+- `GET /admin/dashboard/stats` - 대시보드 통계
+- `GET /admin/dashboard/user-activity` - 사용자 활동 통계
+- `GET /admin/dashboard/popular-contents` - 인기 콘텐츠
+- `GET /admin/dashboard/daily-stats` - 일별 통계
+- `POST /admin/admins` - 관리자 생성
+- `GET /admin/admins` - 관리자 목록
+- `PUT /admin/admins/:id/role` - 역할 변경
+- `DELETE /admin/admins/:id` - 관리자 삭제
+
+### 로그
+- `GET /logs` - 로그 목록 (필터링, 페이징)
+- `GET /logs/:id` - 로그 상세
+- `GET /logs/stats/level` - 레벨별 통계
+- `GET /logs/stats/context` - 컨텍스트별 통계
+- `GET /logs/stats/daily` - 일별 통계
+- `DELETE /logs/old` - 오래된 로그 삭제
+- `DELETE /logs/level/:level` - 특정 레벨 로그 삭제
+
+---
+
+## 🚀 자동 실행 (One Command Start)
+
+### 💻 개발 서버一键启动
+
+**백엔드 + 프론트엔드 모두 자동으로 시작:**
+
+```bash
+# 1. 백엔드 설치
+cd backend && npm install
+
+# 2. 프론트엔드 설치 및 Tailwind 적용 확인
+cd ../frontend && npm install && npm run build
+
+# 3. 환경 변수 설정 (.env 파일 생성)
+cp .env.example .env
+
+# 4. 자동 실행 스크립트 (백엔드 + 프론트엔드를 병행)
+npm run dev:auto
+
+# 또는 백엔드와 프론트엔드를 따로 실행:
+cd backend && npm run start:dev
+cd ../frontend && npm run dev
+```
+
+**Docker 를 이용한 전체 환경:**
+
+```bash
+docker-compose up -d
+**Docker 를 이용한 전체 환경:**
+
+### 🐳 Docker Compose 로 모든 서비스 실행
+
+먼저 `.env` 파일을 준비합니다:
+
+```bash
+# 1. .env.example 복사
+cd backend
+cp .env.example .env
+
+# 2. 환경 변수 확인 및 필요 시 수정
+cat .env
+```
+
+#### 전체 스타트업 (백엔드 + DB + Redis)
+
+```bash
+# 모든 서비스 시작 (PostgreSQL, Redis, NestJS 백엔드)
+docker-compose up -d
+
+# 실행된 컨테이너 상태 확인
+docker-compose ps
+
+# 모든 컨테이너 로그 확인
+docker-compose logs -f
+```
+
+#### 개별 서비스 제어
+
+```bash
+# PostgreSQL 데이터베이스만 시작
+docker-compose up -d postgres
+
+# NestJS 백엔드만 개발 서버로 시작
+docker-compose up -d backend
+
+# Redis 캐시 서비스만 시작
+docker-compose up -d redis
+
+# 특정 컨테이너 재시작 (예: 백엔드)
+docker-compose restart backend
+
+# 컨테이너 중지
+docker-compose stop postgres
+
+# 컨테이너 완전 삭제 (데이터 포함)
+docker-compose down --volumes --remove-orphans
+```
+
+#### DB 연결 및 테스트
+
+```bash
+# PostgreSQL 로 로그인
+docker-compose exec postgres psql ieum -c "SELECT version();"
+
+# 테이블 목록 조회
+docker-compose exec postgres psql ieum -c "\dt"
+
+# Redis 캐시 확인
+docker-compose exec redis redis-cli ping
+```
+
+#### Docker Compose 파일 구조
+
+`docker-compose.yml` 에서 정의된 서비스:
+
+```yaml
+services:
+  # PostgreSQL 데이터베이스
+  postgres:
+    image: postgres:15-alpine
+  
+  # NestJS 백엔드 (개발 모드)
+  backend:
+    build: .
+    command: npm run start:dev
+  
+  # Redis 캐시
+  redis:
+    image: redis:alpine
+```
+
+#### Docker 컨테이너 모니터링
+
+```bash
+# 실시간 로그 팔로우
+docker-compose logs -f
+
+# 특정 서비스 로그만 확인
+docker-compose logs backend
+
+# 컨테이너 사용량 확인
+docker stats
+
+# 모든 컨테이너 상태
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+```
+
+**주의 사항:**
+
+- 📌 **첫 실행 시**: `npm install` 후 Docker Compose 로 실행 (의존 관계 설치)
+- 📌 **데이터 백업**: 컨테이너를 삭제할 때 `-v --remove-orphans` 없이 주의 사용
+- 📌 **지속성**: PostgreSQL 데이터는 Docker Volume 으로 자동 백업됨
+#### 개별 서비스 제어
+
+```bash
+# PostgreSQL 데이터베이스만 시작
+docker-compose up -d postgres
+
+# NestJS 백엔드만 개발 서버로 시작
+docker-compose up -d backend
+
+# Redis 캐시 서비스만 시작
+docker-compose up -d redis
+
+# 특정 컨테이너 재시작 (예: 백엔드)
+docker-compose restart backend
+
+# 컨테이너 중지
+docker-compose stop postgres
+
+# 컨테이너 완전 삭제 (데이터 포함)
+docker-compose down --volumes --remove-orphans
+```
+
+#### DB 연결 및 테스트
+
+```bash
+# PostgreSQL 로 로그인
+docker-compose exec postgres psql ieum -c "SELECT version();"
+
+# 테이블 목록 조회
+docker-compose exec postgres psql ieum -c "\dt"
+
+# Redis 캐시 확인
+docker-compose exec redis redis-cli ping
+```
+
+#### Docker Compose 파일 구조
+
+`docker-compose.yml` 에서 정의된 서비스:
+
+```yaml
+services:
+  # PostgreSQL 데이터베이스
+  postgres:
+    image: postgres:15-alpine
+  
+  # NestJS 백엔드 (개발 모드)
+  backend:
+    build: .
+    command: npm run start:dev
+  
+  # Redis 캐시
+  redis:
+    image: redis:alpine
+```
+
+#### Docker 컨테이너 모니터링
+
+```bash
+# 실시간 로그 팔로우
+docker-compose logs -f
+
+# 특정 서비스 로그만 확인
+docker-compose logs backend
+
+# 컨테이너 사용량 확인
+docker stats
+
+# 모든 컨테이너 상태
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+```
+
+**주의 사항:**
+
+- 📌 **첫 실행 시**: `npm install` 후 Docker Compose 로 실행 (의존 관계 설치)
+- 📌 **데이터 백업**: 컨테이너를 삭제할 때 `-v --remove-orphans` 없이 주의 사용
+- 📌 **지속성**: PostgreSQL 데이터는 Docker Volume 으로 자동 백업됨
+
+---
+
+## ⚠️ Docker 로 실행 시 필요한 사전 설치 도구
+
+### 1. 기본 요구사항
+
+Docker Compose 로 모든 서비스를 실행하려면 다음 도구가 필요합니다:
+
+```bash
+# Docker 설치 (https://docs.docker.com/get-docker/)
+docker --version  # 20.10 이상 권장
+
+# Docker Compose 설치 (v2.x 이상)
+docker compose version  # 2.0 이상 권장
+
+# Podman 대체 옵션 (선택)
+podman --version  # Docker 대체 프로그램
+```
+
+### 2. 시스템 의존성 (macOS/Linux 기준)
+
+Docker 컨테이너가 실행되기 위한 기본 요구사항:
+
+- **macOS**: Docker Desktop 설치 (VMware Fusion 또는 UTM 사용 가능)
+- **Linux**: 
+  - `build-essential`
+  - `libpq-dev` (PostgreSQL 클라이언트 라이브러리)
+  - `wget` / `curl` (스크립트 실행용)
+
+### 3. 외부 API 연동 시 네트워크 설정
+
+외부 API(문화포털, 날씨 정보 등) 를 호출하려면 Docker 컨테이너에서 인터넷 연결이 필요합니다:
+
+```bash
+# 환경 변수에 API 엔드포인트 추가 (.env 파일)
+KAKAO_API_URL=https://kapis.kakao.com/kakao/common/v1
+  
+# 외부 네트워크 접근 허용 (Docker Network 설정)
+docker network create ieum-network
+docker-compose up --network ieum-network -d
+```
+
+### 4. OAuth 인증 서비스 연동 시 추가 설정
+
+카카오, 네이버 등 소셜 로그인을 연동하려면 환경 변수를 설정해야 합니다:
+
+```bash
+# .env 파일에 다음 항목 추가 (선택사항)
+KAKAO_CLIENT_ID=your_kakao_client_id
+KAKAO_CLIENT_SECRET=your_kakao_client_secret
+KAKAO_REDIRECT_URI=http://localhost:3000/auth/kakao/callback
+
+NEISSENG_CLIENT_ID=your_naver_client_id
+NEISSENG_CLIENT_SECRET=your_naver_client_secret
+NEISSENG_REDIRECT_URI=http://localhost:3000/auth/naver/callback
+```
+
+**중요:** OAuth 인증 정보는 Docker 컨테이너 내부에 저장되며, `.env` 파일을 볼 때 주의하세요:
+
+```bash
+# 민감한 정보 보호 위해 .env 파일 접근 제한
+chmod 600 .env
+
+# Git 에 .env 추가하지 않기 (지켜야 할 .gitignore)
+echo ".env" >> .gitignore
+```
+
+### 5. Docker 로 실행할 수 없는 기능
+
+Docker Compose 를 사용해도 아래 기능은 컨테이너 외부에서 구현해야 합니다:
+
+- 🚫 **로컬 파일 시스템 직접 조작**: `backend/logs/` 디렉토리에 생성된 로그 파일은 컨테이너 내부 저장소 (Volume) 로 연결되어 있습니다.
+- 🚫 **네트워크 인터페이스 직접 접근**: Docker 브릿지 네트워크만 사용하므로, 호스트 IP 로 직접 접속하면 안 됩니다.
+
+---
+
+## 🗂️ docker-compose.yml 파일 구조 및 실행 방법
+
+### 📍 파일 위치: `backend/docker-compose.yml`
+
+Docker Compose 파일을 프로젝트 루트 디렉토리 (`IEUM/backend/`) 에 위치합니다.
+
+### ✅ **단계별 실행 가이드**
+
+#### **Step 1: 환경 변수 준비**
+
+```bash
+# 1. 백엔드 디렉토리로 이동
+cd IEUM/backend
+
+# 2. .env.example 파일 복사 (또는 새 .env 생성)
+cp .env.example .env
+
+# 3. 필요한 환경 변수 확인 및 수정
+cat .env
+```
+
+#### **Step 2: Docker 이미지 다운로드**
+
+```bash
+# Docker Compose 가 자동으로 이미지를 다운로드합니다
+docker-compose pull
+
+# 또는 개별 서비스만 다운로드
+docker-compose pull postgres redis backend
+```
+
+#### **Step 3: 모든 서비스 시작 (PostgreSQL + Redis + NestJS)**
+
+```bash
+# 배경 모드에서 모든 컨테이너 시작
+docker-compose up -d
+
+# 실행 상태 확인
+docker-compose ps
+
+# 출력 예시:
+# NAME          STATUS              PORTS
+# backend       Up (healthy)        3000/tcp, 9229/tcp
+# postgres      Up (healthy)        5432/tcp
+# redis         Up (healthy)        6379/tcp
+```
+
+#### **Step 4: 개별 서비스 제어**
+
+```bash
+# PostgreSQL 만 시작 (Redis 는 이미 실행 중)
+docker-compose up -d postgres
+
+# NestJS 백엔드만 개발 서버로 시작
+docker-compose up -d backend
+
+# Redis 만 시작
+docker-compose up -d redis
+
+# 특정 컨테이너 재시작
+docker-compose restart backend
+
+# PostgreSQL 중지
+docker-compose stop postgres
+
+# 전체 스탑 (데이터는_VOLUME 으로 보존)
+docker-compose down
+
+# 전체 삭제 (데이터도 함께 제거)
+docker-compose down --volumes --remove-orphans
+```
+
+#### **Step 5: DB 연결 테스트**
+
+```bash
+# PostgreSQL 로 로그인
+docker-compose exec postgres psql ieum -c "SELECT version();"
+
+# 테이블 목록 조회
+docker-compose exec postgres psql ieum -c "\dt"
+
+# Redis ping 테스트
+docker-compose exec redis redis-cli ping
+
+# NestJS 백엔드 URL 확인
+curl http://localhost:3000/api/health
+```
+
+#### **Step 6: 로그 모니터링**
+
+```bash
+# 모든 서비스 로그 팔로우
+docker-compose logs -f
+
+# 특정 서비스 로그만 확인
+docker-compose logs backend
+docker-compose logs postgres
+
+# 실시간 로그 (새로운 컨테이너 시작 시 유용)
+docker-compose logs -f --tail=100
+```
+
+### 📝 **환경 변수 설명 (.env)**
+
+```bash
+# PostgreSQL 설정
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/ieum
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=ieum
+POSTGRES_PORT=5432
+
+# NestJS 서버 설정
+NODE_ENV=development
+PORT=3000
+HOST=0.0.0.0
+
+# Redis 설정
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+# JWT 설정
+JWT_SECRET=your-secret-key-change-in-production
+ALGORITHM=HS256
+
+# CORS 설정
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
+
+# 로그 레벨
+LOG_LEVEL=info
+
+# SNS 로그인 설정 (선택 사항)
+KAKAO_CLIENT_ID=your-kakao-client-id
+KAKAO_CLIENT_SECRET=your-kakao-client-secret
+NAVER_CLIENT_ID=your-naver-client-id
+NAVER_CLIENT_SECRET=your-naver-client-secret
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+```
+
+### 🔧 **유용한 Docker 명령어 정리**
+
+| 명령어 | 설명 | 예시 |
+|--------|------|------|
+| `docker-compose up -d` | 모든 컨테이너 시작 | `cd backend && docker-compose up -d` |
+| `docker-compose ps` | 컨테이너 상태 확인 | - |
+| `docker-compose logs -f` | 로그 실시간 출력 | `docker-compose logs -f backend` |
+| `docker-compose down` | 컨테이너 중지 및 삭제 | `docker-compose down` |
+| `docker-compose restart` | 컨테이너 재시작 | `docker-compose restart postgres` |
+| `docker stats` | 리소스 사용량 확인 | `docker stats --no-stream` |
+| `docker ps` | 모든 컨테이너 상태 | - |
+
+### ⚠️ **주의사항**
+
+1. ✅ **처음 실행 시**: `.env` 파일 반드시 먼저 생성하세요
+2. ⚠️ **컨테이너 삭제 시**: `-v --remove-orphans` 옵션 사용 시 데이터가 모두 지워집니다!
+3. 🔐 **환경 변수 보안**: `.env` 파일을 Git 에 추가하지 마세요 (``.gitignore``에 추가)
+4. 📦 **Volume 관리**: PostgreSQL 데이터는 Docker Volume 으로 자동 백업됩니다
+
+---
+#### DB 연결 및 테스트
+
+```bash
+# PostgreSQL 로 로그인
+docker-compose exec postgres psql ieum -c "SELECT version();"
+
+# 테이블 목록 조회
+docker-compose exec postgres psql ieum -c "\dt"
+
+# Redis 캐시 확인
+docker-compose exec redis redis-cli ping
+```
+
+#### Docker Compose 파일 구조
+
+`docker-compose.yml` 에서 정의된 서비스:
+
+```yaml
+services:
+  # PostgreSQL 데이터베이스
+  postgres:
+    image: postgres:15-alpine
+  
+  # NestJS 백엔드 (개발 모드)
+  backend:
+    build: .
+    command: npm run start:dev
+  
+  # Redis 캐시
+  redis:
+    image: redis:alpine
+```
+
+#### Docker 컨테이너 모니터링
+
+```bash
+# 실시간 로그 팔로우
+docker-compose logs -f
+
+# 특정 서비스 로그만 확인
+docker-compose logs backend
+
+# 컨테이너 사용량 확인
+docker stats
+
+# 모든 컨테이너 상태
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+```
+
+**주의 사항:**
+
+- 📌 **첫 실행 시**: `npm install` 후 Docker Compose 로 실행 (의존 관계 설치)
+- 📌 **데이터 백업**: 컨테이너를 삭제할 때 `-v --remove-orphans` 없이 주의 사용
+- 📌 **지속성**: PostgreSQL 데이터는 Docker Volume 으로 자동 백업됨
+
+---
+
+## ⚠️ Docker 로 실행 시 필요한 사전 설치 도구
+
+### 1. 기본 요구사항
+
+Docker Compose 로 모든 서비스를 실행하려면 다음 도구가 필요합니다:
+
+```bash
+# Docker 설치 (https://docs.docker.com/get-docker/)
+docker --version  # 20.10 이상 권장
+
+# Docker Compose 설치 (v2.x 이상)
+docker compose version  # 2.0 이상 권장
+
+# Podman 대체 옵션 (선택)
+podman --version  # Docker 대체 프로그램
+```
+
+### 2. 시스템 의존성 (macOS/Linux 기준)
+
+Docker 컨테이너가 실행되기 위한 기본 요구사항:
+
+- **macOS**: Docker Desktop 설치 (VMware Fusion 또는 UTM 사용 가능)
+- **Linux**: 
+  - `build-essential`
+  - `libpq-dev` (PostgreSQL 클라이언트 라이브러리)
+  - `wget` / `curl` (스크립트 실행용)
+
+### 3. 외부 API 연동 시 네트워크 설정
+
+외부 API(문화포털, 날씨 정보 등) 를 호출하려면 Docker 컨테이너에서 인터넷 연결이 필요합니다:
+
+```bash
+# 환경 변수에 API 엔드포인트 추가 (.env 파일)
+KAKAO_API_URL=https://kapis.kakao.com/kakao/common/v1
+  
+# 외부 네트워크 접근 허용 (Docker Network 설정)
+docker network create ieum-network
+docker-compose up --network ieum-network -d
+```
+
+### 4. OAuth 인증 서비스 연동 시 추가 설정
+
+카카오, 네이버 등 소셜 로그인을 연동하려면 환경 변수를 설정해야 합니다:
+
+```bash
+# .env 파일에 다음 항목 추가 (선택사항)
+KAKAO_CLIENT_ID=your_kakao_client_id
+KAKAO_CLIENT_SECRET=your_kakao_client_secret
+KAKAO_REDIRECT_URI=http://localhost:3000/auth/kakao/callback
+
+NEISSENG_CLIENT_ID=your_naver_client_id
+NEISSENG_CLIENT_SECRET=your_naver_client_secret
+NEISSENG_REDIRECT_URI=http://localhost:3000/auth/naver/callback
+```
+
+**중요:** OAuth 인증 정보는 Docker 컨테이너 내부에 저장되며, `.env` 파일을 볼 때 주의하세요:
+
+```bash
+# 민감한 정보 보호 위해 .env 파일 접근 제한
+chmod 600 .env
+
+# Git 에 .env 추가하지 않기 (지켜야 할 .gitignore)
+echo ".env" >> .gitignore
+```
+
+### 5. Docker 로 실행할 수 없는 기능
+
+Docker Compose 를 사용해도 아래 기능은 컨테이너 외부에서 구현해야 합니다:
+
+- 🚫 **로컬 파일 시스템 직접 조작**: `backend/logs/` 디렉토리에 생성된 로그 파일은 컨테이너 내부 저장소 (Volume) 로 연결되어 있습니다.
+- 🚫 **네트워크 인터페이스 직접 접근**: Docker 브릿지 네트워크만 사용하므로, 호스트 IP 로 직접 접속하면 안 됩니다.
+
+---
+
+## 🚀 CI/CD 자동화 파이프라인 (GitHub Actions)
+
+### ✅ 설정된 워크플로우
+
+**📦 `.github/workflows` 폴더 구조:**
+```bash
+.github/workflows/
+├── ci.yml           # 코드 변경 → 테스트 → 코드 커버리지 수집
+├── deploy-dev.yml   # 개발 환경 배포 자동화
+├── deploy-prod.yml  # 프로덕션 배포 자동화
+└── docker-publish.yml  # Docker 이미지 빌드 및 registry 푸시
+```
+
+### 📝 주요 기능:
+
+- 코드 변경 시 자동 테스트 실행  
+- 코드 커버리지 리포트 수집  
+- Pull Request 자동 심의  
+
+**GitHub Actions Dashboard:** `https://github.com/USERNAME/IEUM/actions`
+
+---

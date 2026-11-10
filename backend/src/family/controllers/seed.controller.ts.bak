@@ -1,0 +1,120 @@
+/**
+ * 가족 데이터 시드 (Seed) 컨트롤러 - 개발 환경용
+ * 보안: ADMIN 역할만 접근 가능하도록 보호됨
+ */
+import { Body, Controller, Get, Delete, OnModuleInit } from '@nestjs/common';
+import { Roles } from '../decorators/decorators'; // @Roles decorator import
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Family } from '../entities/family.entity';
+import { FamilyMember } from '../entities/family-member.entity';
+import { ADMIN_FAMILY_DATA, HEAD_FAMILY_DATA, MEMBER_FAMILY_DATA } from '../sample-data';
+
+/**
+ * 초기화 완료 후에도 데이터 재생성은 SeedController 를 사용하세요.
+ * ⚠️  보안: 이 컨트롤러는 ADMIN 역할만 접근 가능합니다.
+ */
+@Controller() // TODO: 필요 시 '/seed' 경로로 변경
+export class SeedController implements OnModuleInit {
+  constructor(
+    @InjectRepository(Family)
+    private familyRepository: Repository<Family>,
+    @InjectRepository(FamilyMember)
+    private familyMemberRepository: Repository<FamilyMember>,
+  ) {}
+
+  async onModuleInit() {
+    // 개발 환경 또는 SEED_DATA=true 일 때만 샘플 데이터 추가
+    if (process.env.NODE_ENV === 'development' || process.env.SEED_DATA === 'true') {
+      await this.seedData();
+    }
+  }
+
+  /**
+   * 모든 역할별 샘플 데이터를 인서트합니다.
+   * 이미 존재하는 데이터는 덮어씁니다.
+   */
+  async seedData() {
+    try {
+      // 이미 ADMIN 사용자가 존재하면 스킵 (중복 방지)
+      const existingAdmin = await this.familyMemberRepository.findOne({ where: { role: 'ADMIN' } });
+      if (existingAdmin) {
+        console.log('⚠️  [SeedController] ADMIN 사용자 이미 존재함. 데이터 추가 스킵.');
+        return;
+      }
+
+      // ADMIN 샘플 데이터
+      const adminFamilies = await this.familyRepository.save(ADMIN_FAMILY_DATA.families);
+      const adminUsers = await this.familyMemberRepository.save(ADMIN_FAMILY_DATA.users as FamilyMember[]);
+
+      // HEAD 샘플 데이터  
+      const headFamilies = await this.familyRepository.save(HEAD_FAMILY_DATA.families);
+      const headUsers = await this.familyMemberRepository.save(HEAD_FAMILY_DATA.users as FamilyMember[]);
+
+      // MEMBER 샘플 데이터
+      const memberFamilies = await this.familyRepository.save(MEMBER_FAMILY_DATA.families);
+      const memberUsers = await this.familyMemberRepository.save(MEMBER_FAMILY_DATA.users as FamilyMember[]);
+
+      console.log('✅ [SeedController] 샘플 데이터 추가 완료:');
+      console.log(`   - Admin Families: ${adminFamilies.length}`);
+      console.log(`   - Head Users: ${headUsers.length}`);
+      console.log(`   - Member Families: ${memberFamilies.length}`);
+      console.log(`   - Member Users: ${memberUsers.length}`);
+
+    } catch (error) {
+      console.error('❌ [SeedController] 샘플 데이터 추가 실패:', error.message);
+    }
+  }
+
+  /**
+   * 모든 샘플 데이터를 삭제하고 새로 시작합니다.
+   * ⚠️  보안: ADMIN 역할만 접근 가능
+   */
+  @Delete('reset')
+  @Roles('ADMIN') // ✅ 보안: ADMIN 역할만 데이터 삭제 가능
+  async resetAllData() {
+    try {
+      await this.familyRepository.delete({});
+      await this.familyMemberRepository.delete({});
+
+      console.log('✅ [SeedController] 기존 데이터 모두 삭제됨.');
+      await this.seedData();
+
+      return { message: '데이터가 재설정되었습니다.' };
+    } catch (error) {
+      console.error('❌ [SeedController] 데이터 삭제 실패:', error.message);
+      throw new Error('데이터 삭제 실패');
+    }
+  }
+
+  /**
+   * 현재 저장된 샘플 데이터를 조회합니다.
+   * ⚠️  보안: ADMIN 역할만 상세 데이터 접근 가능
+   */
+  @Get('list')
+  @Roles('ADMIN') // ✅ 보안: ADMIN 역할만 상세 데이터 조회 가능
+  async listSampleData() {
+    const allFamilies = await this.familyRepository.find();
+    const allMembers = await this.familyMemberRepository.find();
+    
+    return {
+      families: allFamilies,
+      members: allMembers,
+    };
+  }
+
+  /**
+   * 개발 환경용 헬퍼 엔드포인트 - ADMIN 만 가능
+   * 프로덕션 배포 시 이 컨트롤러는 비활성화됨
+   */
+  @Get('health') // 헬스체크용 (선택사항)
+  @Roles('ADMIN')
+  async healthCheck() {
+    return {
+      status: 'OK',
+      environment: process.env.NODE_ENV,
+      seedDataEnabled: process.env.SEED_DATA === 'true',
+    };
+  }
+
+}

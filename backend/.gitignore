@@ -1,0 +1,7 @@
+# 민감한 샘플 데이터 - 절대 커밋 금지
+src/family/sample-data.ts  # 🔐 샘플 데이터는 환경 변수 또는 DB 시드 파일로 대체
+
+# 로그 파일
+logs/
+*.log
+
