@@ -46,6 +46,7 @@ export default defineNuxtConfig({
   },
 
   app: {
+    baseURL: process.env.APP_BASE_URL || '/',
     head: {
       title: '이음 - 지역생활 정보 플랫폼',
       meta: [
