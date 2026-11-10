@@ -1,24 +1,21 @@
-# IEUM Backend - Koyeb/컨테이너 배포용
+# IEUM Frontend (Nuxt) - Koyeb/컨테이너 배포용
 FROM node:20-alpine AS builder
 
-WORKDIR /app/backend
+WORKDIR /app/frontend
 
-COPY backend/package*.json ./
-RUN npm ci --legacy-peer-deps && npm cache clean --force
+COPY frontend/package*.json ./
+RUN npm ci && npm cache clean --force
 
-COPY backend/ .
+COPY frontend/ ./
 RUN npm run build
 
 FROM node:20-alpine
 
-WORKDIR /app/backend
-
-COPY --from=builder /app/backend/dist ./dist
-COPY --from=builder /app/backend/node_modules ./node_modules
-COPY backend/package*.json ./
+WORKDIR /app
+COPY --from=builder /app/frontend/.output ./.output
 
 ENV NODE_ENV=production
 
 EXPOSE 3000
 
-CMD ["node", "dist/main.js"]
+CMD ["node", ".output/server/index.mjs"]
