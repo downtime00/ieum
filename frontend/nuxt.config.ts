@@ -1,4 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+const base = process.env.APP_BASE_URL || '/'
+
 export default defineNuxtConfig({
   compatibilityDate: '2024-04-03',
   devtools: { enabled: true },
@@ -19,17 +21,18 @@ export default defineNuxtConfig({
       theme_color: '#2563eb',
       background_color: '#f8fafc',
       display: 'standalone',
-      start_url: '/',
+      start_url: base,
+      scope: base,
       icons: [
-        { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
-        { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
-        { src: '/icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        { src: `${base}icons/icon-192.png`, sizes: '192x192', type: 'image/png' },
+        { src: `${base}icons/icon-512.png`, sizes: '512x512', type: 'image/png' },
+        { src: `${base}icons/icon-maskable-512.png`, sizes: '512x512', type: 'image/png', purpose: 'maskable' },
       ],
     },
     workbox: {
-      navigateFallback: '/',
+      navigateFallback: base,
       globPatterns: ['**/*.{js,css,html,png,svg,ico,webp}'],
-      importScripts: ['/push-handler.js'],
+      importScripts: ['push-handler.js'],
     },
     devOptions: {
       enabled: false,
@@ -46,7 +49,7 @@ export default defineNuxtConfig({
   },
 
   app: {
-    baseURL: process.env.APP_BASE_URL || '/',
+    baseURL: base,
     head: {
       title: '이음 - 지역생활 정보 플랫폼',
       meta: [
@@ -55,7 +58,8 @@ export default defineNuxtConfig({
         { name: 'description', content: '지역 주민이 자신이 관심 있는 지역기관의 공지, 행사, 프로그램, 문화정보 등을 한곳에서 확인할 수 있는 지역생활 정보 플랫폼' },
       ],
       link: [
-        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+        { rel: 'icon', type: 'image/x-icon', href: `${base}favicon.ico` },
+        { rel: 'manifest', href: `${base}manifest.webmanifest` },
       ],
     },
   },
