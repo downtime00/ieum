@@ -3,6 +3,6 @@
   "private": true,
   "scripts": {
     "build": "cd backend && npm ci && npm run build",
-    "start": "cd backend && node dist/main.js"
+    "start": "cd backend && (test -f dist/main.js || (npm ci && npm run build)) && node dist/main.js"
   }
 }
