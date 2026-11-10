@@ -109,6 +109,22 @@
         </p>
       </section>
 
+      <!-- 시스템 점검 -->
+      <section class="bg-white/10 rounded-2xl p-6 mb-4">
+        <h2 class="font-semibold text-white mb-1">
+          {{ $t("status.title") }}
+        </h2>
+        <p class="text-sm text-white/60 mb-5">
+          {{ $t("status.desc") }}
+        </p>
+        <button
+          @click="router.push('/status')"
+          class="bg-white/15 text-white font-semibold py-3 px-8 rounded-xl hover:bg-white/25 transition"
+        >
+          {{ $t("status.open") }}
+        </button>
+      </section>
+
       <!-- 저장 안내 -->
       <div
         class="bg-sky-500/20 border border-sky-400/30 rounded-2xl p-5 text-sm text-sky-200"

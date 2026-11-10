@@ -370,5 +370,17 @@
     "fromHere": "현재 위치",
     "mic": "말하기",
     "micListening": "듣는 중"
+  },
+  "status": {
+    "title": "시스템 점검",
+    "refresh": "새로고침",
+    "allOk": "모든 시스템 정상",
+    "degraded": "일부 점검이 필요합니다",
+    "lastChecked": "마지막 확인",
+    "ok": "정상",
+    "down": "장애",
+    "autoNote": "30초마다 자동으로 확인합니다",
+    "desc": "서버와 데이터베이스 상태를 확인합니다",
+    "open": "점검하기"
   }
 }

@@ -369,5 +369,17 @@
     "fromHere": "Current location",
     "mic": "Speak",
     "micListening": "Listening"
+  },
+  "status": {
+    "title": "System Check",
+    "refresh": "Refresh",
+    "allOk": "All systems normal",
+    "degraded": "Some checks need attention",
+    "lastChecked": "Last checked",
+    "ok": "OK",
+    "down": "Down",
+    "autoNote": "Checks automatically every 30 seconds",
+    "desc": "Check server and database status",
+    "open": "Run check"
   }
 }
