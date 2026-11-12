@@ -266,9 +266,15 @@ const initMap = async () => {
   });
   infoWindow.setPosition(new naver.maps.LatLng(lat, lng));
   naver.maps.Event.addListener(marker, "click", () => infoWindow.open(map));
-  infoWindow.open(map);
-  // 레이아웃 확정 후 지도 크기 재계산 (깨짐 방지)
-  setTimeout(() => map?.refresh?.(), 300);
+  // 레이아웃 확정 후 크기 재계산 + InfoWindow 표시 (즉시 open 시 insertBefore 오류 가능)
+  setTimeout(() => {
+    try {
+      map?.refresh?.();
+      infoWindow.open(map);
+    } catch {
+      // InfoWindow 표시 실패는 무시 (마커 클릭으로 다시 열 수 있음)
+    }
+  }, 400);
 };
 
 const isFree = computed(() => {
