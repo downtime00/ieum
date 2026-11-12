@@ -38,6 +38,7 @@ export const createProgramSchema = z.object({
   address: z.string().max(500).optional(),
   contactPhone: z.string().max(50).optional(),
   thumbnailUrl: z.string().url().max(500).optional(),
+  isActive: z.boolean().optional(),
 });
 export type CreateProgramDto = z.infer<typeof createProgramSchema>;
 

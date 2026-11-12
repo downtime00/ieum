@@ -151,6 +151,7 @@ export class OperatorsService {
       ...(data.address !== undefined && { address: data.address ?? null }),
       ...(data.contactPhone !== undefined && { contactPhone: data.contactPhone ?? null }),
       ...(data.thumbnailUrl !== undefined && { thumbnailUrl: data.thumbnailUrl ?? null }),
+      ...(data.isActive !== undefined && { isActive: data.isActive }),
     });
     return this.programRepo.save(p);
   }
