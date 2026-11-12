@@ -210,6 +210,58 @@ export class BookingsService {
     return map;
   }
 
+  // 공영자: 지난 프로그램별 예약/정산 이력
+  async operatorHistory(operatorId: number): Promise<any[]> {
+    const programs = await this.programRepo
+      .createQueryBuilder('p')
+      .where('p.operator_id = :operatorId', { operatorId })
+      .andWhere('p.event_date < CURRENT_DATE')
+      .orderBy('p.event_date', 'DESC')
+      .take(100)
+      .getMany();
+    if (programs.length === 0) return [];
+
+    const stats = await this.bookingRepo
+      .createQueryBuilder('b')
+      .select('b.program_id', 'programId')
+      .addSelect('COUNT(*)', 'total')
+      .addSelect(
+        `SUM(CASE WHEN b.status = 'SETTLED' THEN 1 ELSE 0 END)`,
+        'settledCount',
+      )
+      .addSelect(
+        `SUM(CASE WHEN b.status = 'SETTLED' THEN b.operator_amount ELSE 0 END)`,
+        'settledAmount',
+      )
+      .where('b.operator_id = :operatorId', { operatorId })
+      .groupBy('b.program_id')
+      .getRawMany();
+    const statMap = new Map(stats.map((s: any) => [Number(s.programId), s]));
+
+    const reviews = await this.reviewRepo
+      .createQueryBuilder('r')
+      .select('r.program_id', 'programId')
+      .addSelect('AVG(r.rating)', 'avg')
+      .addSelect('COUNT(*)', 'cnt')
+      .where('r.operator_id = :operatorId', { operatorId })
+      .groupBy('r.program_id')
+      .getRawMany();
+    const reviewMap = new Map(reviews.map((r: any) => [Number(r.programId), r]));
+
+    return programs.map((p) => {
+      const s = statMap.get(Number(p.id));
+      const rv = reviewMap.get(Number(p.id));
+      return {
+        ...p,
+        bookingCount: s ? Number(s.total) : 0,
+        settledCount: s ? Number(s.settledCount) : 0,
+        settledAmount: s ? Number(s.settledAmount) : 0,
+        avgRating: rv ? Math.round(Number(rv.avg) * 10) / 10 : null,
+        reviewCount: rv ? Number(rv.cnt) : 0,
+      };
+    });
+  }
+
   // 취소: REQUESTED/ACCEPTED → CANCELLED, PAID → REFUNDED
   async cancel(id: number, userId: number, reason?: string): Promise<ProgramBooking> {
     const b = await this.findOne(id);

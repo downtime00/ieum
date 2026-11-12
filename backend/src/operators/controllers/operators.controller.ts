@@ -140,6 +140,17 @@ export class OperatorsController {
     return this.bookingsService.findOne(id);
   }
 
+  // 공영자: 지난 프로그램별 예약/정산/후기 이력
+  @Get('operators/:id/history')
+  @Header('Cache-Control', 'no-store')
+  operatorHistory(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('userId', ParseIntPipe) userId: number,
+  ) {
+    return this.operatorsService.findOwned(id, userId)
+      .then(() => this.bookingsService.operatorHistory(id));
+  }
+
   @Get('operators/:id/bookings')
   @Header('Cache-Control', 'no-store')
   operatorBookings(
