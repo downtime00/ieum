@@ -1,11 +1,14 @@
 import { z } from 'zod';
 
-export const ORG_TYPES = ['행복복지센터', '실버타운', '노인회관', '복지관', '기타'] as const;
-export const PROGRAM_CATEGORIES = ['공연', '강의', '체험', '기타'] as const;
+export const ORG_TYPES = [
+  '행복복지센터', '실버타운', '노인회관', '복지관',
+  '요양보호사', '간병인', '기타',
+] as const;
+export const PROGRAM_CATEGORIES = ['공연', '강의', '체험', '요양·간병', '방문서비스', '기타'] as const;
 
 export const createOperatorSchema = z.object({
   userId: z.number().int().positive(),
-  name: z.string().min(1, '기관명이 필요합니다').max(200),
+  name: z.string().min(1, '이름 또는 기관명이 필요합니다').max(200),
   orgType: z.enum(ORG_TYPES),
   businessNumber: z.string().max(50).optional(),
   phone: z.string().max(50).optional(),
