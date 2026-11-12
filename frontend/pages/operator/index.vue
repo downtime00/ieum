@@ -147,6 +147,9 @@
                       {{ b.requesterName || `이용자 #${b.requesterUserId}` }} · {{ b.headcount }}명 · {{ b.totalAmount?.toLocaleString() }}원
                     </p>
                     <p v-if="b.message" class="text-sm text-white/50 mt-1">요청: {{ b.message }}</p>
+                    <p v-if="b.desiredAddress || b.desiredLat" class="text-sm text-sky-300 mt-1">
+                      📍 희망 장소: {{ b.desiredAddress || `${Number(b.desiredLat).toFixed(5)}, ${Number(b.desiredLng).toFixed(5)}` }}
+                    </p>
                     <p v-if="b.payerName" class="text-xs text-emerald-300 mt-1">입금자: {{ b.payerName }}</p>
                   </div>
                   <span :class="statusClass(b.status)" class="text-xs font-bold px-3 py-1.5 rounded-full flex-shrink-0">

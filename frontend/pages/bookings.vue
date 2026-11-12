@@ -36,6 +36,9 @@
                   {{ formatDate(b.eventDate) }}<span v-if="b.startTime"> {{ b.startTime }}</span>
                   · {{ b.headcount }}명 · {{ b.totalAmount?.toLocaleString() }}원
                 </p>
+                <p v-if="b.desiredAddress || b.desiredLat" class="text-xs text-sky-300 mt-1">
+                  📍 희망 장소: {{ b.desiredAddress || `${b.desiredLat?.toFixed(5)}, ${b.desiredLng?.toFixed(5)}` }}
+                </p>
               </div>
               <span
                 :class="statusClass(b.status)"
@@ -259,6 +262,9 @@ interface Booking {
   eventDate?: string;
   startTime?: string | null;
   cancelReason?: string | null;
+  desiredAddress?: string | null;
+  desiredLat?: number | null;
+  desiredLng?: number | null;
 }
 
 const bookings = ref<Booking[]>([]);

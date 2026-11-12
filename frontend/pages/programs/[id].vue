@@ -90,6 +90,40 @@
                   요양·간병/방문서비스는 가족장만 예약할 수 있으며, 예약이 가족 전체에 적용됩니다.
                 </p>
               </div>
+              <!-- 희망 장소 — 주소 검색 또는 지도 핀 선택 -->
+              <div>
+                <label class="block text-sm text-white/70 mb-1">
+                  희망 장소 {{ isCareService ? "(필수)" : "(선택)" }}
+                </label>
+                <div class="flex gap-2">
+                  <input v-model="desiredAddress" maxlength="500"
+                    placeholder="예: 서울 관악구 신림동 123-4"
+                    class="flex-1 min-w-0 bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-sky-400" />
+                  <button type="button" @click="searchDesiredLocation" :disabled="geoLoading"
+                    class="bg-white/10 text-white font-semibold py-3 px-4 rounded-xl hover:bg-white/20 transition text-sm whitespace-nowrap disabled:opacity-40">
+                    {{ geoLoading ? "..." : "검색" }}
+                  </button>
+                  <button type="button" @click="toggleLocationMap"
+                    class="bg-white/10 text-white font-semibold py-3 px-4 rounded-xl hover:bg-white/20 transition text-sm whitespace-nowrap">
+                    {{ showLocationMap ? "지도 닫기" : "지도 선택" }}
+                  </button>
+                </div>
+                <div v-if="geoResults.length" class="mt-2 space-y-1.5">
+                  <button v-for="(r, i) in geoResults" :key="i" type="button"
+                    @click="selectDesiredLocation(r)"
+                    class="w-full text-left bg-white/5 hover:bg-white/15 rounded-xl px-4 py-2.5 text-sm text-white/80 transition">
+                    📍 {{ r.address || r.name }}
+                  </button>
+                </div>
+                <div v-if="showLocationMap" class="mt-2">
+                  <div ref="locationMapEl" class="w-full h-64 rounded-xl overflow-hidden"></div>
+                  <p class="text-xs text-white/50 mt-1">지도를 눌러 정확한 위치를 선택하세요.</p>
+                </div>
+                <p v-if="desiredLat !== null" class="text-xs text-emerald-300 mt-1.5">
+                  ✓ 지도 위치 선택됨 ({{ desiredLat.toFixed(5) }}, {{ desiredLng?.toFixed(5) }})
+                </p>
+              </div>
+
               <div>
                 <label class="block text-sm text-white/70 mb-1">요청 사항 (선택)</label>
                 <textarea v-model="message" rows="2" maxlength="1000" placeholder="휠체어 이용, 보호자 동반 등"
@@ -101,7 +135,7 @@
               </p>
               <p v-if="error" class="text-sm text-red-300">{{ error }}</p>
               <p v-if="success" class="text-sm text-emerald-300">{{ success }}</p>
-              <button type="submit" :disabled="submitting || !!success || (isCareService && !selectedFamilyId)"
+              <button type="submit" :disabled="submitting || !!success || (isCareService && !selectedFamilyId) || (isCareService && !desiredAddress && desiredLat === null)"
                 class="w-full bg-blue-800 text-white font-bold py-4 rounded-xl hover:bg-blue-900 transition text-lg disabled:opacity-40">
                 {{ submitting ? "신청 중..." : "예약 신청하기" }}
               </button>
@@ -118,6 +152,8 @@
 </template>
 
 <script setup lang="ts">
+import { loadNaverMaps } from "~/utils/naver-maps";
+
 const config = useRuntimeConfig();
 const route = useRoute();
 
@@ -132,6 +168,17 @@ const success = ref("");
 const submitting = ref(false);
 const headFamilies = ref<any[]>([]);
 const selectedFamilyId = ref<number | null>(null);
+
+// 희망 장소 (지도 선택)
+const desiredAddress = ref("");
+const desiredLat = ref<number | null>(null);
+const desiredLng = ref<number | null>(null);
+const showLocationMap = ref(false);
+const geoResults = ref<{ name: string; address: string; lng: number; lat: number }[]>([]);
+const geoLoading = ref(false);
+const locationMapEl = ref<HTMLElement | null>(null);
+let locationMap: any = null;
+let locationMarker: any = null;
 
 const isCareService = computed(() =>
   ["요양·간병", "방문서비스"].includes(program.value?.category || ""),
@@ -183,6 +230,9 @@ const submit = async () => {
           headcount: headcount.value,
           message: message.value || undefined,
           familyId: selectedFamilyId.value || undefined,
+          desiredAddress: desiredAddress.value || undefined,
+          desiredLat: desiredLat.value ?? undefined,
+          desiredLng: desiredLng.value ?? undefined,
         }),
       },
     );
@@ -193,6 +243,87 @@ const submit = async () => {
     error.value = e.message;
   } finally {
     submitting.value = false;
+  }
+};
+
+const searchDesiredLocation = async () => {
+  const q = desiredAddress.value.trim();
+  if (!q) return;
+  geoLoading.value = true;
+  geoResults.value = [];
+  try {
+    const res = await fetch(
+      `${config.public.apiBase}/contents/geocode?query=${encodeURIComponent(q)}`,
+    );
+    if (res.ok) geoResults.value = await res.json();
+  } finally {
+    geoLoading.value = false;
+  }
+};
+
+const setDesiredCoords = (lat: number, lng: number, address?: string) => {
+  desiredLat.value = lat;
+  desiredLng.value = lng;
+  if (address) desiredAddress.value = address;
+  geoResults.value = [];
+  if (locationMap && window.naver) {
+    locationMap.setCenter(new window.naver.maps.LatLng(lat, lng));
+    locationMap.setZoom(16);
+    placeLocationMarker(lat, lng);
+  }
+};
+
+const selectDesiredLocation = (r: { name: string; address: string; lng: number; lat: number }) => {
+  setDesiredCoords(r.lat, r.lng, r.address || r.name);
+};
+
+const placeLocationMarker = (lat: number, lng: number) => {
+  if (!locationMap || !window.naver) return;
+  if (locationMarker) locationMarker.setMap(null);
+  locationMarker = new window.naver.maps.Marker({
+    position: new window.naver.maps.LatLng(lat, lng),
+    map: locationMap,
+  });
+};
+
+const initLocationMap = async () => {
+  try {
+    await loadNaverMaps((config.public as any).naverMapsClientId);
+  } catch {
+    return;
+  }
+  await nextTick();
+  if (!locationMapEl.value || locationMap) return;
+  const naver = window.naver;
+  // 저장된 위치 또는 서울 중심으로 초기화
+  let center = { lat: 37.5665, lng: 126.978 };
+  try {
+    const stored = localStorage.getItem("userLocation");
+    if (stored) {
+      const p = JSON.parse(stored);
+      if (p?.latitude && p?.longitude) center = { lat: p.latitude, lng: p.longitude };
+    }
+  } catch {}
+  locationMap = new naver.maps.Map(locationMapEl.value, {
+    center: new naver.maps.LatLng(center.lat, center.lng),
+    zoom: 13,
+  });
+  naver.maps.Event.addListener(locationMap, "click", (e: any) => {
+    const lat = e.coord.lat();
+    const lng = e.coord.lng();
+    setDesiredCoords(lat, lng);
+  });
+};
+
+const toggleLocationMap = async () => {
+  showLocationMap.value = !showLocationMap.value;
+  if (showLocationMap.value) {
+    await initLocationMap();
+    // 이미 좌표가 있으면 마커 표시
+    if (desiredLat.value !== null && desiredLng.value !== null) {
+      placeLocationMarker(desiredLat.value, desiredLng.value);
+      locationMap?.setCenter(new window.naver.maps.LatLng(desiredLat.value, desiredLng.value));
+    }
   }
 };
 
