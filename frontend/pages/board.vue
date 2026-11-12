@@ -293,14 +293,13 @@
             >
           </div>
         </article>
-        <button
-          v-if="allHasMore"
-          @click="loadAllPosts(true)"
-          :disabled="allLoadingMore"
-          class="mt-2 mx-auto bg-white/10 text-white font-semibold py-3 px-8 rounded-xl hover:bg-white/20 transition text-sm border border-white/20 disabled:opacity-50"
+        <div ref="allSentinel" class="h-8"></div>
+        <p
+          v-if="allLoadingMore"
+          class="text-center text-white/40 text-sm py-2"
         >
-          {{ allLoadingMore ? $t("board.loading") : $t("board.loadMore") }}
-        </button>
+          {{ $t("board.loading") }}
+        </p>
       </div>
 
       <div
@@ -907,6 +906,8 @@ const allPosts = ref<AllPost[]>([]);
 const allPage = ref(1);
 const allHasMore = ref(false);
 const allLoadingMore = ref(false);
+const allSentinel = ref<HTMLElement | null>(null);
+let allObserver: IntersectionObserver | null = null;
 const posts = ref<Post[]>([]);
 const loading = ref(false);
 const members = ref<Member[]>([]);
@@ -1041,6 +1042,35 @@ const loadAllPosts = async (append = false) => {
     allLoadingMore.value = false;
   }
 };
+
+// 전체 보기 무한스크롤: sentinel이 화면에 보이면 다음 페이지 로드
+const setupAllObserver = () => {
+  allObserver?.disconnect();
+  if (!allSentinel.value) return;
+  allObserver = new IntersectionObserver(
+    (entries) => {
+      if (
+        entries[0].isIntersecting &&
+        allHasMore.value &&
+        !allLoadingMore.value &&
+        !loading.value
+      ) {
+        loadAllPosts(true);
+      }
+    },
+    { rootMargin: "300px" },
+  );
+  allObserver.observe(allSentinel.value);
+};
+
+watch(viewAll, async (v) => {
+  if (v) {
+    await nextTick();
+    setupAllObserver();
+  } else {
+    allObserver?.disconnect();
+  }
+});
 
 const selectFamily = async (f: Family) => {
   viewAll.value = false;
