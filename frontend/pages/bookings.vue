@@ -108,6 +108,13 @@
                 입금 완료 신고
               </button>
               <button
+                v-if="['ACCEPTED', 'PAID'].includes(b.status)"
+                @click="openNotice(b)"
+                class="bg-violet-600 text-white font-semibold py-2.5 px-5 rounded-xl hover:bg-violet-500 transition text-sm"
+              >
+                구성원에게 공지
+              </button>
+              <button
                 v-if="b.status === 'COMPLETED'"
                 @click="confirmBooking(b)"
                 :disabled="acting === b.id"
@@ -161,6 +168,75 @@
                 >닫기</button>
               </div>
             </div>
+            <!-- 공지 보내기 폼 -->
+            <div
+              v-if="noticeFor === String(b.id)"
+              class="mt-4 bg-white/10 rounded-xl p-4"
+            >
+              <p class="text-sm font-semibold text-white mb-3">구성원에게 프로그램 안내 공지</p>
+
+              <div v-if="noticeFamilies.length === 0" class="text-sm text-white/60">
+                가입한 가족/그룹이 없습니다. 게시판에서 가족이나 그룹에 먼저 가입해주세요.
+              </div>
+              <template v-else>
+                <select
+                  v-model="noticeFamilyId"
+                  @change="loadNoticeMembers"
+                  class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white mb-3 focus:outline-none focus:border-sky-400"
+                >
+                  <option v-for="f in noticeFamilies" :key="f.id" :value="f.id" class="bg-slate-800">
+                    {{ f.name }}
+                  </option>
+                </select>
+
+                <div v-if="noticeMembers.length" class="mb-3">
+                  <label class="flex items-center gap-2 text-sm text-white/80 mb-2">
+                    <input type="checkbox" :checked="allMembersSelected" @change="toggleAllMembers"
+                      class="w-4 h-4 accent-sky-500" />
+                    전체 구성원에게 보내기
+                  </label>
+                  <div class="max-h-40 overflow-y-auto space-y-1.5 pr-1">
+                    <label
+                      v-for="m in noticeMembers"
+                      :key="m.id"
+                      class="flex items-center gap-2 text-sm text-white/70"
+                    >
+                      <input
+                        type="checkbox"
+                        :checked="noticeMemberIds.has(m.id)"
+                        @change="toggleMember(m.id)"
+                        class="w-4 h-4 accent-sky-500"
+                      />
+                      {{ m.name }}<span v-if="!m.hasAccount" class="text-white/40 text-xs">(앱 미사용)</span>
+                    </label>
+                  </div>
+                  <p class="text-xs text-white/40 mt-1">체크한 구성원에게만 알림이 갑니다. 앱을 사용하지 않는 멤버는 제외됩니다.</p>
+                </div>
+                <p v-else class="text-sm text-white/50 mb-3">구성원을 불러오는 중...</p>
+
+                <textarea
+                  v-model="noticeMessage"
+                  rows="2"
+                  maxlength="500"
+                  placeholder="공지 내용 (비우면 프로그램 안내가 자동으로 작성됩니다)"
+                  class="w-full rounded-xl px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-400 mb-3"
+                />
+                <div class="flex gap-2">
+                  <button
+                    @click="submitNotice(b)"
+                    :disabled="noticeSending || noticeMemberIds.size === 0"
+                    class="bg-violet-600 text-white font-semibold py-2.5 px-5 rounded-xl hover:bg-violet-500 transition text-sm disabled:opacity-40"
+                  >
+                    {{ noticeSending ? "발송 중..." : `공지 보내기 (${noticeMemberIds.size}명)` }}
+                  </button>
+                  <button
+                    @click="noticeFor = null"
+                    class="bg-white/10 text-white/70 font-semibold py-2.5 px-5 rounded-xl hover:bg-white/20 transition text-sm"
+                  >닫기</button>
+                </div>
+              </template>
+            </div>
+
             <p v-if="actionMsg[b.id]" class="text-sm text-emerald-300 mt-2">{{ actionMsg[b.id] }}</p>
           </div>
         </div>
@@ -195,6 +271,21 @@ const reviewedIds = ref<Set<string>>(new Set());
 const reviewingId = ref<string | null>(null);
 const reviewRating = ref(0);
 const reviewComment = ref("");
+
+// 공지
+const noticeFor = ref<string | null>(null);
+const noticeFamilies = ref<any[]>([]);
+const noticeFamilyId = ref<number | null>(null);
+const noticeMembers = ref<any[]>([]);
+const noticeMemberIds = ref<Set<number>>(new Set());
+const noticeMessage = ref("");
+const noticeSending = ref(false);
+const allMembersSelected = computed(
+  () => {
+    const targets = noticeMembers.value.filter((m) => m.hasAccount && !m.isMe);
+    return targets.length > 0 && noticeMemberIds.value.size === targets.length;
+  },
+);
 
 const statusLabel = (s: string) => ({
   REQUESTED: "신청됨", ACCEPTED: "수락됨·입금대기", PAID: "입금완료",
@@ -324,6 +415,86 @@ const submitReview = async (b: Booking) => {
     actionMsg[b.id] = e.message;
   } finally {
     acting.value = null;
+  }
+};
+
+const openNotice = async (b: Booking) => {
+  const uid = getUserId();
+  if (!uid) return;
+  noticeFor.value = String(b.id);
+  noticeMessage.value = "";
+  noticeMembers.value = [];
+  noticeMemberIds.value = new Set();
+  try {
+    const res = await fetch(`${config.public.apiBase}/board/families?userId=${uid}`);
+    noticeFamilies.value = res.ok ? await res.json() : [];
+    if (noticeFamilies.value.length > 0) {
+      noticeFamilyId.value = noticeFamilies.value[0].id;
+      await loadNoticeMembers();
+    }
+  } catch {
+    noticeFamilies.value = [];
+  }
+};
+
+const loadNoticeMembers = async () => {
+  const uid = getUserId();
+  if (!uid || !noticeFamilyId.value) return;
+  noticeMembers.value = [];
+  noticeMemberIds.value = new Set();
+  try {
+    const res = await fetch(
+      `${config.public.apiBase}/board/families/${noticeFamilyId.value}/members?userId=${uid}`,
+    );
+    const list: any[] = res.ok ? await res.json() : [];
+    // 계정 있는 멤버(본인 제외)만 선택 가능
+    const targets = list.filter((m) => m.hasAccount && !m.isMe);
+    noticeMembers.value = list;
+    noticeMemberIds.value = new Set(targets.map((m) => m.id));
+  } catch {
+    noticeMembers.value = [];
+  }
+};
+
+const toggleMember = (memberRowId: number) => {
+  const s = new Set(noticeMemberIds.value);
+  if (s.has(memberRowId)) s.delete(memberRowId);
+  else s.add(memberRowId);
+  noticeMemberIds.value = s;
+};
+
+const toggleAllMembers = () => {
+  const targets = noticeMembers.value.filter((m) => m.hasAccount && !m.isMe);
+  noticeMemberIds.value = allMembersSelected.value
+    ? new Set()
+    : new Set(targets.map((m) => m.id));
+};
+
+const submitNotice = async (b: Booking) => {
+  const uid = getUserId();
+  if (!uid || !noticeFamilyId.value) return;
+  noticeSending.value = true;
+  try {
+    const allTargets = noticeMembers.value.filter((m) => m.hasAccount && !m.isMe);
+    const sendAll = noticeMemberIds.value.size === allTargets.length && allTargets.length > 0;
+    const res = await fetch(`${config.public.apiBase}/bookings/${b.id}/notice`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: uid,
+        familyId: noticeFamilyId.value,
+        memberIds: sendAll ? undefined : [...noticeMemberIds.value],
+        message: noticeMessage.value || undefined,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "공지 발송에 실패했습니다");
+    actionMsg[b.id] = `공지가 ${data.sent}명에게 발송되었습니다.`;
+    noticeFor.value = null;
+  } catch (e: any) {
+    actionMsg[b.id] = e.message;
+  } finally {
+    noticeSending.value = false;
   }
 };
 
