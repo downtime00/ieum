@@ -62,6 +62,22 @@
             $t("board.title")
           }}</span>
         </NuxtLink>
+        <NuxtLink
+          to="/operators"
+          class="bg-violet-600 hover:bg-violet-500 rounded-xl p-4 min-h-[72px] flex flex-col items-center justify-center transition"
+        >
+          <span class="text-sm font-bold text-white text-center leading-tight"
+            >공연·강의 예약</span
+          >
+        </NuxtLink>
+        <NuxtLink
+          to="/bookings"
+          class="bg-teal-600 hover:bg-teal-500 rounded-xl p-4 min-h-[72px] flex flex-col items-center justify-center transition"
+        >
+          <span class="text-sm font-bold text-white text-center leading-tight"
+            >내 예약</span
+          >
+        </NuxtLink>
       </div>
 
       <!-- 위치 카드: 저장 완료/나중에 하기 상태에서는 숨김 -->
