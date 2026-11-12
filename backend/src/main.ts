@@ -3,6 +3,15 @@ import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
+  console.log('[DB Config]', {
+    host: process.env.DB_HOST || '(unset)',
+    port: process.env.DB_PORT || '(unset)',
+    username: process.env.DB_USERNAME || '(unset)',
+    database: process.env.DB_NAME || '(unset)',
+    ssl: process.env.DB_SSL || '(unset)',
+    hasDatabaseUrl: !!process.env.DATABASE_URL,
+  });
+
   const app = await NestFactory.create(AppModule);
 
   // Validation Pipe
