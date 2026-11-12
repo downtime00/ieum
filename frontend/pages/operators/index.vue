@@ -80,7 +80,7 @@
                     {{ op.orgType }}
                   </span>
                   <span
-                    v-if="op.reviewCount > 0"
+                    v-if="op.reviewCount"
                     class="bg-amber-400/30 text-amber-200 text-xs font-semibold px-2.5 py-1 rounded-full"
                   >
                     ★ {{ op.avgRating }} ({{ op.reviewCount }})
