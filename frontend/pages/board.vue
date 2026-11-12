@@ -1000,8 +1000,13 @@ const loadFamilies = async () => {
   const res = await fetch(api(`/board/families?userId=${userId.value}`));
   if (res.ok) {
     families.value = await res.json();
-    if (families.value.length > 0 && !currentFamily.value && !viewAll.value)
-      selectFamily(families.value[0]);
+    if (
+      families.value.length > 0 &&
+      !currentFamily.value &&
+      !viewAll.value &&
+      !guestMode.value
+    )
+      selectAll();
   }
 };
 
