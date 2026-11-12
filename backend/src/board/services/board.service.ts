@@ -275,6 +275,50 @@ export class BoardService {
     return posts.map((p) => ({ ...p, commentCount: countMap.get(String(p.id)) || 0 }));
   }
 
+  /** 내가 속한 모든 가족/그룹의 게시글을 한 번에 조회 (전체 보기) */
+  async allPosts(userId: number) {
+    const members = await this.memberRepo.find({ where: { userId } });
+    if (members.length === 0) return [];
+    const familyIds = members.map((m) => Number(m.familyId));
+    const families = await this.familyRepo.findBy({ id: In(familyIds) });
+    const familyMap = new Map(families.map((f) => [Number(f.id), f]));
+    const now = new Date();
+    const since = new Date(now);
+    since.setMonth(since.getMonth() - 3);
+    const posts = await this.postRepo
+      .createQueryBuilder('p')
+      .where('p.family_id IN (:...ids)', { ids: familyIds })
+      .andWhere('(p.created_at >= :since OR p.family_id IN (:...publicIds))', {
+        since,
+        publicIds: families.filter((f) => f.isPublic).map((f) => Number(f.id)),
+      })
+      .orderBy('p.is_notice', 'DESC')
+      .addOrderBy('p.created_at', 'DESC')
+      .take(200)
+      .getMany();
+    const visible = posts.filter((p) => {
+      const family = familyMap.get(Number(p.familyId));
+      if (!family?.isPublic) return true;
+      if (p.visibleUntil && new Date(p.visibleUntil) <= now) return false;
+      if (p.visibleFrom && new Date(p.visibleFrom) > now) return false;
+      return true;
+    });
+    if (visible.length === 0) return [];
+    const counts = await this.commentRepo
+      .createQueryBuilder('c')
+      .select('c.post_id', 'postId')
+      .addSelect('COUNT(*)', 'count')
+      .where('c.post_id IN (:...ids)', { ids: visible.map((p) => p.id) })
+      .groupBy('c.post_id')
+      .getRawMany();
+    const countMap = new Map(counts.map((c) => [String(c.postId), Number(c.count)]));
+    return visible.map((p) => ({
+      ...p,
+      commentCount: countMap.get(String(p.id)) || 0,
+      familyName: familyMap.get(Number(p.familyId))?.name || '',
+    }));
+  }
+
   async createPost(data: CreatePostDto): Promise<FamilyPost> {
     const member = await this.assertMember(data.familyId, data.userId);
     // 공지사항은 HEAD만

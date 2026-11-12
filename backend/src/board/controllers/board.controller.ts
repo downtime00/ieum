@@ -94,6 +94,13 @@ export class BoardController {
     return this.boardService.listPosts(familyId, userId);
   }
 
+  /** 내가 속한 모든 가족/그룹의 게시글 통합 조회 */
+  @Get('posts/all')
+  @Header('Cache-Control', 'no-store')
+  allPosts(@Query('userId', ParseIntPipe) userId: number) {
+    return this.boardService.allPosts(userId);
+  }
+
   @Post('posts')
   createPost(@Body(new ZodValidationPipe(createPostSchema)) data: CreatePostDto) {
     return this.boardService.createPost(data);
