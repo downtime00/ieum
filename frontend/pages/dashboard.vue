@@ -115,7 +115,7 @@
           </div>
 
           <div class="flex gap-2">
-            <template v-if="geoStatus === 'idle'">
+            <template v-if="geoStatus === 'idle' && !promptDismissed">
               <button
                 @click="acceptAndSaveLocation"
                 class="bg-blue-800 text-white font-semibold py-2.5 px-5 rounded-xl hover:bg-blue-900 transition text-sm"
@@ -143,6 +143,62 @@
             >
               {{ $t("location.delete") }}
             </button>
+          </div>
+        </div>
+
+        <!-- 수동 지역 설정: 위치 권한 없이 동네/주소 검색으로 설정 -->
+        <div
+          v-if="geoStatus !== 'granted'"
+          class="mt-4 pt-4 border-t border-white/10"
+        >
+          <button
+            @click="showManualSearch = !showManualSearch"
+            class="text-sm text-sky-300 font-semibold hover:text-sky-200 transition"
+          >
+            {{
+              showManualSearch
+                ? $t("location.manualClose")
+                : $t("location.manualOpen")
+            }}
+          </button>
+          <div v-if="showManualSearch" class="mt-3">
+            <div class="flex gap-2">
+              <input
+                v-model="manualQuery"
+                type="text"
+                :placeholder="$t('location.manualPlaceholder')"
+                class="flex-1 min-w-0 bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-white placeholder-white/40 text-base focus:outline-none focus:border-sky-400"
+                @keyup.enter="searchManualLocation"
+              />
+              <button
+                @click="searchManualLocation"
+                :disabled="manualLoading || !manualQuery.trim()"
+                class="bg-blue-800 text-white font-semibold py-2.5 px-5 rounded-xl hover:bg-blue-900 transition text-sm disabled:opacity-40 whitespace-nowrap"
+              >
+                {{ manualLoading ? "..." : $t("location.search") }}
+              </button>
+            </div>
+            <ul v-if="manualResults.length" class="mt-2 space-y-1">
+              <li v-for="r in manualResults" :key="`${r.lat},${r.lng}`">
+                <button
+                  @click="applyManualLocation(r)"
+                  class="w-full text-left bg-white/5 hover:bg-white/15 rounded-xl px-4 py-3 transition"
+                >
+                  <span class="block text-white font-semibold text-sm">
+                    {{ r.name }}
+                  </span>
+                  <span class="block text-white/50 text-xs mt-0.5 break-all">
+                    {{ r.address }}
+                  </span>
+                </button>
+              </li>
+            </ul>
+            <p
+              v-if="manualSearched && !manualResults.length"
+              class="text-sm text-white/50 mt-2"
+            >
+              {{ $t("location.noResult") }}
+            </p>
           </div>
         </div>
       </section>
@@ -678,7 +734,52 @@ const {
   loadStoredPosition,
   requestLocation,
   clearLocation,
+  setManualPosition,
 } = useGeolocation();
+
+// 수동 지역 설정 (권한 없이 동네/주소 검색)
+const showManualSearch = ref(false);
+const manualQuery = ref("");
+const manualResults = ref<
+  { name: string; address: string; lat: number | null; lng: number | null }[]
+>([]);
+const manualLoading = ref(false);
+const manualSearched = ref(false);
+
+const searchManualLocation = async () => {
+  const q = manualQuery.value.trim();
+  if (!q) return;
+  manualLoading.value = true;
+  manualSearched.value = false;
+  try {
+    const res = await fetch(
+      `${config.public.apiBase}/contents/geocode?query=${encodeURIComponent(q)}`,
+    );
+    manualResults.value = res.ok ? await res.json() : [];
+  } catch {
+    manualResults.value = [];
+  }
+  manualSearched.value = true;
+  manualLoading.value = false;
+};
+
+const applyManualLocation = (r: {
+  name: string;
+  address: string;
+  lat: number | null;
+  lng: number | null;
+}) => {
+  if (r.lat == null || r.lng == null) return;
+  setManualPosition({
+    latitude: r.lat,
+    longitude: r.lng,
+    accuracy: 0,
+    timestamp: Date.now(),
+  });
+  showManualSearch.value = false;
+  manualQuery.value = "";
+  manualResults.value = [];
+};
 
 // 알림 이력
 const notifications = ref<any[]>([]);
@@ -1232,11 +1333,7 @@ const loadBoardPreview = async () => {
 };
 
 // 위치 카드: 저장 완료 또는 '나중에' 선택 시 숨김
-const showLocationCard = computed(
-  () =>
-    geoStatus.value !== "granted" &&
-    !(geoStatus.value === "idle" && promptDismissed.value),
-);
+const showLocationCard = computed(() => geoStatus.value !== "granted");
 
 const acceptAndSaveLocation = async () => {
   await requestLocation();

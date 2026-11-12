@@ -94,6 +94,16 @@ export const useGeolocation = () => {
     })
   }
 
+  // 권한 없이 수동으로 위치 설정 (지역 검색 결과 적용용)
+  const setManualPosition = (geo: GeoPosition) => {
+    position.value = geo
+    status.value = 'granted'
+    errorMessage.value = ''
+    if (import.meta.client) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(geo))
+    }
+  }
+
   const clearLocation = () => {
     position.value = null
     status.value = 'idle'
@@ -111,6 +121,7 @@ export const useGeolocation = () => {
     loadStoredPosition,
     refreshPermission,
     requestLocation,
+    setManualPosition,
     clearLocation,
   }
 }

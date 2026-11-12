@@ -148,7 +148,12 @@
     "setLocation": "Set location",
     "savePrompt": "Would you like to save your current location?",
     "savedActive": "Using saved location",
-    "deniedGuide": "To fix: tap the lock (🔒) or tune icon left of the address bar → Permissions → Location → Allow. If installed as an app, go to phone Settings → Apps → IEUM → Permissions → Location."
+    "deniedGuide": "To fix: tap the lock (🔒) or tune icon left of the address bar → Permissions → Location → Allow. If installed as an app, go to phone Settings → Apps → IEUM → Permissions → Location.",
+    "manualOpen": "Set location manually",
+    "manualClose": "Close manual setup",
+    "manualPlaceholder": "e.g. Seoul Gwanak-gu Sillim-dong",
+    "search": "Search",
+    "noResult": "No results. Try a more specific neighborhood or address."
   },
   "senior": {
     "mode": "Senior Mode",
