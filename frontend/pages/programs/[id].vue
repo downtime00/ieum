@@ -72,6 +72,24 @@
                   </p>
                 </div>
               </div>
+              <!-- 그룹(가족) 예약 선택 — 그룹장은 HEAD만, 요양·간병은 필수 -->
+              <div v-if="headFamilies.length > 0 || isCareService">
+                <label class="block text-sm text-white/70 mb-1">
+                  {{ isCareService ? "예약 가족 (필수)" : "예약 대상" }}
+                </label>
+                <select v-model="selectedFamilyId"
+                  class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sky-400">
+                  <option :value="null" class="bg-slate-800" :disabled="isCareService">
+                    {{ isCareService ? "가족을 선택해주세요" : "개인 예약" }}
+                  </option>
+                  <option v-for="f in headFamilies" :key="f.id" :value="f.id" class="bg-slate-800">
+                    {{ f.name }} (그룹 예약)
+                  </option>
+                </select>
+                <p v-if="isCareService" class="text-xs text-sky-300 mt-1">
+                  요양·간병/방문서비스는 가족장만 예약할 수 있으며, 예약이 가족 전체에 적용됩니다.
+                </p>
+              </div>
               <div>
                 <label class="block text-sm text-white/70 mb-1">요청 사항 (선택)</label>
                 <textarea v-model="message" rows="2" maxlength="1000" placeholder="휠체어 이용, 보호자 동반 등"
@@ -83,7 +101,7 @@
               </p>
               <p v-if="error" class="text-sm text-red-300">{{ error }}</p>
               <p v-if="success" class="text-sm text-emerald-300">{{ success }}</p>
-              <button type="submit" :disabled="submitting || !!success"
+              <button type="submit" :disabled="submitting || !!success || (isCareService && !selectedFamilyId)"
                 class="w-full bg-blue-800 text-white font-bold py-4 rounded-xl hover:bg-blue-900 transition text-lg disabled:opacity-40">
                 {{ submitting ? "신청 중..." : "예약 신청하기" }}
               </button>
@@ -112,6 +130,12 @@ const message = ref("");
 const error = ref("");
 const success = ref("");
 const submitting = ref(false);
+const headFamilies = ref<any[]>([]);
+const selectedFamilyId = ref<number | null>(null);
+
+const isCareService = computed(() =>
+  ["요양·간병", "방문서비스"].includes(program.value?.category || ""),
+);
 
 const remaining = computed(() =>
   program.value ? Math.max(0, program.value.capacity - program.value.bookedCount) : 0,
@@ -158,6 +182,7 @@ const submit = async () => {
           userId: uid,
           headcount: headcount.value,
           message: message.value || undefined,
+          familyId: selectedFamilyId.value || undefined,
         }),
       },
     );
@@ -179,6 +204,16 @@ onMounted(async () => {
       const ores = await fetch(`${config.public.apiBase}/operators/${program.value.operatorId}`);
       const op = ores.ok ? await ores.json() : null;
       operatorName.value = op?.name || "";
+      // 내가 그룹장(HEAD)인 가족 목록 — 그룹 예약 옵션
+      const uid = getUserId();
+      if (uid) {
+        const fres = await fetch(`${config.public.apiBase}/board/families?userId=${uid}`);
+        const fams: any[] = fres.ok ? await fres.json() : [];
+        headFamilies.value = fams.filter((f) => f.role === "HEAD");
+        if (isCareService.value && headFamilies.value.length > 0) {
+          selectedFamilyId.value = headFamilies.value[0].id;
+        }
+      }
     }
     if (!getUserId()) needLogin.value = true;
   } finally {
