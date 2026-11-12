@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, ParseIntPipe, UsePipes, Header } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, ParseIntPipe, UsePipes, Header, UseGuards, Req } from '@nestjs/common';
 import { OperatorsService } from '../services/operators.service';
 import { BookingsService } from '../services/bookings.service';
 import { ZodValidationPipe } from '../../common/validation/zod.validation.pipe';
@@ -12,6 +12,7 @@ import type {
   CreateProgramDto, UpdateProgramDto, CreateBookingDto, BookingActionDto, CreateReviewDto,
   SendBookingNoticeDto,
 } from '../dto/operator.dto';
+import { UserAuthGuard, AdminAuthGuard } from '../guards/user-auth.guard';
 
 @Controller()
 export class OperatorsController {
@@ -30,6 +31,7 @@ export class OperatorsController {
 
   // 'me'는 ':id'보다 먼저 선언해야 함 (ParseIntPipe 충돌 방지)
   @Get('operators/me/:userId')
+  @UseGuards(UserAuthGuard)
   getMyOperator(@Param('userId', ParseIntPipe) userId: number) {
     return this.operatorsService.findByOwner(userId);
   }
@@ -55,12 +57,14 @@ export class OperatorsController {
   // ── 기관 등록/관리 ──
 
   @Post('operators')
+  @UseGuards(UserAuthGuard)
   @UsePipes(new ZodValidationPipe(createOperatorSchema))
   createOperator(@Body() data: CreateOperatorDto) {
     return this.operatorsService.create(data);
   }
 
   @Put('operators/:id')
+  @UseGuards(UserAuthGuard)
   @UsePipes(new ZodValidationPipe(updateOperatorSchema))
   updateOperator(
     @Param('id', ParseIntPipe) id: number,
@@ -69,8 +73,9 @@ export class OperatorsController {
     return this.operatorsService.update(id, data.userId, data);
   }
 
-  // 기관 승인/반려 (관리용 — 추후 관리자 권한 가드 적용 예정)
+  // 기관 승인/반려 (관리자 전용)
   @Post('operators/:id/status')
+  @UseGuards(AdminAuthGuard)
   @UsePipes(new ZodValidationPipe(operatorStatusSchema))
   setOperatorStatus(@Param('id', ParseIntPipe) id: number, @Body() data: OperatorStatusDto) {
     return this.operatorsService.setStatus(id, data.status);
@@ -79,6 +84,7 @@ export class OperatorsController {
   // ── 프로그램 관리 (기관 소유자) ──
 
   @Post('operators/:id/programs')
+  @UseGuards(UserAuthGuard)
   @UsePipes(new ZodValidationPipe(createProgramSchema))
   createProgram(@Param('id', ParseIntPipe) id: number, @Body() data: CreateProgramDto) {
     return this.operatorsService.findOwned(id, data.userId)
@@ -86,6 +92,7 @@ export class OperatorsController {
   }
 
   @Get('operators/:id/programs/manage')
+  @UseGuards(UserAuthGuard)
   @Header('Cache-Control', 'no-store')
   listProgramsManage(
     @Param('id', ParseIntPipe) id: number,
@@ -101,6 +108,7 @@ export class OperatorsController {
   }
 
   @Put('programs/:id')
+  @UseGuards(UserAuthGuard)
   @UsePipes(new ZodValidationPipe(updateProgramSchema))
   updateProgram(
     @Param('id', ParseIntPipe) id: number,
@@ -110,6 +118,7 @@ export class OperatorsController {
   }
 
   @Delete('programs/:id')
+  @UseGuards(UserAuthGuard)
   deleteProgram(@Param('id', ParseIntPipe) id: number, @Query('userId', ParseIntPipe) userId: number) {
     return this.operatorsService.deleteProgram(id, userId);
   }
@@ -117,6 +126,7 @@ export class OperatorsController {
   // ── 예약 ──
 
   @Post('programs/:id/bookings')
+  @UseGuards(UserAuthGuard)
   @UsePipes(new ZodValidationPipe(createBookingSchema))
   requestBooking(@Param('id', ParseIntPipe) id: number, @Body() data: CreateBookingDto) {
     return this.bookingsService.requestBooking(
@@ -126,6 +136,7 @@ export class OperatorsController {
   }
 
   @Get('bookings/my')
+  @UseGuards(UserAuthGuard)
   @Header('Cache-Control', 'no-store')
   myBookings(@Query('userId', ParseIntPipe) userId: number) {
     return this.bookingsService.myBookings(userId);
@@ -133,6 +144,7 @@ export class OperatorsController {
 
   // 후기 작성 완료된 예약 ID 목록
   @Get('bookings/reviewed')
+  @UseGuards(UserAuthGuard)
   reviewedBookings(@Query('userId', ParseIntPipe) userId: number) {
     return this.bookingsService.myReviewStatus(userId).then((map) => ({
       bookingIds: Object.keys(map).filter((k) => map[k]).map(Number),
@@ -140,12 +152,15 @@ export class OperatorsController {
   }
 
   @Get('bookings/:id')
-  getBooking(@Param('id', ParseIntPipe) id: number) {
-    return this.bookingsService.findOne(id);
+  @UseGuards(UserAuthGuard)
+  async getBooking(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
+    const userId = Number(req.userId);
+    return this.bookingsService.findOneForUser(id, userId);
   }
 
   // 공영자: 지난 프로그램별 예약/정산/후기 이력
   @Get('operators/:id/history')
+  @UseGuards(UserAuthGuard)
   @Header('Cache-Control', 'no-store')
   operatorHistory(
     @Param('id', ParseIntPipe) id: number,
@@ -156,6 +171,7 @@ export class OperatorsController {
   }
 
   @Get('operators/:id/bookings')
+  @UseGuards(UserAuthGuard)
   @Header('Cache-Control', 'no-store')
   operatorBookings(
     @Param('id', ParseIntPipe) id: number,
@@ -167,30 +183,35 @@ export class OperatorsController {
   }
 
   @Post('bookings/:id/accept')
+  @UseGuards(UserAuthGuard)
   @UsePipes(new ZodValidationPipe(bookingActionSchema))
   acceptBooking(@Param('id', ParseIntPipe) id: number, @Body() data: BookingActionDto) {
     return this.bookingsService.accept(id, data.userId);
   }
 
   @Post('bookings/:id/reject')
+  @UseGuards(UserAuthGuard)
   @UsePipes(new ZodValidationPipe(bookingActionSchema))
   rejectBooking(@Param('id', ParseIntPipe) id: number, @Body() data: BookingActionDto) {
     return this.bookingsService.reject(id, data.userId, data.reason);
   }
 
   @Post('bookings/:id/payment')
+  @UseGuards(UserAuthGuard)
   @UsePipes(new ZodValidationPipe(bookingActionSchema))
   submitPayment(@Param('id', ParseIntPipe) id: number, @Body() data: BookingActionDto) {
     return this.bookingsService.submitPayment(id, data.userId, data.payerName);
   }
 
   @Post('bookings/:id/complete')
+  @UseGuards(UserAuthGuard)
   @UsePipes(new ZodValidationPipe(bookingActionSchema))
   completeBooking(@Param('id', ParseIntPipe) id: number, @Body() data: BookingActionDto) {
     return this.bookingsService.complete(id, data.userId);
   }
 
   @Post('bookings/:id/confirm')
+  @UseGuards(UserAuthGuard)
   @UsePipes(new ZodValidationPipe(bookingActionSchema))
   confirmBooking(@Param('id', ParseIntPipe) id: number, @Body() data: BookingActionDto) {
     return this.bookingsService.confirm(id, data.userId);
@@ -198,6 +219,7 @@ export class OperatorsController {
 
   // 이용자: 수락된 예약의 프로그램 안내를 가족/그룹 멤버에게 공지 (전체 또는 일부)
   @Post('bookings/:id/notice')
+  @UseGuards(UserAuthGuard)
   @UsePipes(new ZodValidationPipe(sendBookingNoticeSchema))
   sendBookingNotice(@Param('id', ParseIntPipe) id: number, @Body() data: SendBookingNoticeDto) {
     return this.bookingsService.sendBookingNotice(
@@ -211,12 +233,14 @@ export class OperatorsController {
 
   // 이용자: 정산 완료 예약에 후기 작성
   @Post('bookings/:id/review')
+  @UseGuards(UserAuthGuard)
   @UsePipes(new ZodValidationPipe(createReviewSchema))
   createReview(@Param('id', ParseIntPipe) id: number, @Body() data: CreateReviewDto) {
     return this.bookingsService.createReview(id, data.userId, data.rating, data.comment);
   }
 
   @Post('bookings/:id/cancel')
+  @UseGuards(UserAuthGuard)
   @UsePipes(new ZodValidationPipe(bookingActionSchema))
   cancelBooking(@Param('id', ParseIntPipe) id: number, @Body() data: BookingActionDto) {
     return this.bookingsService.cancel(id, data.userId, data.reason);

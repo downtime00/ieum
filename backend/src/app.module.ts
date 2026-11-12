@@ -17,6 +17,8 @@ import { LogsModule } from './logs/logs.module';
 import { LocationModule } from './location/location.module';
 import { MedicationsModule } from './medications/medications.module';
 import { BoardModule } from './board/board.module';
+import { AudioStreamModule } from './audio-stream/audio-stream.module';
+import { AudioPlayer } from './audio-stream/entities/audio-player.entity';
 import { OperatorsModule } from './operators/operators.module';
 import { FamilyPost } from './board/entities/family-post.entity';
 import { FamilyPostComment } from './board/entities/family-post-comment.entity';
@@ -103,6 +105,7 @@ import { RedisModule } from './common/redis/redis.module';
         OperatorProgram,
         ProgramBooking,
       OperatorReview,
+        AudioPlayer,
       ],
       // 개발 환경에서는 synchronize 사용 (마이그레이션 미비 시 자동 스키마 생성)
       // 프로덕션에서는 반드시 false + 마이그레이션 사용
@@ -130,6 +133,7 @@ import { RedisModule } from './common/redis/redis.module';
     MedicationsModule,
     BoardModule,
     OperatorsModule,
+    AudioStreamModule,
     RedisModule,
   ],
   controllers: [HealthController],

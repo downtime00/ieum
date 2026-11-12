@@ -81,7 +81,9 @@ export class BookingsService {
     });
     if (dup) throw new BadRequestException('이미 신청한 프로그램입니다');
 
-    const remaining = program.capacity - program.bookedCount;
+    // 진행 중 예약(REQUESTED/ACCEPTED/PAID)의 인원도 좌석을 홀드 — 정원 초과 방지
+    const held = await this.heldHeadcount(programId);
+    const remaining = program.capacity - program.bookedCount - held;
     if (headcount > remaining) {
       throw new BadRequestException(`잔여 좌석이 부족합니다 (잔여 ${remaining}석)`);
     }
@@ -112,6 +114,19 @@ export class BookingsService {
     return this.bookingRepo.save(booking);
   }
 
+  // 확정 전 진행 중 상태의 예약 인원 합계 (좌석 홀드)
+  private async heldHeadcount(programId: number): Promise<number> {
+    const row = await this.bookingRepo
+      .createQueryBuilder('b')
+      .select('COALESCE(SUM(b.headcount), 0)', 'held')
+      .where('b.program_id = :programId', { programId })
+      .andWhere('b.status IN (:...statuses)', {
+        statuses: ['REQUESTED', 'ACCEPTED', 'PAID'],
+      })
+      .getRawOne();
+    return Number(row?.held ?? 0);
+  }
+
   async myBookings(userId: number): Promise<ProgramBooking[]> {
     return this.bookingRepo.find({
       where: { requesterUserId: userId },
@@ -136,6 +151,15 @@ export class BookingsService {
     return b;
   }
 
+  // 예약자 본인 또는 해당 공영자만 조회 가능
+  async findOneForUser(id: number, userId: number): Promise<ProgramBooking> {
+    const b = await this.findOne(id);
+    if (Number(b.requesterUserId) === userId) return b;
+    const op = await this.operatorRepo.findOne({ where: { id: String(b.operatorId) } });
+    if (op && Number(op.ownerUserId) === userId) return b;
+    throw new ForbiddenException('본인 예약만 조회할 수 있습니다');
+  }
+
   private async assertOperator(booking: ProgramBooking, userId: number): Promise<Operator> {
     const op = await this.operatorsService.findOwned(Number(booking.operatorId), userId);
     return op;
@@ -146,6 +170,14 @@ export class BookingsService {
     const b = await this.findOne(id);
     await this.assertOperator(b, userId);
     if (b.status !== 'REQUESTED') throw new BadRequestException('수락 가능한 상태가 아닙니다');
+    // 프로그램 정원이 줄어든 경우 수락 차단 (홀드 포함 점유 좌석 기준)
+    const program = await this.programRepo.findOne({ where: { id: String(b.programId) } });
+    if (program) {
+      const held = await this.heldHeadcount(Number(b.programId));
+      if (Number(program.bookedCount) + held > Number(program.capacity)) {
+        throw new BadRequestException('잔여 좌석이 부족하여 수락할 수 없습니다');
+      }
+    }
     b.status = 'ACCEPTED';
     return this.bookingRepo.save(b);
   }

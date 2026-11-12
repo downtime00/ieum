@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AudioPlayer } from '../entities/audio-player.entity';
 import { CreateAudioPlayerDto } from '../dto/create-audio-player.dto';
@@ -10,6 +11,7 @@ import { UpdateAudioPlayerDto } from '../dto/update-audio-player.dto';
 @Injectable()
 export class AudioPlayerService {
   constructor(
+    @InjectRepository(AudioPlayer)
     private readonly audioPlayerRepository: Repository<AudioPlayer>,
   ) {}
 
