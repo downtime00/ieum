@@ -119,7 +119,10 @@ export class OperatorsController {
   @Post('programs/:id/bookings')
   @UsePipes(new ZodValidationPipe(createBookingSchema))
   requestBooking(@Param('id', ParseIntPipe) id: number, @Body() data: CreateBookingDto) {
-    return this.bookingsService.requestBooking(id, data.userId, data.requesterName, data.headcount, data.message, data.familyId);
+    return this.bookingsService.requestBooking(
+      id, data.userId, data.requesterName, data.headcount, data.message,
+      data.familyId, data.desiredAddress, data.desiredLat, data.desiredLng,
+    );
   }
 
   @Get('bookings/my')

@@ -55,7 +55,14 @@ export const createBookingSchema = z.object({
   message: z.string().max(1000).optional(),
   // 그룹(가족) 단위 예약 시 필수 — 요양·간병/방문서비스는 반드시 지정, 그룹 예약은 그룹장(HEAD)만 가능
   familyId: z.number().int().positive().optional(),
-});
+  // 희망 장소 — 지도에서 선택한 좌표와 주소 (요양·간병/방문서비스는 사실상 필수 권장)
+  desiredAddress: z.string().max(500).optional(),
+  desiredLat: z.number().min(-90).max(90).optional(),
+  desiredLng: z.number().min(-180).max(180).optional(),
+}).refine(
+  (d) => (d.desiredLat === undefined) === (d.desiredLng === undefined),
+  { message: '위도와 경도는 함께 입력해야 합니다' },
+);
 export type CreateBookingDto = z.infer<typeof createBookingSchema>;
 
 export const bookingActionSchema = z.object({

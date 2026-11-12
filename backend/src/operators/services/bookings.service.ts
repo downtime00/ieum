@@ -37,6 +37,9 @@ export class BookingsService {
     headcount: number,
     message: string | undefined,
     familyId?: number,
+    desiredAddress?: string,
+    desiredLat?: number,
+    desiredLng?: number,
   ): Promise<ProgramBooking> {
     const program = await this.operatorsService.findProgram(programId);
     if (!program.isActive) throw new BadRequestException('신청이 마감된 프로그램입니다');
@@ -47,6 +50,9 @@ export class BookingsService {
     const isCareService = BookingsService.CARE_CATEGORIES.includes(program.category);
     if (isCareService && !familyId) {
       throw new BadRequestException('요양·간병/방문서비스는 가족(그룹)을 지정해 예약해야 합니다');
+    }
+    if (isCareService && !desiredAddress && desiredLat === undefined) {
+      throw new BadRequestException('요양·간병/방문서비스는 서비스 받을 희망 장소를 지도에서 선택해주세요');
     }
     if (familyId) {
       const membership = await this.familyMemberRepo.findOne({
@@ -91,6 +97,9 @@ export class BookingsService {
       requesterUserId: userId,
       requesterName: requesterName ?? null,
       familyId: familyId ?? null,
+      desiredAddress: desiredAddress ?? null,
+      desiredLat: desiredLat ?? null,
+      desiredLng: desiredLng ?? null,
       headcount,
       message: message ?? null,
       status: 'REQUESTED',

@@ -37,6 +37,16 @@ export class ProgramBooking {
   @Column({ type: 'text', nullable: true })
   message: string | null;
 
+  // 요청자가 지정한 희망 장소 (예: 요양 서비스 받을 주소, 공연 희망 장소)
+  @Column({ name: 'desired_address', type: 'varchar', length: 500, nullable: true })
+  desiredAddress: string | null;
+
+  @Column({ name: 'desired_lat', type: 'double precision', nullable: true })
+  desiredLat: number | null;
+
+  @Column({ name: 'desired_lng', type: 'double precision', nullable: true })
+  desiredLng: number | null;
+
   @Column({ type: 'varchar', length: 20, default: 'REQUESTED' })
   status: BookingStatus;
 
