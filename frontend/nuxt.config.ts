@@ -98,6 +98,7 @@ export default defineNuxtConfig({
       apiBase: process.env.API_BASE_URL || 'http://localhost:3001',
       naverMapsClientId: process.env.NAVER_MAPS_CLIENT_ID || '',
       vapidPublicKey: process.env.VAPID_PUBLIC_KEY || '',
+      paymentInfo: process.env.PAYMENT_INFO || '',
     },
   },
 })
