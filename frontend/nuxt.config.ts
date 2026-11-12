@@ -21,6 +21,10 @@ export default defineNuxtConfig({
       theme_color: '#2563eb',
       background_color: '#f8fafc',
       display: 'standalone',
+      dir: 'ltr',
+      lang: 'ko',
+      categories: ['lifestyle', 'utilities'],
+      prefer_related_applications: false,
       start_url: base,
       scope: base,
       icons: [

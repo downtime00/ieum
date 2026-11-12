@@ -125,6 +125,20 @@
         </button>
       </section>
 
+      <!-- 개인정보처리방침 -->
+      <section class="bg-white/10 rounded-2xl p-6 mb-4">
+        <h2 class="font-semibold text-white mb-1">개인정보처리방침</h2>
+        <p class="text-sm text-white/60 mb-5">
+          수집하는 정보와 이용 목적을 확인합니다.
+        </p>
+        <button
+          @click="router.push('/privacy')"
+          class="bg-white/15 text-white font-semibold py-3 px-8 rounded-xl hover:bg-white/25 transition"
+        >
+          보기
+        </button>
+      </section>
+
       <!-- 저장 안내 -->
       <div
         class="bg-sky-500/20 border border-sky-400/30 rounded-2xl p-5 text-sm text-sky-200"
