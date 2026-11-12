@@ -79,6 +79,12 @@
                   >
                     {{ op.orgType }}
                   </span>
+                  <span
+                    v-if="op.reviewCount > 0"
+                    class="bg-amber-400/30 text-amber-200 text-xs font-semibold px-2.5 py-1 rounded-full"
+                  >
+                    ★ {{ op.avgRating }} ({{ op.reviewCount }})
+                  </span>
                 </div>
                 <p v-if="op.address" class="text-sm text-white/60 mt-1">
                   📍 {{ op.address }}
@@ -109,6 +115,8 @@ interface Operator {
   address: string | null;
   description: string | null;
   status: string;
+  avgRating?: number | null;
+  reviewCount?: number;
 }
 
 const orgTypes = ["행복복지센터", "실버타운", "노인회관", "복지관", "기타"];

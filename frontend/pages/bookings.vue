@@ -62,6 +62,19 @@
               <p v-else-if="b.status === 'SETTLED'" class="text-sm text-white/60">
                 정산이 완료되었습니다. 이용해 주셔서 감사합니다.
               </p>
+              <p v-if="b.status === 'SETTLED'" class="text-sm">
+                <template v-if="reviewedIds.has(String(b.id))">
+                  <span class="text-amber-200">★ 후기를 작성했습니다.</span>
+                </template>
+                <template v-else-if="!reviewingId">
+                  <button
+                    @click="startReview(b)"
+                    class="text-sky-300 hover:underline font-semibold"
+                  >
+                    기관 후기 작성하기 ›
+                  </button>
+                </template>
+              </p>
               <p v-else-if="b.status === 'REJECTED'" class="text-sm text-red-300">
                 기관에서 신청을 거절했습니다.{{ b.cancelReason ? ` (${b.cancelReason})` : "" }}
               </p>
@@ -111,6 +124,43 @@
                 예약 취소
               </button>
             </div>
+            <!-- 후기 작성 폼 -->
+            <div
+              v-if="reviewingId === String(b.id)"
+              class="mt-4 bg-white/10 rounded-xl p-4"
+            >
+              <p class="text-sm font-semibold text-white mb-2">이 기관은 어떠셨나요?</p>
+              <div class="flex gap-1 mb-3">
+                <button
+                  v-for="n in 5"
+                  :key="n"
+                  @click="reviewRating = n"
+                  :class="n <= reviewRating ? 'text-amber-300' : 'text-white/30'"
+                  class="text-2xl leading-none px-1 hover:scale-110 transition"
+                  :aria-label="`${n}점`"
+                >★</button>
+              </div>
+              <textarea
+                v-model="reviewComment"
+                rows="3"
+                maxlength="1000"
+                placeholder="후기 내용 (선택, 최대 1000자)"
+                class="w-full rounded-xl px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-400"
+              />
+              <div class="flex gap-2 mt-3">
+                <button
+                  @click="submitReview(b)"
+                  :disabled="reviewRating === 0 || acting === b.id"
+                  class="bg-blue-800 text-white font-semibold py-2.5 px-5 rounded-xl hover:bg-blue-900 transition text-sm disabled:opacity-40"
+                >
+                  후기 등록
+                </button>
+                <button
+                  @click="reviewingId = null"
+                  class="bg-white/10 text-white/70 font-semibold py-2.5 px-5 rounded-xl hover:bg-white/20 transition text-sm"
+                >닫기</button>
+              </div>
+            </div>
             <p v-if="actionMsg[b.id]" class="text-sm text-emerald-300 mt-2">{{ actionMsg[b.id] }}</p>
           </div>
         </div>
@@ -141,6 +191,10 @@ const needLogin = ref(false);
 const acting = ref<string | null>(null);
 const actionMsg = reactive<Record<string, string>>({});
 const paymentInfo = (runtimeConfig.public as any).paymentInfo || "";
+const reviewedIds = ref<Set<string>>(new Set());
+const reviewingId = ref<string | null>(null);
+const reviewRating = ref(0);
+const reviewComment = ref("");
 
 const statusLabel = (s: string) => ({
   REQUESTED: "신청됨", ACCEPTED: "수락됨·입금대기", PAID: "입금완료",
@@ -187,6 +241,11 @@ const load = async () => {
   try {
     const res = await fetch(`${config.public.apiBase}/bookings/my?userId=${uid}`);
     const list: any[] = res.ok ? await res.json() : [];
+    const rres = await fetch(`${config.public.apiBase}/bookings/reviewed?userId=${uid}`);
+    if (rres.ok) {
+      const rdata = await rres.json();
+      reviewedIds.value = new Set((rdata.bookingIds || []).map(String));
+    }
     // 프로그램 제목/일시 보강
     bookings.value = await Promise.all(
       list.map(async (b) => {
@@ -236,6 +295,38 @@ const confirmBooking = (b: Booking) => {
   if (!confirm("프로그램을 이용하셨나요? 확인하시면 기관에 정산됩니다.")) return;
   act(b, "confirm");
 };
+const startReview = (b: Booking) => {
+  reviewingId.value = String(b.id);
+  reviewRating.value = 0;
+  reviewComment.value = "";
+};
+
+const submitReview = async (b: Booking) => {
+  const uid = getUserId();
+  if (!uid || reviewRating.value === 0) return;
+  acting.value = b.id;
+  try {
+    const res = await fetch(`${config.public.apiBase}/bookings/${b.id}/review`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: uid,
+        rating: reviewRating.value,
+        comment: reviewComment.value || undefined,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "후기 등록에 실패했습니다");
+    actionMsg[b.id] = "후기가 등록되었습니다. 감사합니다!";
+    reviewedIds.value.add(String(b.id));
+    reviewingId.value = null;
+  } catch (e: any) {
+    actionMsg[b.id] = e.message;
+  } finally {
+    acting.value = null;
+  }
+};
+
 const cancelBooking = (b: Booking) => {
   const reason = prompt("취소 사유 (선택):") ?? undefined;
   if (reason === null) return;

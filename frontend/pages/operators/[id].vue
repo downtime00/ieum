@@ -13,6 +13,12 @@
               <span class="bg-sky-400/30 text-sky-200 text-sm font-semibold px-3 py-1 rounded-full">
                 {{ operator.orgType }}
               </span>
+              <span
+                v-if="reviews.count > 0"
+                class="bg-amber-400/30 text-amber-200 text-sm font-semibold px-3 py-1 rounded-full"
+              >
+                ★ {{ reviews.avgRating }} ({{ reviews.count }})
+              </span>
             </div>
             <p v-if="operator.address" class="text-white/70">📍 {{ operator.address }}</p>
             <p v-if="operator.phone" class="text-white/70 mt-1">📞 {{ operator.phone }}</p>
@@ -53,6 +59,28 @@
               </div>
             </NuxtLink>
           </div>
+
+          <!-- 후기 -->
+          <div v-if="reviews.items.length > 0" class="mt-8">
+            <h2 class="text-lg font-bold text-white mb-3">
+              이용자 후기
+              <span class="text-sm font-normal text-white/50">(평균 ★{{ reviews.avgRating }}, {{ reviews.count }}개)</span>
+            </h2>
+            <div class="space-y-3">
+              <div
+                v-for="r in reviews.items"
+                :key="r.id"
+                class="bg-white/10 rounded-2xl p-4"
+              >
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-amber-300">{{ "★".repeat(r.rating) }}{{ "☆".repeat(5 - r.rating) }}</span>
+                  <span class="text-xs text-white/50">{{ r.reviewerName || "이용자" }}</span>
+                  <span class="text-xs text-white/40 ml-auto">{{ formatDate(r.createdAt) }}</span>
+                </div>
+                <p v-if="r.comment" class="text-sm text-white/80 leading-relaxed">{{ r.comment }}</p>
+              </div>
+            </div>
+          </div>
         </template>
         <div v-else class="text-center py-16 text-red-300">기관을 찾을 수 없습니다.</div>
       </div>
@@ -67,6 +95,11 @@ const route = useRoute();
 const operator = ref<any>(null);
 const programs = ref<any[]>([]);
 const loading = ref(true);
+const reviews = ref<{ items: any[]; avgRating: number | null; count: number }>({
+  items: [],
+  avgRating: null,
+  count: 0,
+});
 
 const formatDate = (d?: string) => {
   if (!d) return "";
@@ -86,6 +119,11 @@ onMounted(async () => {
       `${config.public.apiBase}/operators/${route.params.id}/programs`,
     );
     programs.value = pres.ok ? await pres.json() : [];
+    const rres = await fetch(`${config.public.apiBase}/operators/${route.params.id}/reviews`);
+    if (rres.ok) {
+      const rdata = await rres.json();
+      reviews.value = rdata || reviews.value;
+    }
   } finally {
     loading.value = false;
   }
