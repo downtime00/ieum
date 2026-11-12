@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Operator } from '../entities/operator.entity';
 import { OperatorProgram } from '../entities/operator-program.entity';
+import { OperatorReview } from '../entities/operator-review.entity';
 import type { CreateOperatorDto, UpdateOperatorDto, CreateProgramDto, UpdateProgramDto } from '../dto/operator.dto';
 
 @Injectable()
@@ -12,6 +13,8 @@ export class OperatorsService {
     private readonly operatorRepo: Repository<Operator>,
     @InjectRepository(OperatorProgram)
     private readonly programRepo: Repository<OperatorProgram>,
+    @InjectRepository(OperatorReview)
+    private readonly reviewRepo: Repository<OperatorReview>,
   ) {}
 
   // ── 기관 ──────────────────────────────────────────────
@@ -48,7 +51,25 @@ export class OperatorsService {
       qb.andWhere('o.org_type = :orgType', { orgType: orgType.trim() });
     }
     qb.orderBy('o.created_at', 'DESC').take(100);
-    return qb.getMany();
+    const ops = await qb.getMany();
+    if (ops.length === 0) return ops;
+    const stats = await this.reviewRepo
+      .createQueryBuilder('r')
+      .select('r.operator_id', 'operatorId')
+      .addSelect('AVG(r.rating)', 'avg')
+      .addSelect('COUNT(*)', 'cnt')
+      .where('r.operator_id IN (:...ids)', { ids: ops.map((o) => Number(o.id)) })
+      .groupBy('r.operator_id')
+      .getRawMany();
+    const statMap = new Map(stats.map((s: any) => [Number(s.operatorId), s]));
+    return ops.map((o) => {
+      const s = statMap.get(Number(o.id));
+      return {
+        ...o,
+        avgRating: s ? Math.round(Number(s.avg) * 10) / 10 : null,
+        reviewCount: s ? Number(s.cnt) : 0,
+      };
+    });
   }
 
   async findOne(id: number): Promise<Operator> {
