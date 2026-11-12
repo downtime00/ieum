@@ -17,6 +17,7 @@ import { LogsModule } from './logs/logs.module';
 import { LocationModule } from './location/location.module';
 import { MedicationsModule } from './medications/medications.module';
 import { BoardModule } from './board/board.module';
+import { OperatorsModule } from './operators/operators.module';
 import { FamilyPost } from './board/entities/family-post.entity';
 import { FamilyPostComment } from './board/entities/family-post-comment.entity';
 import { HealthController } from './common/controllers/health.controller';
@@ -47,6 +48,9 @@ import { AdminActivity } from './admin/entities/admin-activity.entity';
 import { Event } from './events/entities/event.entity';
 import { EventParticipation } from './events/entities/event-participation.entity';
 import { Log } from './common/entities/log.entity';
+import { Operator } from './operators/entities/operator.entity';
+import { OperatorProgram } from './operators/entities/operator-program.entity';
+import { ProgramBooking } from './operators/entities/program-booking.entity';
 import { RedisModule } from './common/redis/redis.module';
 
 @Module({
@@ -94,6 +98,9 @@ import { RedisModule } from './common/redis/redis.module';
         Event,
         EventParticipation,
         Log,
+        Operator,
+        OperatorProgram,
+        ProgramBooking,
       ],
       // 개발 환경에서는 synchronize 사용 (마이그레이션 미비 시 자동 스키마 생성)
       // 프로덕션에서는 반드시 false + 마이그레이션 사용
@@ -120,6 +127,7 @@ import { RedisModule } from './common/redis/redis.module';
     LocationModule,
     MedicationsModule,
     BoardModule,
+    OperatorsModule,
     RedisModule,
   ],
   controllers: [HealthController],
