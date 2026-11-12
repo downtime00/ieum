@@ -5,11 +5,12 @@ import { ZodValidationPipe } from '../../common/validation/zod.validation.pipe';
 import {
   createOperatorSchema, updateOperatorSchema, operatorStatusSchema,
   createProgramSchema, updateProgramSchema, createBookingSchema, bookingActionSchema,
-  createReviewSchema,
+  createReviewSchema, sendBookingNoticeSchema,
 } from '../dto/operator.dto';
 import type {
   CreateOperatorDto, UpdateOperatorDto, OperatorStatusDto,
   CreateProgramDto, UpdateProgramDto, CreateBookingDto, BookingActionDto, CreateReviewDto,
+  SendBookingNoticeDto,
 } from '../dto/operator.dto';
 
 @Controller()
@@ -190,6 +191,19 @@ export class OperatorsController {
   @UsePipes(new ZodValidationPipe(bookingActionSchema))
   confirmBooking(@Param('id', ParseIntPipe) id: number, @Body() data: BookingActionDto) {
     return this.bookingsService.confirm(id, data.userId);
+  }
+
+  // 이용자: 수락된 예약의 프로그램 안내를 가족/그룹 멤버에게 공지 (전체 또는 일부)
+  @Post('bookings/:id/notice')
+  @UsePipes(new ZodValidationPipe(sendBookingNoticeSchema))
+  sendBookingNotice(@Param('id', ParseIntPipe) id: number, @Body() data: SendBookingNoticeDto) {
+    return this.bookingsService.sendBookingNotice(
+      id,
+      data.userId,
+      data.familyId,
+      data.memberIds,
+      data.message,
+    );
   }
 
   // 이용자: 정산 완료 예약에 후기 작성

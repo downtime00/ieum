@@ -66,3 +66,13 @@ export const createReviewSchema = z.object({
   comment: z.string().max(1000).optional(),
 });
 export type CreateReviewDto = z.infer<typeof createReviewSchema>;
+
+// 수락된 예약의 프로그램 안내 공지 (가족/그룹 멤버 대상)
+export const sendBookingNoticeSchema = z.object({
+  userId: z.number().int().positive(),
+  familyId: z.number().int().positive(),
+  // 비우면 전체 멤버, 지정하면 해당 멤버(가족 멤버 row id)만
+  memberIds: z.array(z.number().int().positive()).max(200).optional(),
+  message: z.string().max(500).optional(),
+});
+export type SendBookingNoticeDto = z.infer<typeof sendBookingNoticeSchema>;

@@ -1,10 +1,12 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ProgramBooking, BookingStatus } from '../entities/program-booking.entity';
 import { Operator } from '../entities/operator.entity';
 import { OperatorProgram } from '../entities/operator-program.entity';
 import { OperatorReview } from '../entities/operator-review.entity';
+import { FamilyMember } from '../../family/entities/family-member.entity';
+import { NotificationService } from '../../notifications/services/notification.service';
 import { OperatorsService } from './operators.service';
 
 @Injectable()
@@ -18,6 +20,9 @@ export class BookingsService {
     private readonly programRepo: Repository<OperatorProgram>,
     @InjectRepository(OperatorReview)
     private readonly reviewRepo: Repository<OperatorReview>,
+    @InjectRepository(FamilyMember)
+    private readonly familyMemberRepo: Repository<FamilyMember>,
+    private readonly notificationService: NotificationService,
     private readonly operatorsService: OperatorsService,
   ) {}
 
@@ -260,6 +265,67 @@ export class BookingsService {
         reviewCount: rv ? Number(rv.cnt) : 0,
       };
     });
+  }
+
+  // 이용자: 수락된 예약의 프로그램 안내를 가족/그룹 멤버에게 공지
+  async sendBookingNotice(
+    bookingId: number,
+    userId: number,
+    familyId: number,
+    memberIds?: number[],
+    message?: string,
+  ): Promise<{ sent: number }> {
+    const b = await this.findOne(bookingId);
+    if (Number(b.requesterUserId) !== userId) {
+      throw new BadRequestException('본인 예약만 공지할 수 있습니다');
+    }
+    if (!['ACCEPTED', 'PAID', 'COMPLETED'].includes(b.status)) {
+      throw new BadRequestException('기관 수락 이후에만 공지할 수 있습니다');
+    }
+    const myMembership = await this.familyMemberRepo.findOne({
+      where: { familyId, userId },
+    });
+    if (!myMembership) {
+      throw new ForbiddenException('해당 가족/그룹의 멤버만 공지할 수 있습니다');
+    }
+
+    const members = await this.familyMemberRepo.find({ where: { familyId } });
+    let targets = members.filter((m) => !!m.userId);
+    if (memberIds?.length) {
+      const idSet = new Set(memberIds);
+      targets = targets.filter((m) => idSet.has(Number(m.id)));
+    }
+    const userIds = [
+      ...new Set(
+        targets
+          .map((m) => (m.userId ? Number(m.userId) : null))
+          .filter((id): id is number => !!id && id !== userId),
+      ),
+    ];
+    if (userIds.length === 0) {
+      throw new BadRequestException('알림을 받을 멤버가 없습니다 (계정이 있는 멤버만 수신 가능)');
+    }
+
+    const program = await this.programRepo.findOne({ where: { id: String(b.programId) } });
+    const operator = await this.operatorRepo.findOne({ where: { id: String(b.operatorId) } });
+    const when = program?.eventDate
+      ? new Date(program.eventDate).toLocaleDateString('ko-KR', {
+          year: 'numeric', month: 'long', day: 'numeric', weekday: 'short',
+        })
+      : '';
+    const title = '📢 프로그램 안내';
+    const body =
+      message?.trim() ||
+      `${b.requesterName || '예약자'}님이 "${operator?.name || '공영자'}"의 "${program?.title || '프로그램'}"(${when}) 예약이 확정되었습니다. 함께 참여해 주세요.`;
+
+    await this.notificationService.sendToMultipleUsers(
+      userIds,
+      title,
+      body,
+      'ANNOUNCEMENT',
+      `booking:${bookingId}`,
+    );
+    return { sent: userIds.length };
   }
 
   // 취소: REQUESTED/ACCEPTED → CANCELLED, PAID → REFUNDED
