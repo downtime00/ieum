@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Body, Param, Query, ParseIntPipe, Header } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, Query, ParseIntPipe, Header, DefaultValuePipe } from '@nestjs/common';
 import { BoardService } from '../services/board.service';
 import { ZodValidationPipe } from '../../common/validation/zod.validation.pipe';
 import { createPostSchema, createCommentSchema, createFamilySchema, joinFamilySchema } from '../dto/board.dto';
@@ -94,11 +94,15 @@ export class BoardController {
     return this.boardService.listPosts(familyId, userId);
   }
 
-  /** 내가 속한 모든 가족/그룹의 게시글 통합 조회 */
+  /** 내가 속한 모든 가족/그룹의 게시글 통합 조회 (페이지네이션) */
   @Get('posts/all')
   @Header('Cache-Control', 'no-store')
-  allPosts(@Query('userId', ParseIntPipe) userId: number) {
-    return this.boardService.allPosts(userId);
+  allPosts(
+    @Query('userId', ParseIntPipe) userId: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+  ) {
+    return this.boardService.allPosts(userId, Math.max(1, page), Math.min(Math.max(1, limit), 50));
   }
 
   @Post('posts')

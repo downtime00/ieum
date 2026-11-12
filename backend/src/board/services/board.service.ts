@@ -275,10 +275,10 @@ export class BoardService {
     return posts.map((p) => ({ ...p, commentCount: countMap.get(String(p.id)) || 0 }));
   }
 
-  /** 내가 속한 모든 가족/그룹의 게시글을 한 번에 조회 (전체 보기) */
-  async allPosts(userId: number) {
+  /** 내가 속한 모든 가족/그룹의 게시글을 한 번에 조회 (전체 보기, 페이지네이션) */
+  async allPosts(userId: number, page = 1, limit = 20) {
     const members = await this.memberRepo.find({ where: { userId } });
-    if (members.length === 0) return [];
+    if (members.length === 0) return { items: [], hasMore: false, page };
     const familyIds = members.map((m) => Number(m.familyId));
     const families = await this.familyRepo.findBy({ id: In(familyIds) });
     const familyMap = new Map(families.map((f) => [Number(f.id), f]));
@@ -294,7 +294,7 @@ export class BoardService {
       })
       .orderBy('p.is_notice', 'DESC')
       .addOrderBy('p.created_at', 'DESC')
-      .take(200)
+      .take(1000)
       .getMany();
     const visible = posts.filter((p) => {
       const family = familyMap.get(Number(p.familyId));
@@ -303,20 +303,26 @@ export class BoardService {
       if (p.visibleFrom && new Date(p.visibleFrom) > now) return false;
       return true;
     });
-    if (visible.length === 0) return [];
+    const start = (page - 1) * limit;
+    const items = visible.slice(start, start + limit);
+    if (items.length === 0) return { items: [], hasMore: false, page };
     const counts = await this.commentRepo
       .createQueryBuilder('c')
       .select('c.post_id', 'postId')
       .addSelect('COUNT(*)', 'count')
-      .where('c.post_id IN (:...ids)', { ids: visible.map((p) => p.id) })
+      .where('c.post_id IN (:...ids)', { ids: items.map((p) => p.id) })
       .groupBy('c.post_id')
       .getRawMany();
     const countMap = new Map(counts.map((c) => [String(c.postId), Number(c.count)]));
-    return visible.map((p) => ({
-      ...p,
-      commentCount: countMap.get(String(p.id)) || 0,
-      familyName: familyMap.get(Number(p.familyId))?.name || '',
-    }));
+    return {
+      items: items.map((p) => ({
+        ...p,
+        commentCount: countMap.get(String(p.id)) || 0,
+        familyName: familyMap.get(Number(p.familyId))?.name || '',
+      })),
+      hasMore: visible.length > start + limit,
+      page,
+    };
   }
 
   async createPost(data: CreatePostDto): Promise<FamilyPost> {
