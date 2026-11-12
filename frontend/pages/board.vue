@@ -293,6 +293,14 @@
             >
           </div>
         </article>
+        <button
+          v-if="allHasMore"
+          @click="loadAllPosts(true)"
+          :disabled="allLoadingMore"
+          class="mt-2 mx-auto bg-white/10 text-white font-semibold py-3 px-8 rounded-xl hover:bg-white/20 transition text-sm border border-white/20 disabled:opacity-50"
+        >
+          {{ allLoadingMore ? $t("board.loading") : $t("board.loadMore") }}
+        </button>
       </div>
 
       <div
@@ -896,6 +904,9 @@ const families = ref<Family[]>([]);
 const currentFamily = ref<Family | null>(null);
 const viewAll = ref(false);
 const allPosts = ref<AllPost[]>([]);
+const allPage = ref(1);
+const allHasMore = ref(false);
+const allLoadingMore = ref(false);
 const posts = ref<Post[]>([]);
 const loading = ref(false);
 const members = ref<Member[]>([]);
@@ -998,18 +1009,36 @@ const selectAll = async () => {
   currentFamily.value = null;
   members.value = [];
   posts.value = [];
+  allPosts.value = [];
+  allPage.value = 1;
+  allHasMore.value = false;
   showMembers.value = false;
   showManage.value = false;
   await loadAllPosts();
 };
 
-const loadAllPosts = async () => {
-  loading.value = true;
+const loadAllPosts = async (append = false) => {
+  if (append) allLoadingMore.value = true;
+  else loading.value = true;
   try {
-    const res = await fetch(api(`/board/posts/all?userId=${userId.value}`));
-    allPosts.value = res.ok ? await res.json() : [];
+    const page = append ? allPage.value + 1 : 1;
+    const res = await fetch(
+      api(`/board/posts/all?userId=${userId.value}&page=${page}&limit=20`),
+    );
+    if (res.ok) {
+      const data = await res.json();
+      allPosts.value = append
+        ? [...allPosts.value, ...data.items]
+        : data.items;
+      allPage.value = data.page;
+      allHasMore.value = data.hasMore;
+    } else if (!append) {
+      allPosts.value = [];
+      allHasMore.value = false;
+    }
   } finally {
     loading.value = false;
+    allLoadingMore.value = false;
   }
 };
 
