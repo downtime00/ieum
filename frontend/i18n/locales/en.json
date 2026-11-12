@@ -257,6 +257,7 @@
     "create": "Create",
     "join": "Join",
     "writePost": "Write post",
+    "viewAll": "All",
     "postTitle": "Title",
     "postContent": "Content",
     "notice": "Post as notice",

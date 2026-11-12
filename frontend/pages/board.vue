@@ -63,12 +63,24 @@
         class="flex flex-wrap items-center gap-2 mb-4"
       >
         <button
+          v-if="families.length > 0"
+          @click="selectAll"
+          class="px-5 py-2.5 rounded-xl font-semibold text-sm transition border"
+          :class="
+            viewAll
+              ? 'bg-sky-500 text-white border-sky-400'
+              : 'bg-white/10 text-white border-white/20 hover:bg-white/20'
+          "
+        >
+          {{ $t("board.viewAll") }}
+        </button>
+        <button
           v-for="f in families"
           :key="f.id"
           @click="selectFamily(f)"
           class="px-5 py-2.5 rounded-xl font-semibold text-sm transition border"
           :class="
-            currentFamily?.id === f.id
+            !viewAll && currentFamily?.id === f.id
               ? 'bg-sky-500 text-white border-sky-400'
               : 'bg-white/10 text-white border-white/20 hover:bg-white/20'
           "
@@ -78,6 +90,7 @@
         </button>
         <span class="flex-1"></span>
         <button
+          v-if="!viewAll"
           @click="showManage = !showManage"
           class="font-semibold py-2.5 px-4 rounded-xl transition text-sm border"
           :class="
@@ -89,7 +102,7 @@
           ⚙ {{ $t("board.manage") }}
         </button>
         <button
-          v-if="currentFamily?.role !== 'GUEST'"
+          v-if="currentFamily && currentFamily.role !== 'GUEST'"
           @click="openPostForm()"
           class="bg-sky-500 text-white font-semibold py-2.5 px-5 rounded-xl hover:bg-sky-400 transition text-sm"
         >
@@ -233,6 +246,55 @@
       <div v-if="loading" class="text-center py-16 text-white/50 text-lg">
         {{ $t("board.loading") }}
       </div>
+      <div
+        v-else-if="viewAll && allPosts.length === 0"
+        class="text-center py-16 text-white/50 text-lg"
+      >
+        {{ $t("board.empty") }}
+      </div>
+
+      <div
+        v-else-if="viewAll"
+        class="flex flex-col gap-3 pt-1"
+      >
+        <article
+          v-for="(p, idx) in allPosts"
+          :key="p.id"
+          @click="openPost(p)"
+          class="bg-white/10 rounded-2xl p-5 cursor-pointer hover:bg-white/15 transition"
+          :style="{ animationDelay: `${Math.min(idx, 12) * 60}ms` }"
+        >
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <span
+                  v-if="p.isNotice"
+                  class="text-xs font-bold bg-red-400/30 text-red-200 px-2 py-0.5 rounded-full"
+                  >{{ $t("board.notice") }}</span
+                >
+                <span class="text-xs font-semibold bg-white/15 text-white/70 px-2 py-0.5 rounded-full">
+                  {{ p.familyName }}
+                </span>
+                <h3 class="font-semibold text-white">
+                  {{ p.title }}
+                </h3>
+              </div>
+              <p class="text-sm text-white/60 line-clamp-3 whitespace-pre-wrap">
+                {{ p.content }}
+              </p>
+            </div>
+            <span class="text-white/30 text-xl shrink-0">›</span>
+          </div>
+          <div class="flex items-center gap-3 mt-3 text-xs text-white/40">
+            <span>{{ p.authorName }}</span>
+            <span>{{ formatDate(p.createdAt) }}</span>
+            <span v-if="p.commentCount > 0"
+              >{{ $t("board.comments") }} {{ p.commentCount }}</span
+            >
+          </div>
+        </article>
+      </div>
+
       <div
         v-else-if="currentFamily && posts.length === 0"
         class="text-center py-16 text-white/50 text-lg"
@@ -804,6 +866,10 @@ interface Post {
   createdAt: string;
   commentCount: number;
 }
+
+interface AllPost extends Post {
+  familyName: string;
+}
 interface Comment {
   id: string;
   authorUserId: string;
@@ -828,6 +894,8 @@ const userId = ref<number | null>(null);
 
 const families = ref<Family[]>([]);
 const currentFamily = ref<Family | null>(null);
+const viewAll = ref(false);
+const allPosts = ref<AllPost[]>([]);
 const posts = ref<Post[]>([]);
 const loading = ref(false);
 const members = ref<Member[]>([]);
@@ -920,14 +988,36 @@ const loadFamilies = async () => {
   const res = await fetch(api(`/board/families?userId=${userId.value}`));
   if (res.ok) {
     families.value = await res.json();
-    if (families.value.length > 0 && !currentFamily.value)
+    if (families.value.length > 0 && !currentFamily.value && !viewAll.value)
       selectFamily(families.value[0]);
   }
 };
 
+const selectAll = async () => {
+  viewAll.value = true;
+  currentFamily.value = null;
+  members.value = [];
+  posts.value = [];
+  showMembers.value = false;
+  showManage.value = false;
+  await loadAllPosts();
+};
+
+const loadAllPosts = async () => {
+  loading.value = true;
+  try {
+    const res = await fetch(api(`/board/posts/all?userId=${userId.value}`));
+    allPosts.value = res.ok ? await res.json() : [];
+  } finally {
+    loading.value = false;
+  }
+};
+
 const selectFamily = async (f: Family) => {
+  viewAll.value = false;
   currentFamily.value = f;
   showMembers.value = false;
+  showManage.value = false;
   await Promise.all([loadPosts(), loadMembers()]);
 };
 
@@ -1005,6 +1095,10 @@ const kickMember = async (m: Member) => {
 };
 
 const loadPosts = async () => {
+  if (viewAll.value) {
+    await loadAllPosts();
+    return;
+  }
   if (!currentFamily.value) return;
   loading.value = true;
   try {
@@ -1059,6 +1153,7 @@ const openPostForm = () => {
 };
 
 const submitPost = async () => {
+  if (!currentFamily.value) return;
   const res = await fetch(api("/board/posts"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -1174,6 +1269,7 @@ const searchGroups = async () => {
 
 // 게스트: 공개 그룹 게시글 읽기 전용으로 보기
 const viewGroup = async (g: GroupResult) => {
+  viewAll.value = false;
   currentFamily.value = { id: g.id, name: g.name, role: "GUEST", isPublic: true };
   members.value = [];
   posts.value = [];
