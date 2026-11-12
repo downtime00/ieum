@@ -267,7 +267,7 @@ const emailLogin = async () => {
     localStorage.setItem("accessToken", data.accessToken);
     localStorage.setItem("refreshToken", data.refreshToken);
     if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
-    window.location.href = "/dashboard";
+    await navigateTo("/dashboard");
   } catch (err: any) {
     error.value = err.message || t("auth.loginFailed");
   } finally {
@@ -305,7 +305,7 @@ const emailRegister = async () => {
     localStorage.setItem("refreshToken", data.refreshToken);
     if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
     showRegister.value = false;
-    window.location.href = "/dashboard";
+    await navigateTo("/dashboard");
   } catch (err: any) {
     registerError.value = err.message || t("auth.registerFailed");
   } finally {
