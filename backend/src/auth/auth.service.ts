@@ -297,6 +297,6 @@ export class AuthService {
     refreshToken: string,
   ): Promise<boolean> {
     const token = await this.refreshTokenRepository.findOne(refreshToken);
-    return !!token && token.userId === userId && !token.revokedAt;
+    return !!token && Number(token.userId) === userId && !token.revokedAt;
   }
 }
