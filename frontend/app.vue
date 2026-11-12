@@ -4,9 +4,9 @@
     <div class="book-edge book-edge-left" aria-hidden="true"></div>
     <div class="book-edge book-edge-right" aria-hidden="true"></div>
 
-    <Transition name="page" mode="out-in">
-      <NuxtPage />
-    </Transition>
+    <!-- Transition 제거: 네이버 지도 등 외부 라이브러리가 DOM을 변경하면
+         afterLeave 시 insertBefore 오류 발생 -->
+    <NuxtPage />
 
     <!-- 하단 플로팅 처음으로 버튼 (스크롤해도 항상 표시) -->
     <div
