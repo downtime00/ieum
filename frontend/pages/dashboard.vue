@@ -980,9 +980,17 @@ const fmtDate = (d?: string | null) => {
   );
 };
 const boardLoaded = ref(false);
-const hour = new Date().getHours();
-const greetingKey =
-  hour < 12 ? "dashboard.greetingMorning" : hour < 18 ? "dashboard.greetingAfternoon" : "dashboard.greetingEvening";
+// SSR(UTC)과 CSR(KST) 시간대 차이로 인사말이 달라지는 것 방지 — 마운트 후에만 계산
+const mounted = ref(false);
+const greetingKey = computed(() => {
+  if (!mounted.value) return "";
+  const h = new Date().getHours();
+  return h < 12
+    ? "dashboard.greetingMorning"
+    : h < 18
+      ? "dashboard.greetingAfternoon"
+      : "dashboard.greetingEvening";
+});
 
 // 날씨 (Open-Meteo, 무료·키 불필요)
 const weather = ref<{
@@ -1023,6 +1031,7 @@ const weatherCautionKey = (code: number | null, temp: number | null): string | n
   return null;
 };
 const todayText = computed(() => {
+  if (!mounted.value) return "";
   const date = new Date().toLocaleDateString(
     locale.value === "ko" ? "ko-KR" : "en-US",
     { month: "long", day: "numeric", weekday: "long" },
@@ -1265,6 +1274,7 @@ watch(() => weather.value.temp, (temp) => {
 });
 
 onMounted(async () => {
+  mounted.value = true;
   loadStoredPosition();
   loadWeather();
   promptDismissed.value = localStorage.getItem(PROMPT_KEY) === "true";
