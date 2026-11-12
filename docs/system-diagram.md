@@ -153,13 +153,13 @@ sequenceDiagram
 
 | # | 항목 | 현황 | 권장 조치 |
 |---|---|---|---|
-| 1 | **인증 부재 엔드포인트** | 대부분 API가 `?userId=` 쿼리를 신뢰. JWT 없이 타인 userId로 호출 가능 | JwtAuthGuard 적용 또는 userId를 토큰에서 추출 |
+| 1 | **인증 부재 엔드포인트** | ✅ operators 모듈은 `UserAuthGuard`(Bearer JWT + userId 일치 검증) 적용 완료. 프론트는 fetch 래퍼로 헤더 자동 첨부. **board/기타 모듈은 여전히 `?userId=` 신뢰** | board·medications·notifications 등 나머지 모듈에도 동일 가드 단계적 적용 |
 | 2 | **실결제 미구현** | 수동 입금 신고만. 플랫폼 수수료는 상태값일 뿐 실제 에스크로 아님 | PG 연동(토스페이먼츠 등) + 정산 자동화 |
-| 3 | **정원 초과 가능** | `bookedCount`는 COMPLETED 시점에만 증가 → REQUESTED/ACCEPTED 다수 시 초과 | 수락 시 홀드 차감 또는 정원 검사 강화 |
-| 4 | **기관 승인 무방어** | `POST /operators/:id/status`가 인증 없이 호출 가능 | 관리자 권한 가드 필수 |
-| 5 | **프로덕션 마이그레이션** | `NODE_ENV=production`이면 synchronize off → 신규 테이블 미생성 위험 | operators/board 테이블 마이그레이션 작성 |
+| 3 | **정원 초과 가능** | ✅ REQUESTED/ACCEPTED/PAID 인원을 좌석 홀드로 계산, 신청·수락 시 정원 검증 추가 | 프로그램 잔여석 표시도 홀드 반영 검토 |
+| 4 | **기관 승인 무방어** | ✅ `AdminAuthGuard` — ADMIN/SUPER_ADMIN role만 승인/반려 가능 | 관리자 승인 UI 추가 |
+| 5 | **프로덕션 마이그레이션** | ✅ `src/migrations/create-operators-tables.ts` 작성 (operators/operator_programs/program_bookings/operator_reviews) | typeorm CLI 연결 또는 SQL 수동 실행 필요 |
 | 6 | **웹푸시 키 미설정** | Koyeb에 `VAPID_PUBLIC_KEY/PRIVATE_KEY` 없으면 푸시 발송 불가 | env 등록 필요 |
-| 7 | **미등록 모듈** | recommendations, audio-stream, tts가 app.module에 없음 (404) | 프론트 미사용 시 방치 or 등록 |
+| 7 | **미등록 모듈** | ✅ AudioStreamModule 등록 + `AudioPlayerService` InjectRepository 누락 수정. ⚠️ RecommendationModule은 `Content` 엔티티가 contents/users 두 군데 중복 정의라 보류 (프론트 미사용) | 레거시 엔티티 통합 후 재등록 |
 | 8 | **앱 미사용 멤버** | `userId=null` 구성원은 알림/푸시 수신 불가 (의도된 동작) | 대체 채널(문자/전화) 검토 |
 | 9 | **전체 보기 상한** | posts/all은 최대 1000건 스캔 후 20개씩 페이징 | 데이터 증가 시 커서 기반 페이지네이션 권장 |
 | 10 | **i18n 미적용 페이지** | operators/bookings 등 신규 B2B 화면은 한국어 하드코딩 | 다국어 확장 시 점진적 적용 |
