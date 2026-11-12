@@ -59,3 +59,10 @@ export const bookingActionSchema = z.object({
   payerName: z.string().max(100).optional(),
 });
 export type BookingActionDto = z.infer<typeof bookingActionSchema>;
+
+export const createReviewSchema = z.object({
+  userId: z.number().int().positive(),
+  rating: z.number().int().min(1, '1~5점을 선택해주세요').max(5, '1~5점을 선택해주세요'),
+  comment: z.string().max(1000).optional(),
+});
+export type CreateReviewDto = z.infer<typeof createReviewSchema>;

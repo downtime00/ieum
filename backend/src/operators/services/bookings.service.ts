@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ProgramBooking, BookingStatus } from '../entities/program-booking.entity';
 import { Operator } from '../entities/operator.entity';
 import { OperatorProgram } from '../entities/operator-program.entity';
+import { OperatorReview } from '../entities/operator-review.entity';
 import { OperatorsService } from './operators.service';
 
 @Injectable()
@@ -15,6 +16,8 @@ export class BookingsService {
     private readonly operatorRepo: Repository<Operator>,
     @InjectRepository(OperatorProgram)
     private readonly programRepo: Repository<OperatorProgram>,
+    @InjectRepository(OperatorReview)
+    private readonly reviewRepo: Repository<OperatorReview>,
     private readonly operatorsService: OperatorsService,
   ) {}
 
@@ -158,6 +161,53 @@ export class BookingsService {
     b.status = 'SETTLED';
     b.settledAt = new Date();
     return this.bookingRepo.save(b);
+  }
+
+  // 이용자: 정산 완료 예약에 후기 작성 (SETTLED, 예약당 1회)
+  async createReview(
+    bookingId: number,
+    userId: number,
+    rating: number,
+    comment?: string,
+  ): Promise<OperatorReview> {
+    const b = await this.findOne(bookingId);
+    if (Number(b.requesterUserId) !== userId) {
+      throw new BadRequestException('본인 예약에만 후기를 작성할 수 있습니다');
+    }
+    if (b.status !== 'SETTLED') {
+      throw new BadRequestException('정산 완료된 예약에만 후기를 작성할 수 있습니다');
+    }
+    const dup = await this.reviewRepo.findOne({ where: { bookingId } });
+    if (dup) throw new ConflictException('이미 후기를 작성한 예약입니다');
+
+    const review = this.reviewRepo.create({
+      bookingId,
+      operatorId: Number(b.operatorId),
+      programId: Number(b.programId),
+      reviewerUserId: userId,
+      reviewerName: b.requesterName ?? null,
+      rating,
+      comment: comment ?? null,
+    });
+    return this.reviewRepo.save(review);
+  }
+
+  async operatorReviews(operatorId: number): Promise<{ items: OperatorReview[]; avgRating: number | null; count: number }> {
+    const items = await this.reviewRepo.find({
+      where: { operatorId },
+      order: { createdAt: 'DESC' },
+      take: 100,
+    });
+    const count = items.length;
+    const avgRating = count ? items.reduce((s, r) => s + r.rating, 0) / count : null;
+    return { items, avgRating: avgRating ? Math.round(avgRating * 10) / 10 : null, count };
+  }
+
+  async myReviewStatus(userId: number): Promise<Record<string, boolean>> {
+    const reviews = await this.reviewRepo.find({ where: { reviewerUserId: userId } });
+    const map: Record<string, boolean> = {};
+    for (const r of reviews) map[String(r.bookingId)] = true;
+    return map;
   }
 
   // 취소: REQUESTED/ACCEPTED → CANCELLED, PAID → REFUNDED

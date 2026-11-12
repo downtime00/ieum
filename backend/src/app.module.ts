@@ -51,6 +51,7 @@ import { Log } from './common/entities/log.entity';
 import { Operator } from './operators/entities/operator.entity';
 import { OperatorProgram } from './operators/entities/operator-program.entity';
 import { ProgramBooking } from './operators/entities/program-booking.entity';
+import { OperatorReview } from './operators/entities/operator-review.entity';
 import { RedisModule } from './common/redis/redis.module';
 
 @Module({
@@ -101,6 +102,7 @@ import { RedisModule } from './common/redis/redis.module';
         Operator,
         OperatorProgram,
         ProgramBooking,
+      OperatorReview,
       ],
       // 개발 환경에서는 synchronize 사용 (마이그레이션 미비 시 자동 스키마 생성)
       // 프로덕션에서는 반드시 false + 마이그레이션 사용

@@ -5,10 +5,11 @@ import { ZodValidationPipe } from '../../common/validation/zod.validation.pipe';
 import {
   createOperatorSchema, updateOperatorSchema, operatorStatusSchema,
   createProgramSchema, updateProgramSchema, createBookingSchema, bookingActionSchema,
+  createReviewSchema,
 } from '../dto/operator.dto';
 import type {
   CreateOperatorDto, UpdateOperatorDto, OperatorStatusDto,
-  CreateProgramDto, UpdateProgramDto, CreateBookingDto, BookingActionDto,
+  CreateProgramDto, UpdateProgramDto, CreateBookingDto, BookingActionDto, CreateReviewDto,
 } from '../dto/operator.dto';
 
 @Controller()
@@ -41,6 +42,13 @@ export class OperatorsController {
   @Header('Cache-Control', 'no-store')
   listPrograms(@Param('id', ParseIntPipe) id: number) {
     return this.operatorsService.listPrograms(id);
+  }
+
+  // 기관 후기 목록 + 평균 평점
+  @Get('operators/:id/reviews')
+  @Header('Cache-Control', 'no-store')
+  operatorReviews(@Param('id', ParseIntPipe) id: number) {
+    return this.bookingsService.operatorReviews(id);
   }
 
   // ── 기관 등록/관리 ──
@@ -119,6 +127,14 @@ export class OperatorsController {
     return this.bookingsService.myBookings(userId);
   }
 
+  // 후기 작성 완료된 예약 ID 목록
+  @Get('bookings/reviewed')
+  reviewedBookings(@Query('userId', ParseIntPipe) userId: number) {
+    return this.bookingsService.myReviewStatus(userId).then((map) => ({
+      bookingIds: Object.keys(map).filter((k) => map[k]).map(Number),
+    }));
+  }
+
   @Get('bookings/:id')
   getBooking(@Param('id', ParseIntPipe) id: number) {
     return this.bookingsService.findOne(id);
@@ -163,6 +179,13 @@ export class OperatorsController {
   @UsePipes(new ZodValidationPipe(bookingActionSchema))
   confirmBooking(@Param('id', ParseIntPipe) id: number, @Body() data: BookingActionDto) {
     return this.bookingsService.confirm(id, data.userId);
+  }
+
+  // 이용자: 정산 완료 예약에 후기 작성
+  @Post('bookings/:id/review')
+  @UsePipes(new ZodValidationPipe(createReviewSchema))
+  createReview(@Param('id', ParseIntPipe) id: number, @Body() data: CreateReviewDto) {
+    return this.bookingsService.createReview(id, data.userId, data.rating, data.comment);
   }
 
   @Post('bookings/:id/cancel')
