@@ -92,6 +92,9 @@
               </template>
               <template v-else-if="geoStatus === 'denied'">
                 <p class="text-sm text-red-300">{{ $t("location.denied") }}</p>
+                <p class="text-xs text-white/60 mt-1 leading-relaxed">
+                  {{ $t("location.deniedGuide") }}
+                </p>
               </template>
               <template v-else-if="geoStatus === 'unavailable'">
                 <p class="text-sm text-white/70">
@@ -127,7 +130,7 @@
               </button>
             </template>
             <button
-              v-else-if="geoStatus === 'denied' || geoStatus === 'unavailable'"
+              v-else-if="geoStatus === 'unavailable'"
               @click="requestGeo"
               class="bg-blue-800 text-white font-semibold py-2.5 px-5 rounded-xl hover:bg-blue-900 transition text-sm"
             >

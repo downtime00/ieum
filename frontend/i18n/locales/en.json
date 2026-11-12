@@ -147,7 +147,8 @@
     "notSet": "Location is not set.",
     "setLocation": "Set location",
     "savePrompt": "Would you like to save your current location?",
-    "savedActive": "Using saved location"
+    "savedActive": "Using saved location",
+    "deniedGuide": "To fix: tap the lock (🔒) or tune icon left of the address bar → Permissions → Location → Allow. If installed as an app, go to phone Settings → Apps → IEUM → Permissions → Location."
   },
   "senior": {
     "mode": "Senior Mode",

@@ -15,9 +15,27 @@ export const useGeolocation = () => {
   const status = ref<GeoStatus>('idle')
   const position = ref<GeoPosition | null>(null)
   const errorMessage = ref('')
+  const permissionStatus = ref<string>('prompt')
+
+  // 브라우저 권한 상태 조회 (denied면 재요청 불가 → 설정 안내 표시용)
+  const refreshPermission = async () => {
+    if (!import.meta.client || !navigator.permissions?.query) return
+    try {
+      const res = await navigator.permissions.query({
+        name: 'geolocation' as PermissionName,
+      })
+      permissionStatus.value = res.state
+      res.onchange = () => {
+        permissionStatus.value = res.state
+      }
+    } catch {
+      // Permissions API 미지원 브라우저는 무시
+    }
+  }
 
   const loadStoredPosition = () => {
     if (!import.meta.client) return
+    refreshPermission()
     const stored = localStorage.getItem(STORAGE_KEY)
     if (stored) {
       try {
@@ -89,7 +107,9 @@ export const useGeolocation = () => {
     status,
     position,
     errorMessage,
+    permissionStatus,
     loadStoredPosition,
+    refreshPermission,
     requestLocation,
     clearLocation,
   }

@@ -117,6 +117,12 @@
       <p v-if="geoError" class="text-sm text-red-300 mt-3 text-center">
         {{ geoError }}
       </p>
+      <p
+        v-if="geoStatus === 'denied'"
+        class="text-xs text-white/60 mt-2 text-center leading-relaxed px-4"
+      >
+        {{ $t("location.deniedGuide") }}
+      </p>
       <p v-if="mapError" class="text-sm text-amber-300 mt-3 text-center">
         {{ mapError }}
       </p>
