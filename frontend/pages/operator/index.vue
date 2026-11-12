@@ -180,6 +180,34 @@
             </div>
           </div>
 
+          <!-- 공연 이력 -->
+          <div v-else-if="activeTab === 'history'">
+            <div v-if="history.length === 0" class="text-center py-10 text-white/50">
+              지난 프로그램이 없습니다.
+            </div>
+            <div v-else class="space-y-3">
+              <div v-for="p in history" :key="p.id" class="bg-white/10 rounded-2xl p-5">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span class="bg-amber-400/30 text-amber-200 text-xs font-semibold px-2.5 py-1 rounded-full">{{ p.category }}</span>
+                      <span class="text-white/60 text-sm">{{ formatDate(p.eventDate) }}<span v-if="p.startTime"> {{ p.startTime }}</span></span>
+                      <span v-if="p.avgRating" class="bg-yellow-400/30 text-yellow-200 text-xs font-semibold px-2.5 py-1 rounded-full">
+                        ★ {{ p.avgRating }} ({{ p.reviewCount }})
+                      </span>
+                    </div>
+                    <h3 class="font-bold text-white mt-1.5">{{ p.title }}</h3>
+                    <p class="text-sm text-white/60 mt-1">
+                      예약 {{ p.bookingCount }}건 · 정산 완료 {{ p.settledCount }}건
+                      <template v-if="p.settledAmount"> · 정산액 {{ p.settledAmount.toLocaleString() }}원</template>
+                    </p>
+                  </div>
+                  <span class="bg-slate-400/30 text-slate-300 text-xs font-bold px-3 py-1.5 rounded-full flex-shrink-0">종료</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- 기관 정보 -->
           <div v-else-if="activeTab === 'info'">
             <form @submit.prevent="saveInfo" class="space-y-3 max-w-xl">
@@ -225,6 +253,7 @@ const config = useRuntimeConfig();
 const tabs = [
   { key: "programs", label: "프로그램 관리" },
   { key: "bookings", label: "예약 관리" },
+  { key: "history", label: "공연 이력" },
   { key: "info", label: "기관 정보" },
 ];
 const programCategories = ["공연", "강의", "체험", "기타"];
@@ -258,6 +287,9 @@ const bookings = ref<any[]>([]);
 const bookingFilter = ref("");
 const acting = ref<string | null>(null);
 const actionMsg = reactive<Record<string, string>>({});
+
+// 공연 이력
+const history = ref<any[]>([]);
 
 // 기관 정보
 const infoForm = reactive({ name: "", phone: "", address: "", description: "", bankName: "", bankAccount: "", accountHolder: "" });
@@ -302,7 +334,20 @@ const loadOperator = async () => {
     });
     loadPrograms();
     loadBookings();
+    loadHistory();
   }
+};
+
+const loadHistory = async () => {
+  const res = await fetch(`${config.public.apiBase}/operators/${operator.value.id}/history?userId=${userId.value}`);
+  history.value = res.ok ? await res.json() : [];
+};
+
+const formatDate = (d?: string) => {
+  if (!d) return "";
+  return new Date(d).toLocaleDateString("ko-KR", {
+    year: "numeric", month: "long", day: "numeric", weekday: "short",
+  });
 };
 
 const loadPrograms = async () => {

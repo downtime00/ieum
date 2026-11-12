@@ -47,7 +47,10 @@
           </div>
 
           <!-- 예약 신청 -->
-          <div v-if="remaining > 0" class="bg-white/10 rounded-2xl p-5">
+          <div v-if="isPast" class="bg-white/10 rounded-2xl p-5 text-center text-white/60">
+            종료된 프로그램입니다.
+          </div>
+          <div v-else-if="remaining > 0" class="bg-white/10 rounded-2xl p-5">
             <h2 class="font-semibold text-white mb-3">예약 신청</h2>
             <div v-if="needLogin" class="text-center py-4">
               <p class="text-white/70 mb-3">예약 신청은 로그인이 필요합니다.</p>
@@ -113,6 +116,13 @@ const submitting = ref(false);
 const remaining = computed(() =>
   program.value ? Math.max(0, program.value.capacity - program.value.bookedCount) : 0,
 );
+
+const isPast = computed(() => {
+  if (!program.value?.eventDate) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return new Date(program.value.eventDate) < today;
+});
 
 const formatDate = (d?: string) => {
   if (!d) return "";

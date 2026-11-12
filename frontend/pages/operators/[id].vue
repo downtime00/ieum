@@ -28,13 +28,13 @@
           </div>
 
           <!-- 프로그램 목록 -->
-          <h2 class="text-lg font-bold text-white mb-3">프로그램</h2>
-          <div v-if="programs.length === 0" class="text-white/50 py-8 text-center">
-            등록된 프로그램이 없습니다.
+          <h2 class="text-lg font-bold text-white mb-3">예정된 프로그램</h2>
+          <div v-if="upcomingPrograms.length === 0" class="text-white/50 py-8 text-center">
+            예정된 프로그램이 없습니다.
           </div>
           <div v-else class="space-y-3">
             <NuxtLink
-              v-for="p in programs"
+              v-for="p in upcomingPrograms"
               :key="p.id"
               :to="`/programs/${p.id}`"
               class="block bg-white/10 hover:bg-white/15 rounded-2xl p-5 transition"
@@ -59,6 +59,36 @@
               </div>
             </NuxtLink>
           </div>
+
+          <!-- 지난 프로그램 -->
+          <template v-if="pastPrograms.length > 0">
+            <h2 class="text-lg font-bold text-white mt-8 mb-3">지난 프로그램</h2>
+            <div class="space-y-3">
+              <div
+                v-for="p in pastPrograms"
+                :key="p.id"
+                class="bg-white/5 rounded-2xl p-5 opacity-70"
+              >
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span class="bg-slate-400/30 text-slate-300 text-xs font-semibold px-2.5 py-1 rounded-full">
+                        {{ p.category }}
+                      </span>
+                      <span class="text-white/50 text-sm">
+                        {{ formatDate(p.eventDate) }}<span v-if="p.startTime"> {{ p.startTime }}</span>
+                      </span>
+                      <span class="bg-slate-400/30 text-slate-300 text-xs font-bold px-2 py-1 rounded-full">종료</span>
+                    </div>
+                    <h3 class="text-base font-bold text-white/80 mt-2">{{ p.title }}</h3>
+                    <p class="text-sm text-white/50 mt-1">
+                      {{ p.price === 0 ? "무료" : `${p.price.toLocaleString()}원/인` }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
 
           <!-- 후기 -->
           <div v-if="reviews.items.length > 0" class="mt-8">
@@ -95,6 +125,15 @@ const route = useRoute();
 const operator = ref<any>(null);
 const programs = ref<any[]>([]);
 const loading = ref(true);
+
+const isPast = (d?: string) => {
+  if (!d) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return new Date(d) < today;
+};
+const upcomingPrograms = computed(() => programs.value.filter((p) => !isPast(p.eventDate)));
+const pastPrograms = computed(() => programs.value.filter((p) => isPast(p.eventDate)));
 const reviews = ref<{ items: any[]; avgRating: number | null; count: number }>({
   items: [],
   avgRating: null,
