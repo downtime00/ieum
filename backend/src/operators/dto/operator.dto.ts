@@ -53,6 +53,8 @@ export const createBookingSchema = z.object({
   requesterName: z.string().max(100).optional(),
   headcount: z.number().int().positive().max(100),
   message: z.string().max(1000).optional(),
+  // 그룹(가족) 단위 예약 시 필수 — 요양·간병/방문서비스는 반드시 지정, 그룹 예약은 그룹장(HEAD)만 가능
+  familyId: z.number().int().positive().optional(),
 });
 export type CreateBookingDto = z.infer<typeof createBookingSchema>;
 

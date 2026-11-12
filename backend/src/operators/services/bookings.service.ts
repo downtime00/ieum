@@ -5,7 +5,7 @@ import { ProgramBooking, BookingStatus } from '../entities/program-booking.entit
 import { Operator } from '../entities/operator.entity';
 import { OperatorProgram } from '../entities/operator-program.entity';
 import { OperatorReview } from '../entities/operator-review.entity';
-import { FamilyMember } from '../../family/entities/family-member.entity';
+import { FamilyMember, MemberRole } from '../../family/entities/family-member.entity';
 import { NotificationService } from '../../notifications/services/notification.service';
 import { OperatorsService } from './operators.service';
 
@@ -26,6 +26,9 @@ export class BookingsService {
     private readonly operatorsService: OperatorsService,
   ) {}
 
+  // 그룹(가족)을 위한 예약은 그룹장(HEAD)만 가능 — 요양·간병/방문서비스는 가족 지정 필수
+  private static readonly CARE_CATEGORIES = ['요양·간병', '방문서비스'];
+
   // 이용자 예약 신청 → REQUESTED
   async requestBooking(
     programId: number,
@@ -33,11 +36,28 @@ export class BookingsService {
     requesterName: string | undefined,
     headcount: number,
     message: string | undefined,
+    familyId?: number,
   ): Promise<ProgramBooking> {
     const program = await this.operatorsService.findProgram(programId);
     if (!program.isActive) throw new BadRequestException('신청이 마감된 프로그램입니다');
     if (new Date(program.eventDate) < new Date(new Date().toDateString())) {
       throw new BadRequestException('이미 지난 프로그램입니다');
+    }
+
+    const isCareService = BookingsService.CARE_CATEGORIES.includes(program.category);
+    if (isCareService && !familyId) {
+      throw new BadRequestException('요양·간병/방문서비스는 가족(그룹)을 지정해 예약해야 합니다');
+    }
+    if (familyId) {
+      const membership = await this.familyMemberRepo.findOne({
+        where: { familyId, userId },
+      });
+      if (!membership) {
+        throw new ForbiddenException('해당 가족/그룹의 멤버가 아닙니다');
+      }
+      if (membership.role !== MemberRole.HEAD) {
+        throw new ForbiddenException('그룹을 위한 예약은 그룹장(가족장)만 신청할 수 있습니다');
+      }
     }
 
     const operator = await this.operatorsService.findOne(Number(program.operatorId));
@@ -70,6 +90,7 @@ export class BookingsService {
       operatorId: Number(program.operatorId),
       requesterUserId: userId,
       requesterName: requesterName ?? null,
+      familyId: familyId ?? null,
       headcount,
       message: message ?? null,
       status: 'REQUESTED',

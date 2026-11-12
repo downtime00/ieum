@@ -27,6 +27,10 @@ export class ProgramBooking {
   @Column({ name: 'requester_name', type: 'varchar', length: 100, nullable: true })
   requesterName: string | null;
 
+  // 그룹(가족) 단위 예약 시 해당 family id — 개인 예약이면 null
+  @Column({ name: 'family_id', type: 'bigint', nullable: true })
+  familyId: number | null;
+
   @Column({ type: 'int', default: 1 })
   headcount: number;
 
