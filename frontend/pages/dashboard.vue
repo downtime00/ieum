@@ -1264,9 +1264,7 @@ watch(() => weather.value.temp, (temp) => {
   if (temp != null) greetOnce();
 });
 
-onMounted(() => {
-  const token = localStorage.getItem("accessToken");
-
+onMounted(async () => {
   loadStoredPosition();
   loadWeather();
   promptDismissed.value = localStorage.getItem(PROMPT_KEY) === "true";
@@ -1277,6 +1275,10 @@ onMounted(() => {
   loadNotificationLimit();
   // 날씨 조회 실패 시에도 인사말은 읽어주기
   setTimeout(greetOnce, 4000);
+
+  // 만료된 access token은 refresh token으로 갱신, 실패 시 게스트 모드
+  const loggedIn = await ensureSession(config.public.apiBase);
+  const token = loggedIn ? getAccessToken() : null;
 
   if (!token) {
     // 게스트 모드: 로그인 없이 로컬 ID로 이용 (가족 기능 제외)

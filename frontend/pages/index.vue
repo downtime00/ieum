@@ -223,6 +223,17 @@
 <script setup lang="ts">
 const config = useRuntimeConfig();
 const { locale, setLocale, t } = useI18n();
+
+// 이미 로그인 상태면 대시보드로 (PWA start_url이 로그인 페이지라 세션 유지 필요)
+onMounted(async () => {
+  const token = localStorage.getItem("accessToken");
+  if (token) {
+    await ensureSession(config.public.apiBase);
+    if (localStorage.getItem("accessToken")) {
+      await navigateTo("/dashboard");
+    }
+  }
+});
 const { enabled: seniorEnabled, toggle: toggleSenior } = useSeniorMode();
 const { enabled: voiceEnabled, toggle: toggleVoice } = useSpeech();
 
