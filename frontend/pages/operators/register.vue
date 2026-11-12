@@ -2,10 +2,10 @@
   <div class="min-h-screen bg-stone-50">
     <div class="container mx-auto px-4 py-8 max-w-2xl">
       <div class="bg-slate-800 rounded-3xl p-4 sm:p-6">
-        <h1 class="text-2xl font-bold text-white mb-2">기관 등록</h1>
+        <h1 class="text-2xl font-bold text-white mb-2">기관·서비스 제공자 등록</h1>
         <p class="text-sm text-white/60 mb-6">
-          행복복지센터, 실버타운, 노인회관 등 공공·복지 기관을 등록하면
-          공연·강의·체험 프로그램을 올리고 예약을 받을 수 있습니다.
+          행복복지센터, 실버타운, 노인회관 등 공공·복지 기관과
+          요양보호사, 간병인 등 개인 서비스 제공자를 등록할 수 있습니다.
           등록 후 관리자 승인 시 이용할 수 있습니다.
         </p>
 
@@ -22,14 +22,15 @@
         <form v-else @submit.prevent="submit" class="space-y-4">
           <div>
             <label class="block text-sm font-semibold text-white/80 mb-1.5">
-              기관명 <span class="text-red-300">*</span>
+              {{ isCaregiver ? "이름 또는 상호" : "기관명" }} <span class="text-red-300">*</span>
             </label>
             <input v-model="form.name" required maxlength="200"
+              :placeholder="isCaregiver ? '예: 김요양' : ''"
               class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-sky-400" />
           </div>
           <div>
             <label class="block text-sm font-semibold text-white/80 mb-1.5">
-              기관 유형 <span class="text-red-300">*</span>
+              {{ isCaregiver ? "제공 유형" : "기관 유형" }} <span class="text-red-300">*</span>
             </label>
             <select v-model="form.orgType" required
               class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sky-400">
@@ -39,8 +40,9 @@
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-semibold text-white/80 mb-1.5">사업자등록번호</label>
+              <label class="block text-sm font-semibold text-white/80 mb-1.5">{{ isCaregiver ? "자격증/자격 (선택)" : "사업자등록번호" }}</label>
               <input v-model="form.businessNumber" maxlength="50"
+                :placeholder="isCaregiver ? '예: 요양보호사 자격증' : ''"
                 class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-sky-400" />
             </div>
             <div>
@@ -50,14 +52,19 @@
             </div>
           </div>
           <div>
-            <label class="block text-sm font-semibold text-white/80 mb-1.5">주소</label>
+            <label class="block text-sm font-semibold text-white/80 mb-1.5">{{ isCaregiver ? "서비스 지역" : "주소" }}</label>
             <input v-model="form.address" maxlength="500"
               class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-sky-400" />
           </div>
           <div>
-            <label class="block text-sm font-semibold text-white/80 mb-1.5">기관 소개</label>
+            <label class="block text-sm font-semibold text-white/80 mb-1.5">{{ isCaregiver ? "자기소개·경력·서비스 안내" : "기관 소개" }}</label>
             <textarea v-model="form.description" rows="3" maxlength="2000"
+              :placeholder="isCaregiver ? '예: 요양보호사 5년 경력, 방문 요양·간병 서비스 가능 지역 등' : ''"
               class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-sky-400"></textarea>
+            <p v-if="isCaregiver" class="text-xs text-sky-300 mt-1.5">
+              승인 후 '요양·간병' 또는 '방문서비스' 분류로 서비스를 등록하면 이용자가 예약할 수 있습니다.
+              가격은 1회/시간당 단가, 소요 시간은 서비스 시간으로 입력해주세요.
+            </p>
           </div>
 
           <div class="border-t border-white/10 pt-4">
@@ -80,7 +87,7 @@
 
           <button type="submit" :disabled="loading"
             class="w-full bg-blue-800 text-white font-bold py-4 rounded-xl hover:bg-blue-900 transition text-lg disabled:opacity-40">
-            {{ loading ? "등록 중..." : "기관 등록 신청" }}
+            {{ loading ? "등록 중..." : "등록 신청" }}
           </button>
         </form>
       </div>
@@ -92,7 +99,8 @@
 const config = useRuntimeConfig();
 const router = useRouter();
 
-const orgTypes = ["행복복지센터", "실버타운", "노인회관", "복지관", "기타"];
+const orgTypes = ["행복복지센터", "실버타운", "노인회관", "복지관", "요양보호사", "간병인", "기타"];
+const isCaregiver = computed(() => ["요양보호사", "간병인"].includes(form.orgType));
 const needLogin = ref(false);
 const loading = ref(false);
 const error = ref("");

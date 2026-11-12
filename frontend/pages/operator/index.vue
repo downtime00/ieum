@@ -256,7 +256,7 @@ const tabs = [
   { key: "history", label: "공연 이력" },
   { key: "info", label: "기관 정보" },
 ];
-const programCategories = ["공연", "강의", "체험", "기타"];
+const programCategories = ["공연", "강의", "체험", "요양·간병", "방문서비스", "기타"];
 const bookingFilters = [
   { key: "", label: "전체", value: "" },
   { key: "REQUESTED", label: "신청됨", value: "REQUESTED" },
