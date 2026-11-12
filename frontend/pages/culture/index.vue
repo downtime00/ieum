@@ -174,6 +174,7 @@
               :alt="item.title"
               class="w-24 h-24 object-cover rounded-xl flex-shrink-0 bg-white/15"
               loading="lazy"
+              decoding="async"
             />
             <div class="flex-1 min-w-0">
               <NuxtLink

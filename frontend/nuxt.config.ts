@@ -1,5 +1,8 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 const base = process.env.APP_BASE_URL || '/'
+const apiOrigin = process.env.API_BASE_URL
+  ? new URL(process.env.API_BASE_URL).origin.replace(/\./g, '\\.')
+  : ''
 
 export default defineNuxtConfig({
   compatibilityDate: '2024-04-03',
@@ -37,6 +40,28 @@ export default defineNuxtConfig({
       navigateFallback: base,
       globPatterns: ['**/*.{js,css,html,png,svg,ico,webp}'],
       importScripts: ['push-handler.js'],
+      runtimeCaching: [
+        {
+          // 공개 문화정보 API — 네트워크 우선, 실패/지연 시 캐시 (최대 24시간)
+          urlPattern: new RegExp(`^${apiOrigin}/contents`),
+          handler: 'NetworkFirst',
+          options: {
+            cacheName: 'api-contents',
+            networkTimeoutSeconds: 5,
+            expiration: { maxEntries: 100, maxAgeSeconds: 24 * 3600 },
+          },
+        },
+        {
+          // 외부 이미지(문화 포스터 등) — 캐시 우선, 오래된 것 자동 삭제
+          urlPattern: /\.(png|jpe?g|webp|gif|svg)(\?.*)?$/,
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'external-images',
+            cacheableResponse: { statuses: [0, 200] },
+            expiration: { maxEntries: 150, maxAgeSeconds: 30 * 24 * 3600 },
+          },
+        },
+      ],
     },
     devOptions: {
       enabled: false,

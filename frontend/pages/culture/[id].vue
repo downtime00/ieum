@@ -19,6 +19,7 @@
           :src="item.thumbnailUrl"
           :alt="item.title"
           class="w-full h-64 object-cover bg-white/10"
+          decoding="async"
         />
         <div class="p-6 sm:p-8">
           <h1 class="text-2xl font-bold text-white leading-snug break-words mb-3">
