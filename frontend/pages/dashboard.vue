@@ -1154,7 +1154,7 @@ const todayText = computed(() => {
     { month: "long", day: "numeric", weekday: "long" },
   );
   const caution = weatherCautionKey(weather.value.code, weather.value.temp);
-  const msg = caution ? t(caution) : t(greetingKey);
+  const msg = caution ? t(caution) : t(greetingKey.value);
   return `${date} · ${msg}`;
 });
 

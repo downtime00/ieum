@@ -12,6 +12,7 @@ export const locale = ref<AppLocale>('ko')
 const LOCALE_KEY = 'app_locale'
 
 export const resolveKey = (key: string, dict: Record<string, any> = messages[locale.value]): string => {
+  if (typeof key !== 'string') return ''
   const parts = key.split('.')
   let value: any = dict
   for (const part of parts) {
