@@ -85,7 +85,8 @@
     "medHospitalDirections": "Directions to hospital",
     "tilePrograms": "Events/Lectures",
     "tileBookings": "My bookings",
-    "tileOperator": "Operator"
+    "tileOperator": "Operator",
+    "tileCareServices": "Care services"
   },
   "culture": {
     "title": "Culture & Events",

@@ -711,11 +711,12 @@ const goDirections = async () => {
 
 const { userType } = useUserType();
 
-// 영역 바로가기 타일 정의 — 사용자 유형별로 자주 쓰는 메뉴를 앞에 배치
+// 영역 바로가기 타일 — 사용자 유형별 기본 메뉴 (해당 유형에 필요한 것만 표시)
 const SHORTCUT_TILES: Record<
   string,
   { key: string; to: string; labelKey: string; cls: string }[]
 > = {
+  // 일반 사용자: 생활 정보 중심
   user: [
     { key: "meds", to: "/medications", labelKey: "medications.title", cls: "bg-emerald-600 hover:bg-emerald-500" },
     { key: "culture", to: "/culture", labelKey: "culture.title", cls: "bg-sky-600 hover:bg-sky-500" },
@@ -723,21 +724,17 @@ const SHORTCUT_TILES: Record<
     { key: "programs", to: "/operators", labelKey: "dashboard.tilePrograms", cls: "bg-violet-600 hover:bg-violet-500" },
     { key: "bookings", to: "/bookings", labelKey: "dashboard.tileBookings", cls: "bg-teal-600 hover:bg-teal-500" },
   ],
+  // 공영·강의 제공자: 프로그램 등록/예약 관리 중심
   lecture: [
-    { key: "programs", to: "/operators", labelKey: "dashboard.tilePrograms", cls: "bg-violet-600 hover:bg-violet-500" },
     { key: "operator", to: "/operator", labelKey: "dashboard.tileOperator", cls: "bg-fuchsia-600 hover:bg-fuchsia-500" },
     { key: "bookings", to: "/bookings", labelKey: "dashboard.tileBookings", cls: "bg-teal-600 hover:bg-teal-500" },
-    { key: "culture", to: "/culture", labelKey: "culture.title", cls: "bg-sky-600 hover:bg-sky-500" },
-    { key: "board", to: "/board", labelKey: "board.title", cls: "bg-amber-600 hover:bg-amber-500" },
-    { key: "meds", to: "/medications", labelKey: "medications.title", cls: "bg-emerald-600 hover:bg-emerald-500" },
+    { key: "programs", to: "/operators", labelKey: "dashboard.tilePrograms", cls: "bg-violet-600 hover:bg-violet-500" },
   ],
+  // 요양원(요양보호사·간병인): 예약 접수/서비스 관리 중심
   care: [
-    { key: "operator", to: "/operator", labelKey: "dashboard.tileOperator", cls: "bg-fuchsia-600 hover:bg-fuchsia-500" },
     { key: "bookings", to: "/bookings", labelKey: "dashboard.tileBookings", cls: "bg-teal-600 hover:bg-teal-500" },
-    { key: "programs", to: "/operators", labelKey: "dashboard.tilePrograms", cls: "bg-violet-600 hover:bg-violet-500" },
-    { key: "board", to: "/board", labelKey: "board.title", cls: "bg-amber-600 hover:bg-amber-500" },
-    { key: "culture", to: "/culture", labelKey: "culture.title", cls: "bg-sky-600 hover:bg-sky-500" },
-    { key: "meds", to: "/medications", labelKey: "medications.title", cls: "bg-emerald-600 hover:bg-emerald-500" },
+    { key: "operator", to: "/operator", labelKey: "dashboard.tileOperator", cls: "bg-fuchsia-600 hover:bg-fuchsia-500" },
+    { key: "programs", to: "/operators", labelKey: "dashboard.tileCareServices", cls: "bg-violet-600 hover:bg-violet-500" },
   ],
 };
 

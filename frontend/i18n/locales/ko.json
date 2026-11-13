@@ -85,7 +85,8 @@
     "medHospitalDirections": "병원 가는 길 찾기",
     "tilePrograms": "공연·강의 예약",
     "tileBookings": "내 예약",
-    "tileOperator": "기관 관리"
+    "tileOperator": "기관 관리",
+    "tileCareServices": "요양·간병 서비스"
   },
   "culture": {
     "title": "문화 정보",
