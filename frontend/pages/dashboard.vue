@@ -36,47 +36,18 @@
           </div>
       </div>
 
-      <!-- 영역 바로가기 타일 -->
+      <!-- 영역 바로가기 타일 (사용자 유형별 순서) -->
       <div class="grid grid-cols-3 gap-2 mb-4">
         <NuxtLink
-          to="/medications"
-          class="bg-emerald-600 hover:bg-emerald-500 rounded-xl p-4 min-h-[72px] flex flex-col items-center justify-center transition"
+          v-for="tile in shortcutTiles"
+          :key="tile.key"
+          :to="tile.to"
+          :class="tile.cls"
+          class="rounded-xl p-4 min-h-[72px] flex flex-col items-center justify-center transition"
         >
           <span class="text-sm font-bold text-white text-center leading-tight">{{
-            $t("medications.title")
+            $t(tile.labelKey)
           }}</span>
-        </NuxtLink>
-        <NuxtLink
-          to="/culture"
-          class="bg-sky-600 hover:bg-sky-500 rounded-xl p-4 min-h-[72px] flex flex-col items-center justify-center transition"
-        >
-          <span class="text-sm font-bold text-white text-center leading-tight">{{
-            $t("culture.title")
-          }}</span>
-        </NuxtLink>
-        <NuxtLink
-          to="/board"
-          class="bg-amber-600 hover:bg-amber-500 rounded-xl p-4 min-h-[72px] flex flex-col items-center justify-center transition"
-        >
-          <span class="text-sm font-bold text-white text-center leading-tight">{{
-            $t("board.title")
-          }}</span>
-        </NuxtLink>
-        <NuxtLink
-          to="/operators"
-          class="bg-violet-600 hover:bg-violet-500 rounded-xl p-4 min-h-[72px] flex flex-col items-center justify-center transition"
-        >
-          <span class="text-sm font-bold text-white text-center leading-tight"
-            >공연·강의 예약</span
-          >
-        </NuxtLink>
-        <NuxtLink
-          to="/bookings"
-          class="bg-teal-600 hover:bg-teal-500 rounded-xl p-4 min-h-[72px] flex flex-col items-center justify-center transition"
-        >
-          <span class="text-sm font-bold text-white text-center leading-tight"
-            >내 예약</span
-          >
         </NuxtLink>
       </div>
 
@@ -738,6 +709,42 @@ const goDirections = async () => {
   dirLoading.value = false;
 };
 
+const { userType } = useUserType();
+
+// 영역 바로가기 타일 정의 — 사용자 유형별로 자주 쓰는 메뉴를 앞에 배치
+const SHORTCUT_TILES: Record<
+  string,
+  { key: string; to: string; labelKey: string; cls: string }[]
+> = {
+  user: [
+    { key: "meds", to: "/medications", labelKey: "medications.title", cls: "bg-emerald-600 hover:bg-emerald-500" },
+    { key: "culture", to: "/culture", labelKey: "culture.title", cls: "bg-sky-600 hover:bg-sky-500" },
+    { key: "board", to: "/board", labelKey: "board.title", cls: "bg-amber-600 hover:bg-amber-500" },
+    { key: "programs", to: "/operators", labelKey: "dashboard.tilePrograms", cls: "bg-violet-600 hover:bg-violet-500" },
+    { key: "bookings", to: "/bookings", labelKey: "dashboard.tileBookings", cls: "bg-teal-600 hover:bg-teal-500" },
+  ],
+  lecture: [
+    { key: "programs", to: "/operators", labelKey: "dashboard.tilePrograms", cls: "bg-violet-600 hover:bg-violet-500" },
+    { key: "operator", to: "/operator", labelKey: "dashboard.tileOperator", cls: "bg-fuchsia-600 hover:bg-fuchsia-500" },
+    { key: "bookings", to: "/bookings", labelKey: "dashboard.tileBookings", cls: "bg-teal-600 hover:bg-teal-500" },
+    { key: "culture", to: "/culture", labelKey: "culture.title", cls: "bg-sky-600 hover:bg-sky-500" },
+    { key: "board", to: "/board", labelKey: "board.title", cls: "bg-amber-600 hover:bg-amber-500" },
+    { key: "meds", to: "/medications", labelKey: "medications.title", cls: "bg-emerald-600 hover:bg-emerald-500" },
+  ],
+  care: [
+    { key: "operator", to: "/operator", labelKey: "dashboard.tileOperator", cls: "bg-fuchsia-600 hover:bg-fuchsia-500" },
+    { key: "bookings", to: "/bookings", labelKey: "dashboard.tileBookings", cls: "bg-teal-600 hover:bg-teal-500" },
+    { key: "programs", to: "/operators", labelKey: "dashboard.tilePrograms", cls: "bg-violet-600 hover:bg-violet-500" },
+    { key: "board", to: "/board", labelKey: "board.title", cls: "bg-amber-600 hover:bg-amber-500" },
+    { key: "culture", to: "/culture", labelKey: "culture.title", cls: "bg-sky-600 hover:bg-sky-500" },
+    { key: "meds", to: "/medications", labelKey: "medications.title", cls: "bg-emerald-600 hover:bg-emerald-500" },
+  ],
+};
+
+const shortcutTiles = computed(
+  () => SHORTCUT_TILES[userType.value] ?? SHORTCUT_TILES.user,
+);
+
 const isLoggedIn = ref(false);
 const userName = ref("");
 const userId = ref<number | null>(null);
@@ -1388,6 +1395,7 @@ watch(() => weather.value.temp, (temp) => {
 
 onMounted(async () => {
   mounted.value = true;
+  initUserType();
   loadStoredPosition();
   loadWeather();
   promptDismissed.value = localStorage.getItem(PROMPT_KEY) === "true";

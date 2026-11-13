@@ -37,6 +37,34 @@
         </button>
       </section>
 
+      <!-- 사용자 유형 선택 -->
+      <section class="bg-white/10 rounded-2xl p-6 mb-4">
+        <h2 class="font-semibold text-white mb-1">
+          {{ $t("settings.userType") }}
+        </h2>
+        <p class="text-sm text-white/60 mb-5">
+          {{ $t("settings.userTypeDesc") }}
+        </p>
+        <div class="grid grid-cols-3 gap-3">
+          <button
+            v-for="opt in userTypeOptions"
+            :key="opt.value"
+            @click="selectUserType(opt.value)"
+            :class="
+              userType === opt.value
+                ? 'bg-sky-500 text-white border-sky-400'
+                : 'bg-white/10 text-white border-white/20 hover:bg-white/20'
+            "
+            class="py-4 px-2 rounded-xl border-2 font-bold transition text-center"
+          >
+            <span class="block text-base">{{ $t(opt.labelKey) }}</span>
+            <span class="block text-[11px] font-normal mt-1 opacity-70">{{
+              $t(opt.descKey)
+            }}</span>
+          </button>
+        </div>
+      </section>
+
       <!-- 진동 설정 -->
       <section class="bg-white/10 rounded-2xl p-6 mb-4">
         <h2 class="font-semibold text-white mb-1">
@@ -152,12 +180,34 @@
 
 <script setup lang="ts">
 const router = useRouter();
+const { userType, setUserType } = useUserType();
 const STORAGE_KEY = "notificationDisplayCount";
 const VIBRATION_KEY = "ieum_vibration";
 const DEFAULT_COUNT = 2;
 const MAX_COUNT = 10;
 
 const countOptions = Array.from({ length: MAX_COUNT - 1 }, (_, i) => i + 2); // 2~10
+
+// 사용자 유형 (일반/공영·강의/요양원) — 대시보드 메뉴 순서에 반영
+const userTypeOptions = [
+  {
+    value: "user" as const,
+    labelKey: "settings.typeUser",
+    descKey: "settings.typeUserDesc",
+  },
+  {
+    value: "lecture" as const,
+    labelKey: "settings.typeLecture",
+    descKey: "settings.typeLectureDesc",
+  },
+  {
+    value: "care" as const,
+    labelKey: "settings.typeCare",
+    descKey: "settings.typeCareDesc",
+  },
+];
+
+const selectUserType = (v: "user" | "lecture" | "care") => setUserType(v);
 
 const count = ref(DEFAULT_COUNT);
 
@@ -200,6 +250,7 @@ const selectCount = (n: number) => {
 };
 
 onMounted(() => {
+  initUserType();
   // 설정은 로컬 저장소 기반이라 로그인 없이도 사용 가능
   const saved = parseInt(localStorage.getItem(STORAGE_KEY) || "", 10);
   if (!isNaN(saved)) {

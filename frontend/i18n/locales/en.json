@@ -82,7 +82,10 @@
     "medTaken": "Taken",
     "medMissed": "Not taken",
     "medDetail": "View details",
-    "medHospitalDirections": "Directions to hospital"
+    "medHospitalDirections": "Directions to hospital",
+    "tilePrograms": "Events/Lectures",
+    "tileBookings": "My bookings",
+    "tileOperator": "Operator"
   },
   "culture": {
     "title": "Culture & Events",
@@ -206,7 +209,15 @@
     "vibrationOn": "Vibration on",
     "vibrationOff": "Vibration off",
     "testVibration": "Test vibration",
-    "vibrationUnsupported": "Vibration is not supported on this browser/device"
+    "vibrationUnsupported": "Vibration is not supported on this browser/device",
+    "userType": "User type",
+    "userTypeDesc": "Choose the menus most relevant to you",
+    "typeUser": "General",
+    "typeUserDesc": "Meds, culture, board",
+    "typeLecture": "Events/Lecture",
+    "typeLectureDesc": "Programs & operator mgmt",
+    "typeCare": "Care provider",
+    "typeCareDesc": "Home care & nursing mgmt"
   },
   "medications": {
     "title": "Medications & Appointments",
