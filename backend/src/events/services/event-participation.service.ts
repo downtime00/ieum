@@ -55,7 +55,7 @@ export class EventParticipationService {
 
     return this.participationRepository.find({
       where,
-      relations: ['user', 'content'],
+      relations: {user: true, content: true},
       order: { registeredAt: 'DESC' },
     });
   }
@@ -63,7 +63,7 @@ export class EventParticipationService {
   async findOne(id: number): Promise<EventParticipation> {
     const participation = await this.participationRepository.findOne({
       where: { id },
-      relations: ['user', 'content'],
+      relations: {user: true, content: true},
     });
 
     if (!participation) {
