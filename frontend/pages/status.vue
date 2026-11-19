@@ -5,9 +5,14 @@
 
         <!-- 헤더 -->
         <div class="flex items-center justify-between mb-6">
-          <h1 class="text-2xl font-bold text-white">
-            {{ $t("status.title") }}
-          </h1>
+          <div class="flex items-center gap-3">
+            <button @click="goBack" class="text-sm text-sky-300 hover:underline">
+              ← 뒤로가기
+            </button>
+            <h1 class="text-2xl font-bold text-white">
+              {{ $t("status.title") }}
+            </h1>
+          </div>
           <button
             @click="loadStatus"
             :disabled="loading"
@@ -84,6 +89,12 @@
 import { computed, onMounted, onUnmounted, ref } from "vue";
 
 const config = useRuntimeConfig();
+const router = useRouter();
+
+const goBack = () => {
+  if (window.history.length > 1) window.history.back();
+  else router.push("/settings");
+};
 
 interface CheckResult {
   status: "ok" | "down";

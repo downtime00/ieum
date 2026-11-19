@@ -6,9 +6,9 @@
           불러오는 중...
         </div>
         <template v-else-if="program">
-          <NuxtLink to="javascript:history.back()" class="text-sm text-sky-300 hover:underline">
+          <button @click="goBack" class="text-sm text-sky-300 hover:underline">
             ← 뒤로가기
-          </NuxtLink>
+          </button>
 
           <div class="mt-3 mb-6">
             <div class="flex items-center gap-2 flex-wrap mb-2">
@@ -156,6 +156,12 @@ import { loadNaverMaps } from "~/utils/naver-maps";
 
 const config = useRuntimeConfig();
 const route = useRoute();
+const router = useRouter();
+
+const goBack = () => {
+  if (window.history.length > 1) window.history.back();
+  else router.push("/operators");
+};
 
 const program = ref<any>(null);
 const operatorName = ref("");

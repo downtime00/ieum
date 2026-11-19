@@ -2,6 +2,11 @@
   <div class="min-h-screen bg-stone-50">
     <div class="container mx-auto px-4 py-8">
       <div class="bg-slate-800 rounded-3xl p-4 sm:p-6">
+      <div class="mb-4">
+        <button @click="goBack" class="text-sm text-sky-300 hover:underline">
+          ← 뒤로가기
+        </button>
+      </div>
       <div v-if="loading" class="text-center py-16 text-white/50 text-lg">
         {{ $t("culture.loading") }}
       </div>
@@ -163,8 +168,14 @@
 import { loadNaverMaps } from "~/utils/naver-maps";
 
 const route = useRoute();
+const router = useRouter();
 const config = useRuntimeConfig();
 const { t } = useI18n();
+
+const goBack = () => {
+  if (window.history.length > 1) window.history.back();
+  else router.push("/culture");
+};
 
 declare global {
   interface Window {
