@@ -36,6 +36,34 @@
           </div>
       </div>
 
+      <!-- 공지사항 (관리자 작성, 고정 우선) -->
+      <section v-if="notices.length" class="mb-4">
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <h3 class="font-bold text-amber-800 text-sm mb-2 flex items-center gap-1.5">
+            📢 {{ $t("dashboard.notices") }}
+          </h3>
+          <ul class="space-y-2">
+            <li
+              v-for="n in notices"
+              :key="n.id"
+              class="text-sm"
+            >
+              <button
+                @click="openNotice(n)"
+                class="text-left w-full group"
+              >
+                <span class="font-semibold text-slate-800 group-hover:text-blue-700 transition">
+                  <span v-if="n.isPinned" class="text-amber-500 mr-1">📌</span>{{ n.title }}
+                </span>
+                <span class="block text-slate-500 text-xs mt-0.5 line-clamp-2 whitespace-pre-line">
+                  {{ n.content }}
+                </span>
+              </button>
+            </li>
+          </ul>
+        </div>
+      </section>
+
       <!-- 영역 바로가기 타일 (사용자 유형별 순서) -->
       <div class="grid grid-cols-3 gap-2 mb-4">
         <NuxtLink
@@ -551,6 +579,35 @@
             }}</span>
           </a>
         </div>
+      </div>
+    </div>
+
+    <!-- 공지사항 상세 모달 -->
+    <div
+      v-if="activeNotice"
+      class="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center p-4"
+      @click.self="activeNotice = null"
+    >
+      <div class="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-lg max-h-[80vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+            <span v-if="activeNotice.isPinned" class="text-xl">📌</span>
+            {{ activeNotice.title }}
+          </h3>
+          <button
+            @click="activeNotice = null"
+            class="text-slate-400 hover:text-slate-600 text-3xl leading-none px-3"
+            aria-label="닫기"
+          >
+            ×
+          </button>
+        </div>
+        <p class="text-sm text-slate-400 mb-4">
+          {{ formatNoticeDate(activeNotice.createdAt) }}
+        </p>
+        <p class="text-base text-slate-700 whitespace-pre-line leading-relaxed">
+          {{ activeNotice.content }}
+        </p>
       </div>
     </div>
   </div>
@@ -1464,7 +1521,41 @@ onMounted(async () => {
   loadMedData();
   loadCulturePreview();
   loadBoardPreview();
+  loadNotices();
 });
+
+// 관리자 공지사항 — 공개 공지만, 고정 우선 정렬(백엔드 orderBy)
+interface DashboardNotice {
+  id: string;
+  title: string;
+  content: string;
+  scope: string;
+  isPinned: boolean;
+  createdAt: string;
+}
+const notices = ref<DashboardNotice[]>([]);
+const activeNotice = ref<DashboardNotice | null>(null);
+
+const loadNotices = async () => {
+  try {
+    const res = await fetch(
+      `${config.public.apiBase}/admin/notices?scope=public&limit=3`,
+    );
+    if (res.ok) {
+      const data = await res.json();
+      notices.value = (data.items || []).slice(0, 3);
+    }
+  } catch {
+    /* 공지 로딩 실패 시 섹션 숨김 */
+  }
+};
+
+const openNotice = (n: DashboardNotice) => {
+  activeNotice.value = n;
+};
+
+const formatNoticeDate = (d?: string) =>
+  d ? new Date(d).toLocaleDateString("ko-KR") : "";
 
 // 기관 소유 여부 조회 → 대시보드 메뉴 자동 구성
 const loadMyOperator = async () => {

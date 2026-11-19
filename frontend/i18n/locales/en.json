@@ -86,7 +86,8 @@
     "tilePrograms": "Events/Lectures",
     "tileBookings": "My bookings",
     "tileOperator": "Operator",
-    "tileCareServices": "Care services"
+    "tileCareServices": "Care services",
+    "notices": "Announcements"
   },
   "culture": {
     "title": "Culture & Events",

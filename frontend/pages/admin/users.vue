@@ -144,6 +144,8 @@
 </template>
 
 <script setup lang="ts">
+import { apiFetch } from "~/utils/auth";
+
 const config = useRuntimeConfig();
 
 const users = ref<any[]>([]);
@@ -204,11 +206,11 @@ const saveMenus = async () => {
   saving.value = true;
   result.value = null;
   try {
-    const res = await fetch(
-      `${config.public.apiBase}/admin/users/${selected.value.id}/menus`,
+    const res = await apiFetch(
+      config.public.apiBase,
+      `/admin/users/${selected.value.id}/menus`,
       {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ menuKeys: editKeys.value }),
       },
     );
@@ -233,11 +235,11 @@ const resetMenus = async () => {
   saving.value = true;
   result.value = null;
   try {
-    const res = await fetch(
-      `${config.public.apiBase}/admin/users/${selected.value.id}/menus`,
+    const res = await apiFetch(
+      config.public.apiBase,
+      `/admin/users/${selected.value.id}/menus`,
       {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ menuKeys: null }),
       },
     );

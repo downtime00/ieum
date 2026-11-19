@@ -88,3 +88,29 @@ export const logout = async (apiBase: string): Promise<void> => {
 
   clearSession()
 }
+
+/**
+ * 인증이 필요한 API 호출 — Authorization 헤더 자동 첨부,
+ * 401 시 토큰 갱신 후 1회 재시도.
+ */
+export const apiFetch = async (
+  apiBase: string,
+  path: string,
+  options: RequestInit = {},
+): Promise<Response> => {
+  const doFetch = (token: string | null) =>
+    fetch(`${apiBase}${path}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(options.headers || {}),
+      },
+    })
+
+  let res = await doFetch(getAccessToken())
+  if (res.status === 401 && (await ensureSession(apiBase))) {
+    res = await doFetch(getAccessToken())
+  }
+  return res
+}
