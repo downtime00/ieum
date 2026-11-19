@@ -1,8 +1,8 @@
 <template>
-  <div class="min-h-screen bg-stone-50">
-    <div class="container mx-auto px-4 pt-8 pb-28">
+  <div class="min-h-screen bg-stone-50 flex flex-col">
+    <div class="container mx-auto px-4 pt-8 pb-28 flex-1 flex flex-col">
       <!-- 통합 대시보드 패널 -->
-      <div class="bg-slate-800 rounded-3xl p-4 sm:p-6 mb-6">
+      <div class="bg-slate-800 rounded-3xl p-4 sm:p-6 mb-6 flex-1 flex flex-col">
       <!-- 날씨 타일 -->
       <div
         class="bg-white/10 rounded-xl p-4 mb-4 flex items-center justify-between gap-3"
