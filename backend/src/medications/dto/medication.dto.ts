@@ -27,3 +27,13 @@ export const updateMedicationSchema = medicationSchema.partial().omit({ userId: 
 
 export type CreateMedicationDto = z.infer<typeof medicationSchema>;
 export type UpdateMedicationDto = z.infer<typeof updateMedicationSchema>;
+
+export const doseSchema = z.object({
+  time: z.string().regex(/^\d{2}:\d{2}$/, '시간은 HH:mm 형식이어야 합니다'),
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, '날짜는 YYYY-MM-DD 형식이어야 합니다')
+    .optional(),
+});
+
+export type DoseDto = z.infer<typeof doseSchema>;

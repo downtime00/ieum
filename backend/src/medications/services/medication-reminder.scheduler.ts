@@ -31,7 +31,8 @@ export class MedicationReminderScheduler {
   async handleReminders() {
     try {
       const medications = await this.medicationRepo.find({ where: { isActive: true } });
-      const now = new Date();
+      // 서버 TZ(Koyeb=UTC)와 무관하게 한국 시간 기준으로 판정
+      const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
       for (const med of medications) {
         await this.checkDoseReminders(med, now).catch((e) =>
           this.logger.warn(`복용 알림 실패 (medication ${med.id}): ${e?.message || e}`),
