@@ -3,23 +3,23 @@
     <!-- 헤더 -->
     <div class="bg-slate-800 px-4 py-4 sticky top-0 z-40">
       <div
-        class="container mx-auto flex items-center justify-between
-      >">
+        class="container mx-auto flex flex-wrap items-center justify-between gap-3"
+      >
         <div class="flex items-center gap-3">
-          <div>
-            <h1 class="text-xl font-bold text-white">
+          <div class="min-w-0">
+            <h1 class="text-xl sm:text-2xl font-bold text-white leading-tight">
               {{ $t("culture.mapTitle") }}
             </h1>
-            <p class="text-sm text-white/60">
+            <p class="text-sm sm:text-base text-white/60 mt-0.5">
               {{ $t("culture.mapSubtitle") }}
             </p>
           </div>
         </div>
-        <div class="flex gap-2">
+        <div class="flex gap-2 shrink-0">
           <button
             @click="locateMe"
             :disabled="geoStatus === 'requesting'"
-            class="bg-sky-500 text-white font-semibold py-2 px-4 rounded-xl hover:bg-sky-400 transition text-sm disabled:bg-white/20"
+            class="bg-sky-500 text-white font-semibold py-3 px-5 rounded-xl hover:bg-sky-400 transition text-base disabled:bg-white/20"
           >
             {{
               geoStatus === "requesting"
@@ -37,12 +37,12 @@
             v-model="searchQuery"
             @keyup.enter="searchRegion"
             :placeholder="$t('culture.regionSearchPlaceholder')"
-            class="flex-1 border-2 border-white/20 bg-white/10 text-white placeholder-white/40 rounded-full px-5 py-2.5 text-base focus:outline-none focus:border-sky-400"
+            class="flex-1 min-w-0 border-2 border-white/20 bg-white/10 text-white placeholder-white/40 rounded-full px-5 py-3 text-base focus:outline-none focus:border-sky-400"
           />
           <button
             @click="searchRegion"
             :disabled="searchLoading"
-            class="bg-sky-500 text-white font-semibold py-2.5 px-6 rounded-xl hover:bg-sky-400 transition text-sm disabled:opacity-40 shrink-0"
+            class="bg-sky-500 text-white font-semibold py-3 px-6 rounded-xl hover:bg-sky-400 transition text-base disabled:opacity-40 shrink-0"
           >
             {{
               searchLoading ? $t("common.loading") : $t("culture.regionSearch")
@@ -58,20 +58,19 @@
             v-for="(r, i) in searchResults"
             :key="i"
             @click="selectRegion(r)"
-            class="w-full text-left px-5 py-3 hover:bg-white/10 transition border-b border-white/10 last:border-0"
+            class="w-full text-left px-5 py-3.5 hover:bg-white/10 transition border-b border-white/10 last:border-0"
           >
-            <p class="font-semibold text-white text-sm">{{ r.name }}</p>
-            <p class="text-xs text-white/50 truncate">{{ r.address }}</p>
+            <p class="font-semibold text-white text-base">{{ r.name }}</p>
+            <p class="text-sm text-white/50 truncate">{{ r.address }}</p>
           </button>
         </div>
       </div>
     </div>
 
     <!-- 지도 -->
-    <div class="flex-1 container mx-auto p-4">
+    <div class="flex-1 container mx-auto p-4 flex flex-col">
       <div
-        class="relative bg-slate-900 rounded-2xl overflow-hidden ring-1 ring-white/10"
-        style="height: calc(100vh - 220px); min-height: 400px"
+        class="relative flex-1 bg-slate-900 rounded-2xl overflow-hidden ring-1 ring-white/10 min-h-[400px]"
       >
         <div ref="mapEl" class="w-full h-full"></div>
         <!-- 큰 줌 버튼 (어르신용 상시 노출) -->
@@ -94,7 +93,7 @@
       </div>
       <p
         v-if="visibleCount > 0"
-        class="text-sm text-white/60 mt-3 text-center"
+        class="text-base text-white/70 mt-3 text-center"
       >
         {{
           centerPosition
@@ -104,26 +103,26 @@
       </p>
       <p
         v-if="centerPosition && visibleCount === 0"
-        class="text-sm text-amber-300 mt-3 text-center"
+        class="text-base text-amber-300 mt-3 text-center"
       >
         {{ $t("culture.noNearby") }}
       </p>
       <p
         v-if="!geoPosition && !searchCenter"
-        class="text-sm text-white/40 mt-3 text-center"
+        class="text-base text-white/50 mt-3 text-center"
       >
         {{ $t("culture.setLocationHint") }}
       </p>
-      <p v-if="geoError" class="text-sm text-red-300 mt-3 text-center">
+      <p v-if="geoError" class="text-base text-red-300 mt-3 text-center">
         {{ geoError }}
       </p>
       <p
         v-if="geoStatus === 'denied'"
-        class="text-xs text-white/60 mt-2 text-center leading-relaxed px-4"
+        class="text-sm text-white/60 mt-2 text-center leading-relaxed px-4"
       >
         {{ $t("location.deniedGuide") }}
       </p>
-      <p v-if="mapError" class="text-sm text-amber-300 mt-3 text-center">
+      <p v-if="mapError" class="text-base text-amber-300 mt-3 text-center">
         {{ mapError }}
       </p>
 
@@ -132,7 +131,7 @@
         v-if="searchCenter && visibleItems.length > 0"
         class="mt-4 bg-white/10 rounded-2xl p-4"
       >
-        <h2 class="font-semibold text-white mb-3">
+        <h2 class="font-semibold text-white text-lg mb-3">
           {{ searchCenter.name }}
           {{ $t("culture.regionItems", { count: visibleItems.length }) }}
         </h2>
@@ -143,13 +142,13 @@
             v-for="item in visibleItems"
             :key="item.id"
             :to="`/culture/${item.id}`"
-            class="flex items-center justify-between gap-2 bg-white/10 hover:bg-white/15 rounded-xl px-4 py-3 transition"
+            class="flex items-center justify-between gap-2 bg-white/10 hover:bg-white/15 rounded-xl px-4 py-3.5 transition"
           >
             <div class="min-w-0">
-              <p class="font-medium text-white text-sm truncate">
+              <p class="font-medium text-white text-base truncate">
                 {{ item.title }}
               </p>
-              <p class="text-xs text-white/50 truncate">
+              <p class="text-sm text-white/50 truncate">
                 {{ item.location || ""
                 }}<span v-if="item.eventDate">
                   · {{ formatEventDate(item.eventDate) }}</span
@@ -162,7 +161,7 @@
       </div>
       <div
         v-else-if="searchCenter && visibleItems.length === 0"
-        class="mt-4 bg-amber-400/20 border border-amber-400/30 rounded-2xl p-4 text-center text-sm text-amber-200"
+        class="mt-4 bg-amber-400/20 border border-amber-400/30 rounded-2xl p-4 text-center text-base text-amber-200"
       >
         {{ $t("culture.noNearby") }}
       </div>
