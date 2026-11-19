@@ -73,7 +73,7 @@ export class FamilyService {
     // Family 에서 필요한 속성만 조회 (code, familyId, expiresAt)
     const existingCodes = await this.familyRepository.find({
       where: [{ id: familyId }, { code: null }],
-      select: ['id', 'code', 'familyId', 'expiresAt'],
+      select: {id: true, code: true, familyId: true, expiresAt: true},
     }) as unknown as Family[]; // create 후 save 로 인한 필드 누수 방지 (as any)
 
     // 유효한 초대코드 찾기 (null 이 아닌 경우 또는 만료되지 않은 경우)
@@ -147,7 +147,7 @@ export class FamilyService {
     // Family 에서 필요한 속성만 조회 (code, familyId, expiresAt)
     const existingCodes = await this.familyRepository.find({
       where: [{ code }, { expiresAt: null }],
-      select: ['id', 'code', 'familyId', 'expiresAt'],
+      select: {id: true, code: true, familyId: true, expiresAt: true},
     }) as unknown as Family[]; // create 후 save 로 인한 필드 누수 방지 (as any)
 
     if (!existingCodes || existingCodes.length === 0) {
@@ -174,7 +174,7 @@ export class FamilyService {
     // Family 에서 필요한 속성만 조회 (code, familyId, expiresAt)
     const existingCodes = await this.familyRepository.find({
       where: [{ id: familyId }, { code: null }],
-      select: ['id', 'code', 'familyId', 'expiresAt'],
+      select: {id: true, code: true, familyId: true, expiresAt: true},
     }) as unknown as Family[]; // create 후 save 로 인한 필드 누수 방지 (as any)
 
     // 유효한 초대코드 찾기 (null 이 아닌 경우 또는 만료되지 않은 경우)

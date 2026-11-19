@@ -106,7 +106,6 @@ export class AdminService {
   async getNoticeById(id: string) {
     const notice = await this.noticeRepository.findOne({
       where: { id },
-      relations: ['organization'],
     });
 
     if (!notice) {
@@ -965,7 +964,7 @@ export class AdminService {
     if (data.all) {
       const users = await this.userRepository.find({
         where: { status: 'ACTIVE' as any },
-        select: ['id'],
+        select: {id: true},
       });
       userIds = users.map((u) => u.id);
     }

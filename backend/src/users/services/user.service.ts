@@ -19,7 +19,6 @@ export class UserService {
   async findAll(): Promise<User[]> {
     return this.userRepository.find({
       where: { status: UserStatus.ACTIVE },
-      relations: ['profile'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -27,7 +26,6 @@ export class UserService {
   async findOne(id: number): Promise<User> {
     const user = await this.userRepository.findOne({
       where: { id, status: UserStatus.ACTIVE },
-      relations: ['profile', 'socialAccounts'],
     });
 
     if (!user) {
@@ -58,7 +56,6 @@ export class UserService {
   async searchByName(name: string): Promise<User[]> {
     return this.userRepository.find({
       where: { name: Like(`%${name}%`), status: UserStatus.ACTIVE },
-      relations: ['profile'],
     });
   }
 }

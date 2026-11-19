@@ -36,5 +36,8 @@
   },
   "engines": {
     "node": ">=26"
+  },
+  "overrides": {
+    "readdir-glob": "^4.0.0"
   }
 }

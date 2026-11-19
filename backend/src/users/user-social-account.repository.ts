@@ -21,14 +21,14 @@ export class UserSocialAccountRepository {
   findOne(provider: string, providerUserId: string): Promise<UserSocialAccount | null> {
     return this.repository.findOne({
       where: { provider, providerUserId },
-      relations: ['user'],
+      relations: {user: true},
     });
   }
 
   findByUserId(userId: number): Promise<UserSocialAccount[]> {
     return this.repository.find({
       where: { userId },
-      relations: ['user'],
+      relations: {user: true},
     });
   }
 }

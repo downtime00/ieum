@@ -122,7 +122,7 @@ export class ContentService {
   async findOne(id: number): Promise<Content> {
     const content = await this.contentRepository.findOne({
       where: { id },
-      relations: ['organization'],
+      relations: {organization: true},
     });
 
     if (!content) {
@@ -147,7 +147,7 @@ export class ContentService {
         { title: Like(likePattern) },
         { description: Like(likePattern) },
       ],
-      relations: ['organization'],
+      relations: {organization: true},
       order: { createdAt: 'DESC' },
     });
   }
