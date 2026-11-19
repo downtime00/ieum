@@ -470,3 +470,14 @@ h1, h2, h3 {
   background:
     radial-gradient(ellipse at center, #ffffff 0%, #f4f6f9 100%);
 }
+
+/* 버튼/링크 모서리 둥글기 완화 — 카드·패널(rounded-2xl/3xl)은 유지.
+   rounded-full(원형 마이크/줌 버튼)은 그대로 둠 */
+button.rounded-xl,
+a.rounded-xl {
+  border-radius: 0.625rem;
+}
+button.rounded-2xl,
+a.rounded-2xl {
+  border-radius: 0.875rem;
+}
