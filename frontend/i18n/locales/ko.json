@@ -320,7 +320,10 @@
     "commentsDisable": "댓글 끄기",
     "commentsDisabled": "이 게시판은 댓글이 비활성화되어 있습니다.",
     "membersShort": "구성원",
-    "manage": "관리"
+    "manage": "관리",
+    "voiceErrorPermission": "마이크 권한이 필요합니다. 브라우저 설정에서 허용해주세요.",
+    "voiceErrorNetwork": "음성 인식 네트워크 오류입니다. 다시 시도해주세요.",
+    "voiceErrorGeneric": "음성 인식에 실패했습니다. 다시 시도해주세요."
   },
   "weather": {
     "title": "날씨",

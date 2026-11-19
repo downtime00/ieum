@@ -319,7 +319,10 @@
     "commentsDisable": "Disable comments",
     "commentsDisabled": "Comments are disabled on this board.",
     "membersShort": "Members",
-    "manage": "Manage"
+    "manage": "Manage",
+    "voiceErrorPermission": "Microphone permission is required. Please allow it in browser settings.",
+    "voiceErrorNetwork": "Speech recognition network error. Please try again.",
+    "voiceErrorGeneric": "Speech recognition failed. Please try again."
   },
   "weather": {
     "title": "Weather",

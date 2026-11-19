@@ -461,7 +461,7 @@
             v-model="commentInput"
             @keyup.enter="addComment"
             :placeholder="$t('board.commentPlaceholder')"
-            class="flex-1 border border-slate-300 rounded-full px-4 py-2.5 text-sm focus:outline-none focus:border-blue-400"
+            class="flex-1 h-11 border border-slate-300 rounded-full px-4 text-base focus:outline-none focus:border-blue-400"
           />
           <button
             v-if="commentVoice.supported"
@@ -486,11 +486,14 @@
           <button
             @click="addComment"
             :disabled="!commentInput.trim()"
-            class="bg-blue-800 text-white font-semibold py-2.5 px-5 rounded-xl text-sm hover:bg-blue-900 disabled:opacity-40 transition"
+            class="h-11 bg-blue-800 text-white font-semibold px-5 rounded-xl text-base hover:bg-blue-900 disabled:opacity-40 transition"
           >
             {{ $t("board.addComment") }}
           </button>
         </div>
+        <p v-if="commentVoice.error" class="text-sm text-red-600 mt-2">
+          {{ voiceErrorText(commentVoice.error) }}
+        </p>
       </div>
     </div>
 
@@ -567,6 +570,9 @@
           <input type="checkbox" v-model="postForm.isNotice" class="w-4 h-4" />
           {{ $t("board.notice") }}
         </label>
+        <p v-if="postVoice.error" class="text-sm text-red-600 mb-2">
+          {{ voiceErrorText(postVoice.error) }}
+        </p>
         <div class="flex gap-2 justify-between items-center">
           <button
             v-if="postVoice.supported"
@@ -574,7 +580,7 @@
             @click="postVoice.toggle"
             :title="$t('board.voiceInput')"
             :aria-label="$t('board.voiceInput')"
-            class="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition border"
+            class="flex items-center gap-2 h-11 px-5 rounded-xl font-semibold text-base transition border"
             :class="
               postVoice.listening
                 ? 'bg-red-500 text-white border-red-500 animate-pulse'
@@ -592,7 +598,7 @@
           <div class="flex gap-2">
           <button
             @click="showPostForm = false"
-            class="px-5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 transition"
+            class="h-11 px-5 rounded-xl text-base text-slate-600 hover:bg-slate-100 transition"
           >
             {{ $t("board.cancel") }}
           </button>
@@ -603,7 +609,7 @@
               !postForm.content.trim() ||
               (currentFamily?.isPublic && !postForm.visibleUntil)
             "
-            class="bg-blue-800 text-white font-semibold px-6 py-2.5 rounded-xl hover:bg-blue-900 disabled:opacity-40 transition"
+            class="h-11 bg-blue-800 text-white font-semibold px-6 rounded-xl text-base hover:bg-blue-900 disabled:opacity-40 transition"
           >
             {{ $t("board.submit") }}
           </button>
@@ -663,7 +669,7 @@
         <div class="flex gap-2 justify-end">
           <button
             @click="showFamilyModal = null"
-            class="px-5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 transition"
+            class="h-11 px-5 rounded-xl text-base text-slate-600 hover:bg-slate-100 transition"
           >
             {{ $t("board.cancel") }}
           </button>
@@ -674,7 +680,7 @@
                 ? !familyForm.name.trim()
                 : !familyForm.code.trim()
             "
-            class="bg-blue-800 text-white font-semibold px-6 py-2.5 rounded-xl hover:bg-blue-900 disabled:opacity-40 transition"
+            class="h-11 bg-blue-800 text-white font-semibold px-6 rounded-xl text-base hover:bg-blue-900 disabled:opacity-40 transition"
           >
             {{
               familyModalMode === "create"
@@ -840,7 +846,7 @@
         <div class="p-4 border-t border-slate-100 flex justify-end">
           <button
             @click="showGroupSearch = false"
-            class="px-5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 transition"
+            class="h-11 px-5 rounded-xl text-base text-slate-600 hover:bg-slate-100 transition"
           >
             {{ $t("board.close") }}
           </button>
@@ -852,6 +858,8 @@
 
 <script setup lang="ts">
 import QRCode from "qrcode";
+
+const { t } = useI18n();
 
 interface Family {
   id: number;
@@ -927,6 +935,13 @@ const postVoice = useVoiceInput(() =>
   dictationField.value === "title" ? titleRef : contentRef,
 );
 const commentVoice = useVoiceInput(commentInput);
+
+const voiceErrorText = (code: string) => {
+  if (code === "microphone_permission" || code === "service-not-allowed")
+    return t("board.voiceErrorPermission");
+  if (code === "network") return t("board.voiceErrorNetwork");
+  return t("board.voiceErrorGeneric");
+};
 
 const showFamilyModal = ref<"create" | "join" | null>(null);
 const familyModalMode = ref<"create" | "join">("create");
