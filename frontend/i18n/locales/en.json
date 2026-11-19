@@ -252,7 +252,14 @@
     "customTimesPlaceholder": "Other times (e.g. 15:00, 22:00 — comma separated)",
     "reminderHint": "A reminder is sent 30 minutes before each checked time, only within the medication period.",
     "startDate": "Start date",
-    "endDate": "End date"
+    "endDate": "End date",
+    "todaySchedule": "Today's Medications",
+    "noSchedule": "No doses scheduled for this day.",
+    "taken": "Taken",
+    "scheduleProgress": "{done}/{total} done",
+    "goToday": "Today",
+    "prevDay": "Previous day",
+    "nextDay": "Next day"
   },
   "board": {
     "title": "Family & Group Board",

@@ -253,7 +253,14 @@
     "reminderHint": "체크한 시간의 30분 전에 알림이 옵니다. 복용 기간(시작일~종료일) 내에서만 발송됩니다.",
     "startDate": "시작일",
     "endDate": "종료일",
-    "notificationCountDesc": "처음 화면에 표시할 알림 개수를 선택하세요 (최대 10개)"
+    "notificationCountDesc": "처음 화면에 표시할 알림 개수를 선택하세요 (최대 10개)",
+    "todaySchedule": "오늘의 복용",
+    "noSchedule": "이 날 복용 예정이 없습니다.",
+    "taken": "복용 완료",
+    "scheduleProgress": "{done}/{total} 완료",
+    "goToday": "오늘",
+    "prevDay": "이전 날",
+    "nextDay": "다음 날"
   },
   "board": {
     "title": "가족·그룹 게시판",

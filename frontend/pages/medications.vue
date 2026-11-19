@@ -17,6 +17,97 @@
         </button>
       </div>
 
+      <!-- 오늘의 복용 일정 -->
+      <div class="mb-6 bg-white/10 rounded-2xl p-4 sm:p-5">
+        <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
+          <h2 class="text-lg font-bold text-white">
+            {{ $t("medications.todaySchedule") }}
+          </h2>
+          <div class="flex items-center gap-2">
+            <button
+              @click="shiftDoseDate(-1)"
+              :aria-label="$t('medications.prevDay')"
+              class="w-10 h-10 rounded-xl bg-white/10 text-white text-lg font-bold hover:bg-white/20 transition"
+            >
+              ‹
+            </button>
+            <span class="text-white font-semibold min-w-[7rem] text-center">{{
+              doseDateLabel
+            }}</span>
+            <button
+              @click="shiftDoseDate(1)"
+              :aria-label="$t('medications.nextDay')"
+              class="w-10 h-10 rounded-xl bg-white/10 text-white text-lg font-bold hover:bg-white/20 transition"
+            >
+              ›
+            </button>
+            <button
+              v-if="!isToday"
+              @click="goToday"
+              class="text-sm font-semibold text-sky-300 border border-sky-300/40 rounded-xl px-3 py-2 hover:bg-sky-300/10 transition"
+            >
+              {{ $t("medications.goToday") }}
+            </button>
+          </div>
+        </div>
+
+        <div v-if="doseLoading" class="text-white/50 text-sm py-2">
+          {{ $t("common.loading") }}
+        </div>
+        <div
+          v-else-if="doseItems.length === 0"
+          class="text-white/50 text-sm py-2"
+        >
+          {{ $t("medications.noSchedule") }}
+        </div>
+        <div v-else class="space-y-3">
+          <div
+            v-for="item in doseItems"
+            :key="item.id"
+            class="bg-white/5 rounded-xl p-3"
+          >
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="font-semibold text-white">{{ item.name }}</span>
+              <span
+                v-if="item.subjectName"
+                class="text-xs font-semibold bg-violet-400/30 text-violet-100 px-2 py-0.5 rounded-full"
+              >
+                {{
+                  $t("medications.forFamily", {
+                    name: item.subjectName,
+                    relation: item.subjectRelation || "",
+                  })
+                }}
+              </span>
+            </div>
+            <div class="flex flex-wrap gap-2 mt-2">
+              <button
+                v-for="tm in item.times"
+                :key="tm.time"
+                @click="toggleDose(item, tm)"
+                :class="
+                  tm.taken
+                    ? 'bg-emerald-500 text-white border-emerald-400'
+                    : 'bg-white/15 text-white border-white/25 hover:bg-white/25'
+                "
+                class="inline-flex items-center gap-1.5 border rounded-xl px-4 py-2.5 font-semibold text-base transition"
+              >
+                <span>{{ tm.time }}</span>
+                <span v-if="tm.taken" class="text-sm">✓</span>
+              </button>
+            </div>
+          </div>
+          <p class="text-sm text-white/60 font-semibold">
+            {{
+              $t("medications.scheduleProgress", {
+                done: doseDoneCount,
+                total: doseTotalCount,
+              })
+            }}
+          </p>
+        </div>
+      </div>
+
       <!-- 목록 -->
       <div v-if="loading" class="text-center py-16 text-white/50 text-lg">
         {{ $t("common.loading") }}
@@ -385,6 +476,96 @@ interface Medication {
 
 const items = ref<Medication[]>([]);
 const loading = ref(false);
+
+// 오늘의 복용 일정
+interface DoseTime {
+  time: string;
+  taken: boolean;
+}
+interface DoseItem {
+  id: number;
+  name: string;
+  subjectName?: string | null;
+  subjectRelation?: string | null;
+  times: DoseTime[];
+}
+const doseDate = ref("");
+const doses = ref<{ date: string; items: DoseItem[] } | null>(null);
+const doseLoading = ref(false);
+
+const toDateStr = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate(),
+  ).padStart(2, "0")}`;
+const todayStr = () => toDateStr(new Date());
+
+const doseItems = computed(() => doses.value?.items ?? []);
+const isToday = computed(() => doseDate.value === todayStr());
+const doseDateLabel = computed(() => {
+  if (!doseDate.value) return "";
+  return new Date(`${doseDate.value}T00:00:00`).toLocaleDateString("ko-KR", {
+    month: "long",
+    day: "numeric",
+    weekday: "short",
+  });
+});
+const doseTotalCount = computed(() =>
+  doseItems.value.reduce((n, i) => n + i.times.length, 0),
+);
+const doseDoneCount = computed(() =>
+  doseItems.value.reduce(
+    (n, i) => n + i.times.filter((t) => t.taken).length,
+    0,
+  ),
+);
+
+const loadDoses = async () => {
+  if (!userId.value || !doseDate.value) return;
+  doseLoading.value = true;
+  try {
+    const res = await fetch(
+      `${config.public.apiBase}/medications/doses?userId=${userId.value}&date=${doseDate.value}`,
+    );
+    if (res.ok) doses.value = await res.json();
+  } catch (e) {
+    console.error("복용 일정 로딩 실패:", e);
+  } finally {
+    doseLoading.value = false;
+  }
+};
+
+const shiftDoseDate = (delta: number) => {
+  const d = new Date(`${doseDate.value}T00:00:00`);
+  d.setDate(d.getDate() + delta);
+  doseDate.value = toDateStr(d);
+  loadDoses();
+};
+
+const goToday = () => {
+  doseDate.value = todayStr();
+  loadDoses();
+};
+
+const toggleDose = async (item: DoseItem, tm: DoseTime) => {
+  const prev = tm.taken;
+  tm.taken = !prev;
+  try {
+    const url = `${config.public.apiBase}/medications/${item.id}/doses?userId=${userId.value}`;
+    const res = prev
+      ? await fetch(`${url}&time=${tm.time}&date=${doseDate.value}`, {
+          method: "DELETE",
+        })
+      : await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ time: tm.time, date: doseDate.value }),
+        });
+    if (!res.ok) throw new Error();
+  } catch {
+    tm.taken = prev;
+  }
+};
+
 const showForm = ref(false);
 const saving = ref(false);
 const editingId = ref<string | null>(null);
@@ -583,6 +764,7 @@ const save = async () => {
     }
     showForm.value = false;
     await load();
+    await loadDoses();
     // 새로 등록한 가족 대상 메모는 가족 게시판에 자동 공유
     if (isNew && form.value.isFamily) {
       await postMedToFamilyBoard(payload, reminderTimes);
@@ -602,17 +784,20 @@ const remove = async (m: Medication) => {
       { method: "DELETE" },
     );
     await load();
+    await loadDoses();
   } catch (e) {
     console.error("삭제 실패:", e);
   }
 };
 
 onMounted(() => {
+  doseDate.value = todayStr();
   const token = localStorage.getItem("accessToken");
   if (!token) {
     // 게스트 모드: 로그인 없이 로컬 ID 사용
     userId.value = getGuestUserId();
     load();
+    loadDoses();
     return;
   }
   try {
@@ -623,5 +808,6 @@ onMounted(() => {
     userId.value = getGuestUserId();
   }
   load();
+  loadDoses();
 });
 </script>
