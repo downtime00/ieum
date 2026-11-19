@@ -208,6 +208,8 @@ let map: any = null;
 let userMarker: any = null;
 const overlays: any[] = [];
 let allItems: MapContent[] = [];
+let didFitBounds = false;
+let lastCenterKey = '';
 
 // 지역 검색
 const searchQuery = ref("");
@@ -353,7 +355,41 @@ onMounted(async () => {
   }
 });
 
-// 마커 렌더링 — 내 위치가 있으면 5km 이내만 표시
+// 마커 렌더링 — 내 위치가 있으면 5km 이내만 표시, 줌 아웃 시 지역별 클러스터
+const CLUSTER_ZOOM = 9; // 이 이하 줌에서는 개별 마커 대신 권역 클러스터 표시
+const CLUSTER_CELL = 0.4; // 클러스터 셀 크기 (도 단위, 약 40km)
+
+interface Cluster {
+  lat: number;
+  lng: number;
+  count: number;
+  items: MapContent[];
+}
+
+const clusterItems = (items: MapContent[]): Cluster[] => {
+  const map = new Map<string, Cluster>();
+  for (const item of items) {
+    const lat = Number(item.latitude);
+    const lng = Number(item.longitude);
+    if (isNaN(lat) || isNaN(lng)) continue;
+    const key = `${Math.round(lat / CLUSTER_CELL)}:${Math.round(lng / CLUSTER_CELL)}`;
+    let c = map.get(key);
+    if (!c) {
+      c = { lat: 0, lng: 0, count: 0, items: [] };
+      map.set(key, c);
+    }
+    c.lat += lat;
+    c.lng += lng;
+    c.count += 1;
+    c.items.push(item);
+  }
+  return [...map.values()].map((c) => ({
+    ...c,
+    lat: c.lat / c.count,
+    lng: c.lng / c.count,
+  }));
+};
+
 const renderMarkers = () => {
   if (!map) return;
   overlays.forEach((o) => o.setMap(null));
@@ -375,42 +411,69 @@ const renderMarkers = () => {
     minLng = 180,
     maxLng = -180;
   const infoWindow = new (naver().maps.InfoWindow)({});
+  const zoom = map.getZoom() ?? 10;
 
-  for (const item of items) {
-    const lat = Number(item.latitude);
-    const lng = Number(item.longitude);
-    if (isNaN(lat) || isNaN(lng)) continue;
+  if (zoom <= CLUSTER_ZOOM && items.length > 0) {
+    // 줌 아웃: 권역별 클러스터 마커 (개수 표시)
+    for (const c of clusterItems(items)) {
+      const size = Math.min(64, 34 + Math.round(Math.log2(c.count + 1) * 8));
+      const marker = new (naver().maps.Marker)({
+        map,
+        position: new (naver().maps.LatLng)(c.lat, c.lng),
+        icon: {
+          content: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:#4f46e5;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);box-sizing:border-box;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:${Math.max(12, size / 3)}px">${c.count}</div>`,
+          anchor: new (naver().maps.Point)(size / 2, size / 2),
+        },
+      });
+      overlays.push(marker);
 
-    // 화면 좌표계 원형 마커 — 줌에 따라 크기 자동 조절 (지리 좌표 Circle는 메르카토르 투영으로 세로로 늘어나는 문제 방지)
-    const size = markerSize();
-    const marker = new (naver().maps.Marker)({
-      map,
-      position: new (naver().maps.LatLng)(lat, lng),
-      icon: {
-        content: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:#f59e0b;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);box-sizing:border-box"></div>`,
-        anchor: new (naver().maps.Point)(size / 2, size / 2),
-      },
-    });
-    overlays.push(marker);
+      naver().maps.Event.addListener(marker, "click", () => {
+        map.setCenter(new (naver().maps.LatLng)(c.lat, c.lng));
+        map.setZoom(CLUSTER_ZOOM + 2);
+      });
 
-    // 클릭 시 정보창
-    naver().maps.Event.addListener(marker, "click", () => {
-      infoWindow.setContent(
-        `<div style="width:240px;padding:4px;word-break:keep-all;line-height:1.5">
+      minLat = Math.min(minLat, c.lat);
+      maxLat = Math.max(maxLat, c.lat);
+      minLng = Math.min(minLng, c.lng);
+      maxLng = Math.max(maxLng, c.lng);
+    }
+  } else {
+    // 줌 인: 개별 마커
+    for (const item of items) {
+      const lat = Number(item.latitude);
+      const lng = Number(item.longitude);
+      if (isNaN(lat) || isNaN(lng)) continue;
+
+      const size = markerSize();
+      const marker = new (naver().maps.Marker)({
+        map,
+        position: new (naver().maps.LatLng)(lat, lng),
+        icon: {
+          content: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:#f59e0b;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);box-sizing:border-box"></div>`,
+          anchor: new (naver().maps.Point)(size / 2, size / 2),
+        },
+      });
+      overlays.push(marker);
+
+      // 클릭 시 정보창
+      naver().maps.Event.addListener(marker, "click", () => {
+        infoWindow.setContent(
+          `<div style="width:240px;padding:4px;word-break:keep-all;line-height:1.5">
 <b style="font-size:17px">${item.title}</b><br/>
           ${item.location ? ` ${item.location}<br/>` : ""}
           ${item.eventDate ? ` ${new Date(item.eventDate).toLocaleDateString("ko-KR")}<br/>` : ""}
 <a href="/culture/${item.id}" style="color:#2563eb;font-weight:600">${t("culture.viewDetail")} →</a>
 </div>`,
-      );
-      infoWindow.setPosition(new (naver().maps.LatLng)(lat, lng));
-      infoWindow.open(map);
-    });
+        );
+        infoWindow.setPosition(new (naver().maps.LatLng)(lat, lng));
+        infoWindow.open(map);
+      });
 
-    minLat = Math.min(minLat, lat);
-    maxLat = Math.max(maxLat, lat);
-    minLng = Math.min(minLng, lng);
-    maxLng = Math.max(maxLng, lng);
+      minLat = Math.min(minLat, lat);
+      maxLat = Math.max(maxLat, lat);
+      minLng = Math.min(minLng, lng);
+      maxLng = Math.max(maxLng, lng);
+    }
   }
 
   // 저장된 내 위치가 있으면 마커 추가
@@ -422,16 +485,21 @@ const renderMarkers = () => {
     maxLng = Math.max(maxLng, geoPosition.value.longitude);
   }
 
-  if (center && items.length > 0) {
-    // 중심(검색 지역/내 위치) 기준으로 확대 (5km 반경이 보이도록)
+  if (center && items.length > 0 && zoom > CLUSTER_ZOOM) {
+    // 중심(검색 지역/내 위치)이 바뀐 경우에만 재중심 — 줌 변경 시 되돌리지 않음
     const c: any = center;
-    const latlng = new (naver().maps.LatLng)(
-      c.latitude ?? c.lat,
-      c.longitude ?? c.lng,
-    );
-    map.setCenter(latlng);
-    map.setZoom(searchCenter.value ? 12 : 13);
-  } else if (items.length > 0) {
+    const centerKey = `${c.latitude ?? c.lat},${c.longitude ?? c.lng}`;
+    if (centerKey !== lastCenterKey) {
+      lastCenterKey = centerKey;
+      const latlng = new (naver().maps.LatLng)(
+        c.latitude ?? c.lat,
+        c.longitude ?? c.lng,
+      );
+      map.setCenter(latlng);
+      map.setZoom(searchCenter.value ? 12 : 13);
+    }
+  } else if (items.length > 0 && !center && !didFitBounds) {
+    didFitBounds = true;
     const bounds = new (naver().maps.LatLngBounds)(
       new (naver().maps.LatLng)(minLat, minLng),
       new (naver().maps.LatLng)(maxLat, maxLng),
