@@ -44,8 +44,16 @@ export class AdminController {
   @Get('notices')
   @ApiOperation({ summary: '공지사항 목록 조회 (페이징 포함)' })
   @ApiResponse({ status: 200, description: '공지사항 목록' })
-  async getNotices() {
-    return this.adminService.getNotices();
+  async getNotices(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('scope') scope?: 'public' | 'private',
+  ) {
+    return this.adminService.getNotices(
+      page ? Number(page) : 1,
+      limit ? Number(limit) : 10,
+      scope,
+    );
   }
 
   /**
@@ -62,6 +70,7 @@ export class AdminController {
    * 공지사항 생성
    */
   @Post('notices')
+  @UseGuards(AdminAuthGuard)
   @UsePipes(new ZodValidationPipe(createNoticeSchema))
   @ApiOperation({ summary: '공지사항 생성 (Admin)' })
   @ApiResponse({ status: 201, description: '공지사항이 성공적으로 생성됨' })
@@ -79,6 +88,7 @@ export class AdminController {
    * 공지사항 수정
    */
   @Put('notices/:id')
+  @UseGuards(AdminAuthGuard)
   @ApiOperation({ summary: '공지사항 수정 (Admin)' })
   @ApiResponse({ status: 200, description: '공지사항이 성공적으로 업데이트됨' })
   async updateNotice(@Param('id') id: string, @Body() data: Partial<Notice>) {
@@ -89,6 +99,7 @@ export class AdminController {
    * 공지사항 삭제
    */
   @Delete('notices/:id')
+  @UseGuards(AdminAuthGuard)
   @ApiOperation({ summary: '공지사항 삭제 (Admin)' })
   @ApiResponse({ status: 200, description: '공지사항이 성공적으로 삭제됨' })
   async deleteNotice(@Param('id') id: string) {
@@ -99,6 +110,7 @@ export class AdminController {
    * 공지사항 고정/비고정 토글
    */
   @Put('notices/:id/pin')
+  @UseGuards(AdminAuthGuard)
   @ApiOperation({ summary: '공지사항 고정/비고정 토글' })
   @ApiResponse({ status: 200, description: '고정이 성공적으로 적용됨' })
   async togglePin(@Param('id') id: string, @Body() data: { pinned?: boolean }) {

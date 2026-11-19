@@ -87,11 +87,15 @@ export class AdminService {
   /**
    * 공지사항 목록 조회 (페이징 포함)
    */
-  async getNotices(page: number = 1, limit: number = 10) {
+  async getNotices(page: number = 1, limit: number = 10, scope?: 'public' | 'private') {
     const queryBuilder = this.noticeRepository.createQueryBuilder('notice');
-    
+    if (scope) {
+      queryBuilder.where('notice.scope = :scope', { scope });
+    }
+
     const [items, total] = await queryBuilder
-      .orderBy('notice.createdAt', 'DESC')
+      .orderBy('notice.isPinned', 'DESC')
+      .addOrderBy('notice.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount();
