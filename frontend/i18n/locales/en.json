@@ -210,15 +210,7 @@
     "vibrationOn": "Vibration on",
     "vibrationOff": "Vibration off",
     "testVibration": "Test vibration",
-    "vibrationUnsupported": "Vibration is not supported on this browser/device",
-    "userType": "User type",
-    "userTypeDesc": "Choose the menus most relevant to you",
-    "typeUser": "General",
-    "typeUserDesc": "Meds, culture, board",
-    "typeLecture": "Events/Lecture",
-    "typeLectureDesc": "Programs & operator mgmt",
-    "typeCare": "Care provider",
-    "typeCareDesc": "Home care & nursing mgmt"
+    "vibrationUnsupported": "Vibration is not supported on this browser/device"
   },
   "medications": {
     "title": "Medications & Appointments",
