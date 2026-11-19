@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { Notice } from '../notice.entity';
 import { OrganizationsService } from '../../organizations/organizations.service';
 import { CreateOrganizationDto } from '../../organizations/dto/create-organization.dto';

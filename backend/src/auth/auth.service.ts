@@ -10,7 +10,7 @@ import { GoogleAuthProvider } from './providers/google.provider';
 import { SNSUserInfo } from './interfaces/social-auth-provider.interface';
 import { randomBytes } from 'crypto';
 import { UserStatus } from '../users/entities/user.entity';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 
 export interface AuthResponse {
   accessToken: string;
