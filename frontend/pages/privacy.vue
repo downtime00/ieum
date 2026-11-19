@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-stone-50">
     <div class="container mx-auto px-4 py-8 max-w-2xl">
-      <div class="bg-slate-800 rounded-3xl p-4 sm:p-6">
+      <div class="ieum-panel rounded-3xl p-4 sm:p-6">
         <h1 class="text-2xl font-bold text-white mb-6">개인정보처리방침</h1>
 
         <div class="space-y-6 text-white/85 leading-relaxed">

@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-stone-50">
     <div class="container mx-auto px-4 py-8 max-w-3xl">
-      <div class="bg-slate-800 rounded-3xl p-4 sm:p-6">
+      <div class="ieum-panel rounded-3xl p-4 sm:p-6">
         <div class="flex items-center justify-between mb-5">
           <h1 class="text-2xl font-bold text-white">내 예약</h1>
           <NuxtLink to="/operators" class="text-sm text-sky-300 hover:underline">
@@ -187,7 +187,7 @@
                   @change="loadNoticeMembers"
                   class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white mb-3 focus:outline-none focus:border-sky-400"
                 >
-                  <option v-for="f in noticeFamilies" :key="f.id" :value="f.id" class="bg-slate-800">
+                  <option v-for="f in noticeFamilies" :key="f.id" :value="f.id" class="ieum-panel">
                     {{ f.name }}
                   </option>
                 </select>

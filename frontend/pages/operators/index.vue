@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-stone-50">
     <div class="container mx-auto px-4 py-8 max-w-4xl">
-      <div class="bg-slate-800 rounded-3xl p-4 sm:p-6">
+      <div class="ieum-panel rounded-3xl p-4 sm:p-6">
         <!-- 헤더 -->
         <div class="flex items-center justify-between flex-wrap gap-3 mb-5">
           <div>

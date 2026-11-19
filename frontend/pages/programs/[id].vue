@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-stone-50">
     <div class="container mx-auto px-4 py-8 max-w-3xl">
-      <div class="bg-slate-800 rounded-3xl p-4 sm:p-6">
+      <div class="ieum-panel rounded-3xl p-4 sm:p-6">
         <div v-if="loading" class="text-center py-16 text-white/50 text-lg">
           불러오는 중...
         </div>
@@ -79,10 +79,10 @@
                 </label>
                 <select v-model="selectedFamilyId"
                   class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sky-400">
-                  <option :value="null" class="bg-slate-800" :disabled="isCareService">
+                  <option :value="null" class="ieum-panel" :disabled="isCareService">
                     {{ isCareService ? "가족을 선택해주세요" : "개인 예약" }}
                   </option>
-                  <option v-for="f in headFamilies" :key="f.id" :value="f.id" class="bg-slate-800">
+                  <option v-for="f in headFamilies" :key="f.id" :value="f.id" class="ieum-panel">
                     {{ f.name }} (그룹 예약)
                   </option>
                 </select>

@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-stone-50">
     <div class="container mx-auto px-4 py-8 max-w-2xl">
-      <div class="bg-slate-800 rounded-3xl p-4 sm:p-6">
+      <div class="ieum-panel rounded-3xl p-4 sm:p-6">
         <h1 class="text-2xl font-bold text-white mb-2">기관·서비스 제공자 등록</h1>
         <p class="text-sm text-white/60 mb-6">
           행복복지센터, 실버타운, 노인회관 등 공공·복지 기관과
@@ -34,8 +34,8 @@
             </label>
             <select v-model="form.orgType" required
               class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sky-400">
-              <option value="" disabled class="bg-slate-800">선택해주세요</option>
-              <option v-for="t in orgTypes" :key="t" :value="t" class="bg-slate-800">{{ t }}</option>
+              <option value="" disabled class="ieum-panel">선택해주세요</option>
+              <option v-for="t in orgTypes" :key="t" :value="t" class="ieum-panel">{{ t }}</option>
             </select>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">

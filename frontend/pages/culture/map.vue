@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-stone-50 flex flex-col">
     <!-- 헤더 -->
-    <div class="bg-slate-800 px-4 py-4 sticky top-0 z-40">
+    <div class="ieum-panel px-4 py-4 sticky top-0 z-40">
       <div
         class="container mx-auto flex flex-wrap items-center justify-between gap-3"
       >
@@ -69,7 +69,7 @@
 
     <!-- 지도 (전체 화면) -->
     <div class="flex-1 flex flex-col min-h-0">
-      <div class="relative flex-1 bg-slate-900 min-h-[320px]">
+      <div class="relative flex-1 bg-stone-200 min-h-[320px]">
 
         <div ref="mapEl" class="w-full h-full"></div>
         <!-- 큰 줌 버튼 (어르신용 상시 노출) -->
@@ -91,7 +91,7 @@
         </div>
       </div>
       <!-- 지도 아래 상태/목록 영역 -->
-      <div class="bg-slate-800 px-4 py-3">
+      <div class="ieum-panel px-4 py-3">
       <div class="container mx-auto">
       <p
         v-if="visibleCount > 0"
