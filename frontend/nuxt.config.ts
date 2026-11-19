@@ -1,7 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 const base = process.env.APP_BASE_URL || '/'
-const apiOrigin = process.env.API_BASE_URL
-  ? new URL(process.env.API_BASE_URL).origin.replace(/\./g, '\\.')
+const apiBaseOrigin = process.env.API_BASE_URL
+  ? new URL(process.env.API_BASE_URL).origin
   : ''
 
 export default defineNuxtConfig({
@@ -16,6 +16,13 @@ export default defineNuxtConfig({
 
   pwa: {
     registerType: 'autoUpdate',
+    strategies: 'buildSW',
+    buildSW: {
+      swSrc: './sw.ts',
+      define: {
+        __API_ORIGIN__: JSON.stringify(apiBaseOrigin),
+      },
+    },
     manifest: {
       name: '이음 - 지역생활 정보 플랫폼',
       short_name: '이음',
@@ -36,37 +43,11 @@ export default defineNuxtConfig({
         { src: `${base}icons/icon-maskable-512.png`, sizes: '512x512', type: 'image/png', purpose: 'maskable' },
       ],
     },
-    workbox: {
-      navigateFallback: base,
-      globPatterns: ['**/*.{js,css,html,png,svg,ico,webp}'],
-      importScripts: ['push-handler.js'],
-      runtimeCaching: [
-        {
-          // 공개 문화정보 API — 네트워크 우선, 실패/지연 시 캐시 (최대 24시간)
-          urlPattern: new RegExp(`^${apiOrigin}/contents`),
-          handler: 'NetworkFirst',
-          options: {
-            cacheName: 'api-contents',
-            networkTimeoutSeconds: 5,
-            expiration: { maxEntries: 100, maxAgeSeconds: 24 * 3600 },
-          },
-        },
-        {
-          // 외부 이미지(문화 포스터 등) — 캐시 우선, 오래된 것 자동 삭제
-          urlPattern: /\.(png|jpe?g|webp|gif|svg)(\?.*)?$/,
-          handler: 'CacheFirst',
-          options: {
-            cacheName: 'external-images',
-            cacheableResponse: { statuses: [0, 200] },
-            expiration: { maxEntries: 150, maxAgeSeconds: 30 * 24 * 3600 },
-          },
-        },
-      ],
-    },
     devOptions: {
       enabled: false,
     },
   },
+
 
   css: ['~/assets/css/main.css'],
 
