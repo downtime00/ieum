@@ -466,14 +466,14 @@
             v-model="dirDest"
             type="text"
             :placeholder="$t('directions.placeholder')"
-            class="flex-1 px-4 py-3.5 border border-slate-300 rounded-2xl text-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            class="flex-1 min-w-0 px-4 py-3.5 border border-slate-300 rounded-2xl text-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             @keyup.enter="goDirections"
           />
           <button
             v-if="dirVoice.supported.value"
             type="button"
             @click="dirVoice.toggle"
-            class="flex items-center gap-1.5 px-4 py-3 rounded-xl font-semibold text-sm transition shrink-0 border"
+            class="flex items-center justify-center gap-1.5 h-[54px] px-4 rounded-xl font-semibold text-sm whitespace-nowrap transition shrink-0 border"
             :class="
               dirVoice.listening.value
                 ? 'bg-red-500 border-red-500 text-white animate-pulse'
