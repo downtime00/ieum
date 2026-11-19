@@ -210,7 +210,12 @@
     "vibrationOn": "진동 켜짐",
     "vibrationOff": "진동 꺼짐",
     "testVibration": "진동 테스트",
-    "vibrationUnsupported": "이 브라우저/기기에서는 진동을 지원하지 않습니다"
+    "vibrationUnsupported": "이 브라우저/기기에서는 진동을 지원하지 않습니다",
+    "account": "계정",
+    "loggedIn": "로그인되어 있습니다",
+    "notLoggedIn": "로그인되어 있지 않습니다",
+    "logout": "로그아웃",
+    "goLogin": "로그인하러 가기"
   },
   "medications": {
     "title": "약·병원 메모",

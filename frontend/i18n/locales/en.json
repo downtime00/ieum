@@ -210,7 +210,12 @@
     "vibrationOn": "Vibration on",
     "vibrationOff": "Vibration off",
     "testVibration": "Test vibration",
-    "vibrationUnsupported": "Vibration is not supported on this browser/device"
+    "vibrationUnsupported": "Vibration is not supported on this browser/device",
+    "account": "Account",
+    "loggedIn": "You are logged in",
+    "notLoggedIn": "You are not logged in",
+    "logout": "Log out",
+    "goLogin": "Go to login"
   },
   "medications": {
     "title": "Medications & Appointments",

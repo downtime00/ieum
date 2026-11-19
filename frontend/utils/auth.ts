@@ -58,3 +58,33 @@ export const ensureSession = async (apiBase: string): Promise<boolean> => {
     return true
   }
 }
+
+// 로그아웃 — 서버에 refresh token 무효화 요청 후 로컬 세션 제거.
+// 서버 호출 실패해도 로컬은 항상 정리한다.
+export const logout = async (apiBase: string): Promise<void> => {
+  if (!import.meta.client) return
+  const accessToken = getAccessToken()
+  const refreshToken = localStorage.getItem('refreshToken')
+
+  if (accessToken && refreshToken) {
+    // 만료된 access token이면 먼저 갱신 시도
+    await ensureSession(apiBase)
+    const token = getAccessToken()
+    if (token) {
+      try {
+        await fetch(`${apiBase}/auth/logout`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ refreshToken }),
+        })
+      } catch {
+        // 네트워크 오류 무시 — 어차피 로컬 세션은 제거
+      }
+    }
+  }
+
+  clearSession()
+}

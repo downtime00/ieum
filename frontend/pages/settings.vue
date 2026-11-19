@@ -139,6 +139,35 @@
         </button>
       </section>
 
+      <!-- 계정 / 로그아웃 -->
+      <section class="bg-white/10 rounded-2xl p-6 mb-4">
+        <h2 class="font-semibold text-white mb-1">
+          {{ $t("settings.account") }}
+        </h2>
+        <p class="text-sm text-white/60 mb-5">
+          {{
+            loggedIn
+              ? userEmail || $t("settings.loggedIn")
+              : $t("settings.notLoggedIn")
+          }}
+        </p>
+        <button
+          v-if="loggedIn"
+          @click="doLogout"
+          :disabled="logoutLoading"
+          class="bg-red-500/80 text-white font-semibold py-3 px-8 rounded-xl hover:bg-red-500 transition disabled:opacity-40"
+        >
+          {{ logoutLoading ? "..." : $t("settings.logout") }}
+        </button>
+        <button
+          v-else
+          @click="router.push('/')"
+          class="bg-sky-500 text-white font-semibold py-3 px-8 rounded-xl hover:bg-sky-400 transition"
+        >
+          {{ $t("settings.goLogin") }}
+        </button>
+      </section>
+
       <!-- 저장 안내 -->
       <div
         class="bg-sky-500/20 border border-sky-400/30 rounded-2xl p-5 text-sm text-sky-200"
@@ -152,6 +181,7 @@
 
 <script setup lang="ts">
 const router = useRouter();
+const runtimeConfig = useRuntimeConfig();
 const STORAGE_KEY = "notificationDisplayCount";
 const VIBRATION_KEY = "ieum_vibration";
 const DEFAULT_COUNT = 2;
@@ -173,6 +203,21 @@ const {
 
 const enablePush = () => subscribePush();
 const disablePush = () => unsubscribePush();
+
+// 계정 / 로그아웃
+const loggedIn = ref(false);
+const userEmail = ref("");
+const logoutLoading = ref(false);
+
+const doLogout = async () => {
+  logoutLoading.value = true;
+  try {
+    await logout(runtimeConfig.public.apiBase as string);
+  } finally {
+    logoutLoading.value = false;
+    await navigateTo("/");
+  }
+};
 
 // 진동 설정 (localStorage + 쿠키 — 서비스 워커가 쿠키를 읽어 알림 진동 적용)
 const vibrationOn = ref(true);
@@ -200,6 +245,16 @@ const selectCount = (n: number) => {
 };
 
 onMounted(() => {
+  // 로그인 상태 확인
+  const token = localStorage.getItem("accessToken");
+  loggedIn.value = !!token;
+  if (token) {
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "null");
+      userEmail.value = user?.email || user?.name || "";
+    } catch {}
+  }
+
   // 설정은 로컬 저장소 기반이라 로그인 없이도 사용 가능
   const saved = parseInt(localStorage.getItem(STORAGE_KEY) || "", 10);
   if (!isNaN(saved)) {
