@@ -67,11 +67,10 @@
       </div>
     </div>
 
-    <!-- 지도 -->
-    <div class="flex-1 container mx-auto p-4 flex flex-col">
-      <div
-        class="relative flex-1 bg-slate-900 rounded-2xl overflow-hidden ring-1 ring-white/10 min-h-[400px]"
-      >
+    <!-- 지도 (전체 화면) -->
+    <div class="flex-1 flex flex-col min-h-0">
+      <div class="relative flex-1 bg-slate-900 min-h-[320px]">
+
         <div ref="mapEl" class="w-full h-full"></div>
         <!-- 큰 줌 버튼 (어르신용 상시 노출) -->
         <div class="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
@@ -91,6 +90,9 @@
           </button>
         </div>
       </div>
+      <!-- 지도 아래 상태/목록 영역 -->
+      <div class="bg-slate-800 px-4 py-3">
+      <div class="container mx-auto">
       <p
         v-if="visibleCount > 0"
         class="text-base text-white/70 mt-3 text-center"
@@ -164,6 +166,8 @@
         class="mt-4 bg-amber-400/20 border border-amber-400/30 rounded-2xl p-4 text-center text-base text-amber-200"
       >
         {{ $t("culture.noNearby") }}
+      </div>
+      </div>
       </div>
     </div>
   </div>
