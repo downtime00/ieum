@@ -496,6 +496,9 @@
         >
           {{ $t("directions.listening") }}
         </p>
+        <p v-if="dirVoice.error.value" class="text-sm text-red-500 mt-2">
+          {{ voiceErrorText(dirVoice.error.value) }}
+        </p>
         <p v-if="dirError" class="text-sm text-red-500 mt-3">{{ dirError }}</p>
         <button
           @click="goDirections"
@@ -644,6 +647,12 @@ const dirDest = ref("");
 const dirLoading = ref(false);
 const dirError = ref("");
 const dirVoice = useVoiceInput(dirDest);
+const voiceErrorText = (code: string) => {
+  if (code === "microphone_permission" || code === "service-not-allowed")
+    return t("board.voiceErrorPermission");
+  if (code === "network") return t("board.voiceErrorNetwork");
+  return t("board.voiceErrorGeneric");
+};
 
 const geocodeAddress = async (
   address: string,
