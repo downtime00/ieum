@@ -40,7 +40,7 @@
 
         <!-- 승인됨: 탭 관리 -->
         <template v-else>
-          <div class="flex gap-2 mb-5">
+          <div class="flex flex-wrap gap-2 mb-5">
             <button v-for="tab in tabs" :key="tab.key" @click="activeTab = tab.key"
               :class="activeTab === tab.key ? 'bg-blue-800 text-white' : 'bg-white/10 text-white/70 hover:bg-white/20'"
               class="font-semibold py-2.5 px-5 rounded-xl transition text-sm">
@@ -111,7 +111,7 @@
                       {{ p.price === 0 ? "무료" : `${p.price.toLocaleString()}원/인` }} · 정원 {{ p.capacity }}명 · 신청 {{ p.bookedCount }}명
                     </p>
                   </div>
-                  <div class="flex gap-2 flex-shrink-0">
+                  <div class="flex flex-wrap gap-2 justify-end">
                     <button @click="toggleProgram(p)"
                       class="bg-white/10 text-white/80 font-semibold py-2 px-4 rounded-xl hover:bg-white/20 transition text-xs">
                       {{ p.isActive ? "숨기기" : "보이기" }}

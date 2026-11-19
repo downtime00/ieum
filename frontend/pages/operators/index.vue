@@ -11,7 +11,7 @@
               예약하고 신청할 수 있습니다.
             </p>
           </div>
-          <div class="flex gap-2">
+          <div class="flex flex-wrap gap-2">
             <NuxtLink
               v-if="isOperator"
               to="/operator"
@@ -29,7 +29,7 @@
         </div>
 
         <!-- 검색/필터 -->
-        <div class="flex gap-2 mb-5">
+        <div class="flex flex-wrap gap-2 mb-5">
           <input
             v-model="keyword"
             type="text"

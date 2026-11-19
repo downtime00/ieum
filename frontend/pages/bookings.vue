@@ -157,7 +157,7 @@
                 placeholder="후기 내용 (선택, 최대 1000자)"
                 class="w-full rounded-xl px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-400"
               />
-              <div class="flex gap-2 mt-3">
+              <div class="flex flex-wrap gap-2 mt-3">
                 <button
                   @click="submitReview(b)"
                   :disabled="reviewRating === 0 || acting === b.id"
@@ -224,7 +224,7 @@
                   placeholder="공지 내용 (비우면 프로그램 안내가 자동으로 작성됩니다)"
                   class="w-full rounded-xl px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-400 mb-3"
                 />
-                <div class="flex gap-2">
+                <div class="flex flex-wrap gap-2">
                   <button
                     @click="submitNotice(b)"
                     :disabled="noticeSending || noticeMemberIds.size === 0"

@@ -95,7 +95,7 @@
                 <label class="block text-sm text-white/70 mb-1">
                   희망 장소 {{ isCareService ? "(필수)" : "(선택)" }}
                 </label>
-                <div class="flex gap-2">
+                <div class="flex flex-wrap gap-2">
                   <input v-model="desiredAddress" maxlength="500"
                     placeholder="예: 서울 관악구 신림동 123-4"
                     class="flex-1 min-w-0 bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-sky-400" />

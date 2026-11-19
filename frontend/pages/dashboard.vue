@@ -473,7 +473,7 @@
             v-if="dirVoice.supported.value"
             type="button"
             @click="dirVoice.toggle"
-            class="flex items-center justify-center gap-1.5 h-[54px] px-4 rounded-xl font-semibold text-sm whitespace-nowrap transition shrink-0 border"
+            class="flex items-center justify-center self-stretch gap-1.5 px-4 rounded-xl font-semibold text-sm whitespace-nowrap transition shrink-0 border"
             :class="
               dirVoice.listening.value
                 ? 'bg-red-500 border-red-500 text-white animate-pulse'
