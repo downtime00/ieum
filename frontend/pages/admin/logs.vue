@@ -142,14 +142,18 @@
         </div>
 
         <!-- 페이지네이션 -->
-        <div v-if="totalPages > 1" class="flex justify-center gap-2 mt-6">
+        <div v-if="totalPages > 1" class="flex justify-center items-center gap-2 mt-6 flex-wrap">
           <button
-            v-for="page in totalPages"
+            @click="goPage(currentPage - 1)"
+            :disabled="currentPage === 1"
+            class="px-4 py-2 rounded-xl bg-slate-200 text-slate-700 hover:bg-slate-300 disabled:opacity-40"
+          >
+            이전
+          </button>
+          <button
+            v-for="page in visiblePages"
             :key="page"
-            @click="
-              currentPage = page;
-              loadLogs();
-            "
+            @click="goPage(page)"
             class="px-4 py-2 rounded-xl"
             :class="
               currentPage === page
@@ -158,6 +162,14 @@
             "
           >
             {{ page }}
+          </button>
+          <span v-if="visiblePages.length && (visiblePages[0] > 1 || visiblePages[visiblePages.length-1] < totalPages)" class="text-slate-400 text-sm">…</span>
+          <button
+            @click="goPage(currentPage + 1)"
+            :disabled="currentPage === totalPages"
+            class="px-4 py-2 rounded-xl bg-slate-200 text-slate-700 hover:bg-slate-300 disabled:opacity-40"
+          >
+            다음
           </button>
         </div>
 
@@ -256,6 +268,26 @@ const loading = ref(false);
 const currentPage = ref(1);
 const totalPages = ref(1);
 const selectedLog = ref(null);
+
+// 현재 페이지 주변 최대 7개만 표시 (totalPages가 커도 버튼 폭주 방지)
+const visiblePages = computed(() => {
+  const total = totalPages.value;
+  const cur = currentPage.value;
+  const span = 3;
+  let start = Math.max(1, cur - span);
+  let end = Math.min(total, cur + span);
+  if (end - start < span * 2) {
+    if (start === 1) end = Math.min(total, start + span * 2);
+    if (end === total) start = Math.max(1, end - span * 2);
+  }
+  return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+});
+
+const goPage = (p: number) => {
+  if (p < 1 || p > totalPages.value) return;
+  currentPage.value = p;
+  loadLogs();
+};
 
 const loadLogs = async () => {
   loading.value = true;
