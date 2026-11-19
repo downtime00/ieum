@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Query, Body, Param, ParseIntPipe, UsePipes } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Query, Body, Param, ParseIntPipe, UsePipes, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AdminService } from '../services/admin.service';
 import { createNoticeSchema, type CreateNoticeDto } from '../dtos/create-notice.dto';
@@ -7,6 +7,8 @@ import { QueryOrganizationsDto } from '../../organizations/dto/query-organizatio
 import { ZodValidationPipe } from '../../common/validation/zod.validation.pipe';
 import { createAdminSchema, type CreateAdminDto } from '../dto/create-admin.dto';
 import { sendNotificationSchema, type SendNotificationDto } from '../dto/send-notification.dto';
+import { z } from 'zod';
+import { AdminAuthGuard } from '../../operators/guards/user-auth.guard';
 import { UserRole } from '../../users/entities/user.entity';
 import { createGroupSchema, type CreateGroupDto } from '../dto/create-group.dto';
 
@@ -25,6 +27,11 @@ interface Organization {
   type?: string;
   domain?: string;
 }
+
+const setUserMenusSchema = z.object({
+  menuKeys: z.array(z.string()).nullable(),
+});
+type SetUserMenusDto = z.infer<typeof setUserMenusSchema>;
 
 @ApiTags('Admin')
 @Controller('admin')
@@ -228,6 +235,20 @@ export class AdminController {
     @Query('limit') limit?: number,
   ) {
     return this.adminService.getUsers(keyword, page ? Number(page) : 1, limit ? Number(limit) : 20);
+  }
+
+  /**
+   * 사용자 대시보드 메뉴 override 설정 (menuKeys=null 이면 자동)
+   */
+  @Put('users/:id/menus')
+  @UseGuards(AdminAuthGuard)
+  @UsePipes(new ZodValidationPipe(setUserMenusSchema))
+  @ApiOperation({ summary: '사용자 메뉴 설정 (Admin)' })
+  async setUserMenus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() data: SetUserMenusDto,
+  ) {
+    return this.adminService.setUserMenus(id, data.menuKeys);
   }
 
   /**

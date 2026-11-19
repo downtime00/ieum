@@ -20,6 +20,10 @@ import { Family } from '../../family/entities/family.entity';
 import { FamilyMember } from '../../family/entities/family-member.entity';
 import type { CreateGroupDto } from '../dto/create-group.dto';
 
+export const DASHBOARD_MENU_KEYS = [
+  'medications', 'culture', 'board', 'programs', 'bookings', 'operator',
+] as const;
+
 @Injectable()
 export class AdminService {
   private readonly logger = new AppLogger('AdminService');
@@ -941,7 +945,7 @@ export class AdminService {
   async getUsers(keyword?: string, page = 1, limit = 20) {
     const qb = this.userRepository
       .createQueryBuilder('user')
-      .select(['user.id', 'user.name', 'user.email', 'user.role', 'user.createdAt'])
+      .select(['user.id', 'user.name', 'user.email', 'user.role', 'user.createdAt', 'user.menuKeys'])
       .where('user.status != :deleted', { deleted: 'DELETED' as any });
 
     if (keyword) {
@@ -987,6 +991,28 @@ export class AdminService {
       sentCount: notifications.length,
       userCount: userIds.length,
     };
+  }
+
+  /**
+   * 사용자 대시보드 메뉴 override 설정
+   * menuKeys: 허용할 메뉴 키 배열, null이면 역할 기반 자동으로 복원
+   */
+  async setUserMenus(userId: number, menuKeys: string[] | null) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다');
+
+    if (menuKeys !== null) {
+      const invalid = menuKeys.filter(
+        (k) => !(DASHBOARD_MENU_KEYS as readonly string[]).includes(k),
+      );
+      if (invalid.length) {
+        throw new BadRequestException(`알 수 없는 메뉴 키: ${invalid.join(', ')}`);
+      }
+    }
+
+    user.menuKeys = menuKeys;
+    await this.userRepository.save(user);
+    return { userId, menuKeys };
   }
 
 }

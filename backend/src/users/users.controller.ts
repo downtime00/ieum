@@ -25,4 +25,10 @@ export class UsersController {
   async updateInterests(@Req() req, @Body() dto: UpdateInterestsDto) {
     return this.usersService.updateInterests(req.user.id, dto);
   }
+
+  @Get('me/menus')
+  @UseGuards(JwtAuthGuard)
+  async getMyMenus(@Req() req) {
+    return this.usersService.getMyMenus(req.user.id);
+  }
 }

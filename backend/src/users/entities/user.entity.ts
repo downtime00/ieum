@@ -39,6 +39,10 @@ export class User {
   @Column({ type: 'varchar', length: 255, nullable: true })
   password?: string;
 
+  // 관리자가 지정한 대시보드 메뉴 override (null = 역할 기반 자동)
+  @Column({ type: 'jsonb', nullable: true })
+  menuKeys: string[] | null;
+
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 

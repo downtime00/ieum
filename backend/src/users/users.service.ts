@@ -76,4 +76,9 @@ export class UsersService {
     // For now, return empty array to avoid compilation errors
     return [];
   }
+
+  async getMyMenus(userId: number) {
+    const user = await this.userRepository.findOne(userId);
+    return { menuKeys: user?.menuKeys ?? null };
+  }
 }
