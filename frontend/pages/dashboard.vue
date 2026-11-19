@@ -709,26 +709,46 @@ const goDirections = async () => {
   dirLoading.value = false;
 };
 
-// 영역 바로가기 타일 — 기관(공영자/요양 제공자) 보유 여부로 자동 결정
-const USER_TILES = [
-  { key: "meds", to: "/medications", labelKey: "medications.title", cls: "bg-emerald-600 hover:bg-emerald-500" },
-  { key: "culture", to: "/culture", labelKey: "culture.title", cls: "bg-sky-600 hover:bg-sky-500" },
-  { key: "board", to: "/board", labelKey: "board.title", cls: "bg-amber-600 hover:bg-amber-500" },
-  { key: "programs", to: "/operators", labelKey: "dashboard.tilePrograms", cls: "bg-violet-600 hover:bg-violet-500" },
-  { key: "bookings", to: "/bookings", labelKey: "dashboard.tileBookings", cls: "bg-teal-600 hover:bg-teal-500" },
-];
+// 영역 바로가기 타일 — 기관 보유 여부로 자동 구성, 관리자가 menuKeys로 override 가능
+const TILE_CATALOG: Record<
+  string,
+  { key: string; to: string; labelKey: string; cls: string }
+> = {
+  medications: { key: "meds", to: "/medications", labelKey: "medications.title", cls: "bg-emerald-600 hover:bg-emerald-500" },
+  culture: { key: "culture", to: "/culture", labelKey: "culture.title", cls: "bg-sky-600 hover:bg-sky-500" },
+  board: { key: "board", to: "/board", labelKey: "board.title", cls: "bg-amber-600 hover:bg-amber-500" },
+  programs: { key: "programs", to: "/operators", labelKey: "dashboard.tilePrograms", cls: "bg-violet-600 hover:bg-violet-500" },
+  bookings: { key: "bookings", to: "/bookings", labelKey: "dashboard.tileBookings", cls: "bg-teal-600 hover:bg-teal-500" },
+  operator: { key: "operator", to: "/operator", labelKey: "dashboard.tileOperator", cls: "bg-fuchsia-600 hover:bg-fuchsia-500" },
+};
 
 const CARE_ORG_TYPES = ["요양보호사", "간병인"];
 const myOperator = ref<{ orgType?: string } | null>(null);
+const menuOverride = ref<string[] | null>(null);
+
+const autoMenuKeys = computed<string[]>(() => {
+  if (myOperator.value) {
+    return CARE_ORG_TYPES.includes(myOperator.value.orgType || "")
+      ? ["operator", "bookings", "programs"]
+      : ["operator", "bookings", "programs"];
+  }
+  return ["medications", "culture", "board", "programs", "bookings"];
+});
 
 const shortcutTiles = computed(() => {
-  if (!myOperator.value) return USER_TILES;
-  const isCare = CARE_ORG_TYPES.includes(myOperator.value.orgType || "");
-  return [
-    { key: "operator", to: "/operator", labelKey: "dashboard.tileOperator", cls: "bg-fuchsia-600 hover:bg-fuchsia-500" },
-    { key: "bookings", to: "/bookings", labelKey: "dashboard.tileBookings", cls: "bg-teal-600 hover:bg-teal-500" },
-    { key: "programs", to: "/operators", labelKey: isCare ? "dashboard.tileCareServices" : "dashboard.tilePrograms", cls: "bg-violet-600 hover:bg-violet-500" },
-  ];
+  const keys = menuOverride.value ?? autoMenuKeys.value;
+  const isCare = CARE_ORG_TYPES.includes(myOperator.value?.orgType || "");
+  return keys
+    .map((k) => {
+      const tile = TILE_CATALOG[k];
+      if (!tile) return null;
+      // 요양 기관의 programs 타일은 "요양·간병 서비스" 라벨
+      if (k === "programs" && isCare) {
+        return { ...tile, labelKey: "dashboard.tileCareServices" };
+      }
+      return tile;
+    })
+    .filter(Boolean) as { key: string; to: string; labelKey: string; cls: string }[];
 });
 
 const isLoggedIn = ref(false);
@@ -1450,6 +1470,15 @@ const loadMyOperator = async () => {
     }
   } catch {
     /* 기관 조회 실패 시 일반 메뉴 */
+  }
+  try {
+    const res = await fetch(`${config.public.apiBase}/users/me/menus`);
+    if (res.ok) {
+      const data = await res.json();
+      menuOverride.value = data?.menuKeys ?? null;
+    }
+  } catch {
+    /* 메뉴 설정 조회 실패 시 자동 메뉴 */
   }
 };
 
