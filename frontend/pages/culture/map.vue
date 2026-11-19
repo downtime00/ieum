@@ -19,7 +19,7 @@
           <button
             @click="locateMe"
             :disabled="geoStatus === 'requesting'"
-            class="bg-sky-500 text-white font-semibold py-3 px-5 rounded-xl hover:bg-sky-400 transition text-base disabled:bg-white/20"
+            class="inline-flex items-center justify-center bg-sky-500 text-white font-semibold py-3 px-5 rounded-xl hover:bg-sky-400 transition text-base leading-none disabled:bg-white/20"
           >
             {{
               geoStatus === "requesting"
@@ -42,7 +42,7 @@
           <button
             @click="searchRegion"
             :disabled="searchLoading"
-            class="bg-sky-500 text-white font-semibold py-3 px-6 rounded-xl hover:bg-sky-400 transition text-base disabled:opacity-40 shrink-0"
+            class="inline-flex items-center justify-center bg-sky-500 text-white font-semibold py-3 px-6 rounded-xl hover:bg-sky-400 transition text-base leading-none disabled:opacity-40 shrink-0"
           >
             {{
               searchLoading ? $t("common.loading") : $t("culture.regionSearch")
@@ -77,14 +77,14 @@
         <div class="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
           <button
             @click="zoomIn"
-            class="w-14 h-14 rounded-full bg-white border-2 border-slate-300 shadow-lg text-3xl font-bold text-slate-700 hover:bg-slate-100 active:bg-slate-200"
+            class="w-14 h-14 rounded-full bg-white border-2 border-slate-300 shadow-lg text-3xl font-bold text-slate-700 hover:bg-slate-100 active:bg-slate-200 flex items-center justify-center pb-1"
             aria-label="확대"
           >
             +
           </button>
           <button
             @click="zoomOut"
-            class="w-14 h-14 rounded-full bg-white border-2 border-slate-300 shadow-lg text-3xl font-bold text-slate-700 hover:bg-slate-100 active:bg-slate-200"
+            class="w-14 h-14 rounded-full bg-white border-2 border-slate-300 shadow-lg text-3xl font-bold text-slate-700 hover:bg-slate-100 active:bg-slate-200 flex items-center justify-center pb-1"
             aria-label="축소"
           >
             −
