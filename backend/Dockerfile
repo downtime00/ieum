@@ -1,5 +1,5 @@
 # 다층형 Docker 빌드 최적화
-FROM node:18-alpine AS builder
+FROM node:26-alpine AS builder
 
 # 작업 디렉토리 설정
 WORKDIR /app
@@ -7,8 +7,8 @@ WORKDIR /app
 # 패키지 파일 복사 (layer caching 활용)
 COPY package*.json ./
 
-# 의존성 설치 (--legacy-peer-deps 필요 시 주석 해제)
-RUN npm ci --legacy-peer-deps && npm cache clean --force
+# 의존성 설치
+RUN npm ci && npm cache clean --force
 
 # 소스 코드 복사
 COPY . .
@@ -16,23 +16,22 @@ COPY . .
 # TypeScript 컴파일
 RUN npm run build
 
-# 프로덕션 이미지에 최종 빌드 결과만 포함
-FROM node:18-alpine
+# 프로덕션용 의존성만 남기기 (devDependencies 제거)
+RUN npm prune --omit=dev && npm cache clean --force
+
+# 프로덕션 이미지
+FROM node:26-alpine
 
 WORKDIR /app
 
-# package.json 은 개발용이므로 dist/ 만 필요한 의존성 설치
+COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
-# (필요한 경우) COPY --from=builder /app/package*.json ./
 
 # 환경 변수 설정
 ENV NODE_ENV=${NODE_ENV:-production}
 # 샘플 데이터 로드 여부 설정 (개발용)
 ENV SEED_DATA=${SEED_DATA:-false}
-
-# 오픈 파일 핸들러 증가 (Node.js 대용량 처리 시 필요)
-RUN sysctl -w kernel.file-max=204800 && ulimit -n 65536
 
 # 포트 3000 개방
 EXPOSE 3000

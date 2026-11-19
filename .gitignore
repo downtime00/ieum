@@ -41,3 +41,6 @@ coverage/
 .cache/
 .temp/
 tmp/
+
+# symlink to .output/public
+frontend/dist
