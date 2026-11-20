@@ -121,7 +121,11 @@ interface Operator {
   reviewCount?: number;
 }
 
-const orgTypes = ["행복복지센터", "실버타운", "노인회관", "복지관", "요양보호사", "간병인", "강사", "기타"];
+// 기관 유형은 백엔드 DB(operator_org_types)에서 조회 — 실패 시 기본 목록 유지
+const orgTypes = ref([
+  "행복복지센터", "실버타운", "노인회관", "복지관",
+  "요양보호사", "간병인", "강사", "기타",
+]);
 const operators = ref<Operator[]>([]);
 const loading = ref(false);
 const keyword = ref("");
@@ -155,8 +159,20 @@ const fetchOperators = async () => {
   }
 };
 
+const fetchOrgTypes = async () => {
+  try {
+    const res = await fetch(`${config.public.apiBase}/operators/org-types`);
+    if (!res.ok) return;
+    const list = (await res.json()) as Array<{ name: string }>;
+    if (list.length) orgTypes.value = list.map((t) => t.name);
+  } catch {
+    /* 오프라인 등 — 기본 목록 사용 */
+  }
+};
+
 onMounted(async () => {
   fetchOperators();
+  fetchOrgTypes();
   const uid = getUserId();
   if (uid) {
     try {

@@ -426,9 +426,26 @@ const selectCount = (n: number) => {
 };
 
 // 기관·사업자 등록 신청
-const orgTypeGroups = {
+const orgTypeGroups = reactive({
   institutions: ["행복복지센터", "실버타운", "노인회관", "복지관"],
   individuals: ["요양보호사", "간병인", "강사", "기타"],
+});
+
+// 기관 유형은 백엔드 DB(operator_org_types)에서 조회 — 실패 시 기본 목록 유지
+const loadOrgTypes = async () => {
+  try {
+    const res = await fetch(`${apiBase}/operators/org-types`);
+    if (!res.ok) return;
+    const list = (await res.json()) as Array<{ name: string; group: string }>;
+    const inst = list.filter((t) => t.group === "institution").map((t) => t.name);
+    const ind = list.filter((t) => t.group === "individual").map((t) => t.name);
+    if (inst.length || ind.length) {
+      orgTypeGroups.institutions = inst;
+      orgTypeGroups.individuals = ind;
+    }
+  } catch {
+    /* 오프라인 등 — 기본 목록 사용 */
+  }
 };
 const isCareType = computed(() =>
   ["요양보호사", "간병인"].includes(opForm.orgType),
@@ -499,6 +516,7 @@ const submitOperator = async () => {
 };
 
 onMounted(() => {
+  loadOrgTypes();
   // 로그인 상태 확인
   const token = localStorage.getItem("accessToken");
   loggedIn.value = !!token;
