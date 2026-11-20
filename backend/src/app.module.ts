@@ -54,6 +54,7 @@ import { Operator } from './operators/entities/operator.entity';
 import { OperatorProgram } from './operators/entities/operator-program.entity';
 import { ProgramBooking } from './operators/entities/program-booking.entity';
 import { OperatorReview } from './operators/entities/operator-review.entity';
+import { OperatorOrgType } from './operators/entities/operator-org-type.entity';
 import { RedisModule } from './common/redis/redis.module';
 
 @Module({
@@ -105,6 +106,7 @@ import { RedisModule } from './common/redis/redis.module';
         OperatorProgram,
         ProgramBooking,
       OperatorReview,
+        OperatorOrgType,
         AudioPlayer,
       ],
       // 개발 환경에서는 synchronize 사용 (마이그레이션 미비 시 자동 스키마 생성)

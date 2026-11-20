@@ -29,6 +29,12 @@ export class OperatorsController {
     return this.operatorsService.findAll(keyword, type);
   }
 
+  // 기관 유형 마스터 (DB + Redis 캐시) — 공개, 프론트 select 옵션용
+  @Get('operators/org-types')
+  listOrgTypes() {
+    return this.operatorsService.getOrgTypes();
+  }
+
   // 'me'는 ':id'보다 먼저 선언해야 함 (ParseIntPipe 충돌 방지)
   @Get('operators/me/:userId')
   @UseGuards(UserAuthGuard)

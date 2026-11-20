@@ -4,7 +4,24 @@ import { Repository } from 'typeorm';
 import { Operator } from '../entities/operator.entity';
 import { OperatorProgram } from '../entities/operator-program.entity';
 import { OperatorReview } from '../entities/operator-review.entity';
+import { OperatorOrgType } from '../entities/operator-org-type.entity';
+import { RedisService } from '../../common/redis/redis.service';
 import type { CreateOperatorDto, UpdateOperatorDto, CreateProgramDto, UpdateProgramDto } from '../dto/operator.dto';
+
+const ORG_TYPES_CACHE_KEY = 'operators:org_types';
+const ORG_TYPES_CACHE_TTL = 3600; // 1시간
+
+// 테이블이 비어 있을 때(마이그레이션 미적용 환경) 사용하는 기본 시드
+const DEFAULT_ORG_TYPES: Array<{ name: string; group: 'institution' | 'individual'; sortOrder: number }> = [
+  { name: '행복복지센터', group: 'institution', sortOrder: 1 },
+  { name: '실버타운', group: 'institution', sortOrder: 2 },
+  { name: '노인회관', group: 'institution', sortOrder: 3 },
+  { name: '복지관', group: 'institution', sortOrder: 4 },
+  { name: '요양보호사', group: 'individual', sortOrder: 1 },
+  { name: '간병인', group: 'individual', sortOrder: 2 },
+  { name: '강사', group: 'individual', sortOrder: 3 },
+  { name: '기타', group: 'individual', sortOrder: 4 },
+];
 
 @Injectable()
 export class OperatorsService {
@@ -15,13 +32,60 @@ export class OperatorsService {
     private readonly programRepo: Repository<OperatorProgram>,
     @InjectRepository(OperatorReview)
     private readonly reviewRepo: Repository<OperatorReview>,
+    @InjectRepository(OperatorOrgType)
+    private readonly orgTypeRepo: Repository<OperatorOrgType>,
+    private readonly redis: RedisService,
   ) {}
+
+  // ── 기관 유형 (DB + Redis 캐시) ─────────────────────────
+
+  /** 활성 기관 유형 목록 — Redis 캐시 우선, 미스 시 DB 조회 후 캐시 */
+  async getOrgTypes(): Promise<OperatorOrgType[]> {
+    const cached = await this.redis.get(ORG_TYPES_CACHE_KEY);
+    if (cached) {
+      try {
+        return JSON.parse(cached) as OperatorOrgType[];
+      } catch {
+        // 캐시 파손 시 DB로 폴백
+      }
+    }
+    let types = await this.orgTypeRepo.find({
+      where: { isActive: true },
+      order: { group: 'ASC', sortOrder: 'ASC', name: 'ASC' },
+    });
+    if (types.length === 0) {
+      // 마이그레이션 없이 synchronize로 뜬 환경 대비 자동 시드
+      await this.orgTypeRepo.save(
+        DEFAULT_ORG_TYPES.map((t) => this.orgTypeRepo.create(t)),
+      );
+      types = await this.orgTypeRepo.find({
+        where: { isActive: true },
+        order: { group: 'ASC', sortOrder: 'ASC', name: 'ASC' },
+      });
+    }
+    await this.redis.set(ORG_TYPES_CACHE_KEY, JSON.stringify(types), ORG_TYPES_CACHE_TTL);
+    return types;
+  }
+
+  /** 기관 유형 유효성 검증 — 등록/수정 시 DB(캐시) 기준 */
+  private async assertValidOrgType(orgType: string): Promise<void> {
+    const types = await this.getOrgTypes();
+    if (!types.some((t) => t.name === orgType)) {
+      throw new BadRequestException('등록되지 않은 기관 유형입니다');
+    }
+  }
+
+  /** 기관 유형 캐시 무효화 (유형 변경 시 호출) */
+  async invalidateOrgTypeCache(): Promise<void> {
+    await this.redis.del(ORG_TYPES_CACHE_KEY);
+  }
 
   // ── 기관 ──────────────────────────────────────────────
 
   async create(data: CreateOperatorDto): Promise<Operator> {
     const existing = await this.operatorRepo.findOne({ where: { ownerUserId: data.userId } });
     if (existing) throw new BadRequestException('이미 등록된 기관이 있습니다');
+    await this.assertValidOrgType(data.orgType);
     const op = this.operatorRepo.create({
       ownerUserId: data.userId,
       name: data.name,
@@ -99,6 +163,7 @@ export class OperatorsService {
     if (Number(op.ownerUserId) !== ownerUserId) {
       throw new BadRequestException('본인 기관만 수정할 수 있습니다');
     }
+    if (data.orgType !== undefined) await this.assertValidOrgType(data.orgType);
     Object.assign(op, {
       ...(data.name !== undefined && { name: data.name }),
       ...(data.orgType !== undefined && { orgType: data.orgType }),
