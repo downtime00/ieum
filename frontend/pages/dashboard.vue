@@ -614,6 +614,7 @@
 </template>
 
 <script setup lang="ts">
+import { apiFetch } from "~/utils/auth";
 const router = useRouter();
 const { locale, t } = useI18n();
 const { enabled: seniorEnabled, toggle: toggleSenior } = useSeniorMode();
@@ -847,8 +848,7 @@ const searchManualLocation = async () => {
   manualLoading.value = true;
   manualSearched.value = false;
   try {
-    const res = await fetch(
-      `${config.public.apiBase}/contents/geocode?query=${encodeURIComponent(q)}`,
+    const res = await apiFetch(config.public.apiBase, `/contents/geocode?query=${encodeURIComponent(q)}`,
     );
     manualResults.value = res.ok ? await res.json() : [];
   } catch {
@@ -1099,8 +1099,7 @@ const formatDate = (dateString: string) => {
 const loadNotifications = async () => {
   if (!userId.value) return;
   try {
-    const listRes = await fetch(
-      `${config.public.apiBase}/notifications/user/${userId.value}?limit=${notificationLimit.value}`,
+    const listRes = await apiFetch(config.public.apiBase, `/notifications/user/${userId.value}?limit=${notificationLimit.value}`,
     );
     if (listRes.ok) notifications.value = await listRes.json();
   } catch (e) {
@@ -1118,7 +1117,7 @@ const onNotifClick = (n: any) => {
 
 const markRead = async (n: any) => {
   try {
-    await fetch(`${config.public.apiBase}/notifications/${n.id}/read`, {
+    await apiFetch(config.public.apiBase, `/notifications/${n.id}/read`, {
       method: "POST",
     });
     n.isRead = true;
@@ -1129,8 +1128,7 @@ const markRead = async (n: any) => {
 
 const deleteNotif = async (n: any) => {
   try {
-    const res = await fetch(
-      `${config.public.apiBase}/notifications/${n.id}?userId=${userId.value}`,
+    const res = await apiFetch(config.public.apiBase, `/notifications/${n.id}?userId=${userId.value}`,
       { method: "DELETE" },
     );
     if (res.ok) {
@@ -1326,8 +1324,7 @@ const loadWeather = async () => {
 const loadMedData = async () => {
   if (!userId.value) return;
   try {
-    const res = await fetch(
-      `${config.public.apiBase}/medications?userId=${userId.value}`,
+    const res = await apiFetch(config.public.apiBase, `/medications?userId=${userId.value}`,
     );
     if (res.ok) {
       const list = await res.json();
@@ -1340,8 +1337,7 @@ const loadMedData = async () => {
 
 const loadCulturePreview = async () => {
   try {
-    const res = await fetch(
-      `${config.public.apiBase}/contents?page=1&limit=5`,
+    const res = await apiFetch(config.public.apiBase, `/contents?page=1&limit=5`,
     );
     if (res.ok) {
       const data = await res.json();
@@ -1357,8 +1353,7 @@ const loadBoardAlerts = async () => {
   boardAlertItems.value = [];
   if (!userId.value) return;
   try {
-    const famRes = await fetch(
-      `${config.public.apiBase}/board/families?userId=${userId.value}`,
+    const famRes = await apiFetch(config.public.apiBase, `/board/families?userId=${userId.value}`,
     );
     if (!famRes.ok) return;
     const families = await famRes.json();
@@ -1368,8 +1363,7 @@ const loadBoardAlerts = async () => {
     await Promise.all(
       families.slice(0, 5).map(async (fam: any) => {
         try {
-          const res = await fetch(
-            `${config.public.apiBase}/board/posts?familyId=${fam.id}&userId=${userId.value}`,
+          const res = await apiFetch(config.public.apiBase, `/board/posts?familyId=${fam.id}&userId=${userId.value}`,
           );
           if (!res.ok) return;
           const posts = await res.json();
@@ -1403,8 +1397,7 @@ const loadBoardPreview = async () => {
     return;
   }
   try {
-    const famRes = await fetch(
-      `${config.public.apiBase}/board/families?userId=${userId.value}`,
+    const famRes = await apiFetch(config.public.apiBase, `/board/families?userId=${userId.value}`,
     );
     if (!famRes.ok) return;
     const families = await famRes.json();
@@ -1413,8 +1406,7 @@ const loadBoardPreview = async () => {
       boardLoaded.value = true;
       return;
     }
-    const postRes = await fetch(
-      `${config.public.apiBase}/board/posts?familyId=${fam.id}&userId=${userId.value}`,
+    const postRes = await apiFetch(config.public.apiBase, `/board/posts?familyId=${fam.id}&userId=${userId.value}`,
     );
     if (postRes.ok) {
       const posts = await postRes.json();
@@ -1538,8 +1530,7 @@ const activeNotice = ref<DashboardNotice | null>(null);
 
 const loadNotices = async () => {
   try {
-    const res = await fetch(
-      `${config.public.apiBase}/admin/notices?scope=public&limit=3`,
+    const res = await apiFetch(config.public.apiBase, `/admin/notices?scope=public&limit=3`,
     );
     if (res.ok) {
       const data = await res.json();
@@ -1561,8 +1552,7 @@ const formatNoticeDate = (d?: string) =>
 const loadMyOperator = async () => {
   if (!userId.value) return;
   try {
-    const res = await fetch(
-      `${config.public.apiBase}/operators/me/${userId.value}`,
+    const res = await apiFetch(config.public.apiBase, `/operators/me/${userId.value}`,
     );
     if (res.ok) {
       const data = await res.json();
@@ -1572,7 +1562,7 @@ const loadMyOperator = async () => {
     /* 기관 조회 실패 시 일반 메뉴 */
   }
   try {
-    const res = await fetch(`${config.public.apiBase}/users/me/menus`);
+    const res = await apiFetch(config.public.apiBase, `/users/me/menus`);
     if (res.ok) {
       const data = await res.json();
       menuOverride.value = data?.menuKeys ?? null;

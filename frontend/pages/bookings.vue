@@ -249,6 +249,7 @@
 </template>
 
 <script setup lang="ts">
+import { apiFetch } from "~/utils/auth";
 const runtimeConfig = useRuntimeConfig();
 const config = runtimeConfig;
 
@@ -336,9 +337,9 @@ const load = async () => {
   }
   loading.value = true;
   try {
-    const res = await fetch(`${config.public.apiBase}/bookings/my?userId=${uid}`);
+    const res = await apiFetch(config.public.apiBase, `/bookings/my?userId=${uid}`);
     const list: any[] = res.ok ? await res.json() : [];
-    const rres = await fetch(`${config.public.apiBase}/bookings/reviewed?userId=${uid}`);
+    const rres = await apiFetch(config.public.apiBase, `/bookings/reviewed?userId=${uid}`);
     if (rres.ok) {
       const rdata = await rres.json();
       reviewedIds.value = new Set((rdata.bookingIds || []).map(String));
@@ -347,7 +348,7 @@ const load = async () => {
     bookings.value = await Promise.all(
       list.map(async (b) => {
         try {
-          const pres = await fetch(`${config.public.apiBase}/programs/${b.programId}`);
+          const pres = await apiFetch(config.public.apiBase, `/programs/${b.programId}`);
           const p = pres.ok ? await pres.json() : null;
           return { ...b, programTitle: p?.title, eventDate: p?.eventDate, startTime: p?.startTime };
         } catch {
@@ -367,7 +368,7 @@ const act = async (b: Booking, action: string, extra: any = {}) => {
   if (!uid) return;
   acting.value = b.id;
   try {
-    const res = await fetch(`${config.public.apiBase}/bookings/${b.id}/${action}`, {
+    const res = await apiFetch(config.public.apiBase, `/bookings/${b.id}/${action}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId: uid, ...extra }),
@@ -403,7 +404,7 @@ const submitReview = async (b: Booking) => {
   if (!uid || reviewRating.value === 0) return;
   acting.value = b.id;
   try {
-    const res = await fetch(`${config.public.apiBase}/bookings/${b.id}/review`, {
+    const res = await apiFetch(config.public.apiBase, `/bookings/${b.id}/review`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -432,7 +433,7 @@ const openNotice = async (b: Booking) => {
   noticeMembers.value = [];
   noticeMemberIds.value = new Set();
   try {
-    const res = await fetch(`${config.public.apiBase}/board/families?userId=${uid}`);
+    const res = await apiFetch(config.public.apiBase, `/board/families?userId=${uid}`);
     noticeFamilies.value = res.ok ? await res.json() : [];
     if (noticeFamilies.value.length > 0) {
       noticeFamilyId.value = noticeFamilies.value[0].id;
@@ -449,8 +450,7 @@ const loadNoticeMembers = async () => {
   noticeMembers.value = [];
   noticeMemberIds.value = new Set();
   try {
-    const res = await fetch(
-      `${config.public.apiBase}/board/families/${noticeFamilyId.value}/members?userId=${uid}`,
+    const res = await apiFetch(config.public.apiBase, `/board/families/${noticeFamilyId.value}/members?userId=${uid}`,
     );
     const list: any[] = res.ok ? await res.json() : [];
     // 계정 있는 멤버(본인 제외)만 선택 가능
@@ -483,7 +483,7 @@ const submitNotice = async (b: Booking) => {
   try {
     const allTargets = noticeMembers.value.filter((m) => m.hasAccount && !m.isMe);
     const sendAll = noticeMemberIds.value.size === allTargets.length && allTargets.length > 0;
-    const res = await fetch(`${config.public.apiBase}/bookings/${b.id}/notice`, {
+    const res = await apiFetch(config.public.apiBase, `/bookings/${b.id}/notice`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

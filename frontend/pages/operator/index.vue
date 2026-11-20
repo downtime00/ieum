@@ -23,9 +23,9 @@
         <!-- 기관 없음 -->
         <div v-else-if="!operator" class="text-center py-12">
           <p class="text-white/70 mb-4">등록된 기관이 없습니다.</p>
-          <NuxtLink to="/operators/register"
+          <NuxtLink to="/settings"
             class="bg-blue-800 text-white font-semibold py-3 px-8 rounded-xl hover:bg-blue-900 transition">
-            기관 등록하기
+            설정에서 등록 신청하기
           </NuxtLink>
         </div>
 
@@ -251,6 +251,7 @@
 </template>
 
 <script setup lang="ts">
+import { apiFetch } from "~/utils/auth";
 const config = useRuntimeConfig();
 
 const tabs = [
@@ -323,7 +324,7 @@ const getTokenUserId = (): number | null => {
 };
 
 const loadOperator = async () => {
-  const res = await fetch(`${config.public.apiBase}/operators/me/${userId.value}`);
+  const res = await apiFetch(config.public.apiBase, `/operators/me/${userId.value}`);
   operator.value = res.ok ? await res.json() : null;
   if (operator.value) {
     Object.assign(infoForm, {
@@ -342,7 +343,7 @@ const loadOperator = async () => {
 };
 
 const loadHistory = async () => {
-  const res = await fetch(`${config.public.apiBase}/operators/${operator.value.id}/history?userId=${userId.value}`);
+  const res = await apiFetch(config.public.apiBase, `/operators/${operator.value.id}/history?userId=${userId.value}`);
   history.value = res.ok ? await res.json() : [];
 };
 
@@ -354,13 +355,13 @@ const formatDate = (d?: string) => {
 };
 
 const loadPrograms = async () => {
-  const res = await fetch(`${config.public.apiBase}/operators/${operator.value.id}/programs/manage?userId=${userId.value}`);
+  const res = await apiFetch(config.public.apiBase, `/operators/${operator.value.id}/programs/manage?userId=${userId.value}`);
   programs.value = res.ok ? await res.json() : [];
 };
 
 const loadBookings = async () => {
   const params = bookingFilter.value ? `&status=${bookingFilter.value}` : "";
-  const res = await fetch(`${config.public.apiBase}/operators/${operator.value.id}/bookings?userId=${userId.value}${params}`);
+  const res = await apiFetch(config.public.apiBase, `/operators/${operator.value.id}/bookings?userId=${userId.value}${params}`);
   bookings.value = res.ok ? await res.json() : [];
 };
 
@@ -368,7 +369,7 @@ const createProgram = async () => {
   programSaving.value = true;
   programError.value = "";
   try {
-    const res = await fetch(`${config.public.apiBase}/operators/${operator.value.id}/programs`, {
+    const res = await apiFetch(config.public.apiBase, `/operators/${operator.value.id}/programs`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -398,7 +399,7 @@ const createProgram = async () => {
 };
 
 const toggleProgram = async (p: any) => {
-  const res = await fetch(`${config.public.apiBase}/programs/${p.id}`, {
+  const res = await apiFetch(config.public.apiBase, `/programs/${p.id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ userId: userId.value, isActive: !p.isActive }),
@@ -408,7 +409,7 @@ const toggleProgram = async (p: any) => {
 
 const deleteProgram = async (p: any) => {
   if (!confirm(`"${p.title}" 프로그램을 삭제할까요?`)) return;
-  await fetch(`${config.public.apiBase}/programs/${p.id}?userId=${userId.value}`, { method: "DELETE" });
+  await apiFetch(config.public.apiBase, `/programs/${p.id}?userId=${userId.value}`, { method: "DELETE" });
   await loadPrograms();
 };
 
@@ -416,7 +417,7 @@ const act = async (b: any, action: string, extra: any = {}) => {
   acting.value = b.id;
   actionMsg[b.id] = "";
   try {
-    const res = await fetch(`${config.public.apiBase}/bookings/${b.id}/${action}`, {
+    const res = await apiFetch(config.public.apiBase, `/bookings/${b.id}/${action}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId: userId.value, ...extra }),
@@ -451,7 +452,7 @@ const saveInfo = async () => {
   infoSaving.value = true;
   infoMsg.value = "";
   try {
-    const res = await fetch(`${config.public.apiBase}/operators/${operator.value.id}`, {
+    const res = await apiFetch(config.public.apiBase, `/operators/${operator.value.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId: userId.value, ...infoForm }),

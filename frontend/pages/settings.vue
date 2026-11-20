@@ -139,6 +139,172 @@
         </button>
       </section>
 
+      <!-- 기관·사업자 등록 신청 -->
+      <section class="bg-white/10 rounded-2xl p-6 mb-4">
+        <h2 class="font-semibold text-white mb-1">기관·사업자 등록 신청</h2>
+        <p class="text-sm text-white/60 mb-5">
+          행복복지센터·실버타운·요양보호사·간병인 등 기관/개인 사업자를
+          등록하면 프로그램 등록과 예약 관리가 가능합니다. 관리자 승인 후
+          이용할 수 있습니다.
+        </p>
+
+        <!-- 로그인 필요 -->
+        <div v-if="!loggedIn" class="text-center py-4">
+          <button
+            @click="router.push('/')"
+            class="bg-sky-500 text-white font-semibold py-3 px-8 rounded-xl hover:bg-sky-400 transition"
+          >
+            로그인 후 신청하기
+          </button>
+        </div>
+
+        <div v-else-if="opLoading" class="text-white/50 text-sm py-2">
+          확인 중...
+        </div>
+
+        <!-- 승인 대기 -->
+        <div
+          v-else-if="myOperator && myOperator.status === 'PENDING'"
+          class="bg-amber-400/15 border border-amber-400/40 rounded-xl p-4"
+        >
+          <p class="font-bold text-amber-200">⏳ 승인 대기 중</p>
+          <p class="text-sm text-white/70 mt-1">
+            '{{ myOperator.name }}' 등록 신청이 관리자 승인 대기 중입니다.
+            승인되면 프로그램 등록과 예약 관리가 가능합니다.
+          </p>
+          <NuxtLink
+            to="/operator"
+            class="inline-block mt-3 text-sm text-sky-300 underline"
+            >기관 관리 페이지 보기</NuxtLink
+          >
+        </div>
+
+        <!-- 승인 완료 -->
+        <div
+          v-else-if="myOperator && myOperator.status === 'APPROVED'"
+          class="bg-emerald-400/15 border border-emerald-400/40 rounded-xl p-4"
+        >
+          <p class="font-bold text-emerald-200">✅ 등록 완료</p>
+          <p class="text-sm text-white/70 mt-1">
+            '{{ myOperator.name }}'({{ myOperator.orgType }}) — 프로그램 등록과
+            예약 관리가 가능합니다.
+          </p>
+          <NuxtLink
+            to="/operator"
+            class="inline-block mt-3 text-sm text-sky-300 underline"
+            >기관 관리로 이동</NuxtLink
+          >
+        </div>
+
+        <!-- 반려 -->
+        <div
+          v-else-if="myOperator && myOperator.status === 'REJECTED'"
+          class="bg-red-400/15 border border-red-400/40 rounded-xl p-4"
+        >
+          <p class="font-bold text-red-200">❌ 등록 반려됨</p>
+          <p class="text-sm text-white/70 mt-1">
+            '{{ myOperator.name }}' 등록이 반려되었습니다. 자세한 내용은
+            관리자에게 문의해주세요.
+          </p>
+        </div>
+
+        <!-- 신청 폼 (미등록) -->
+        <form
+          v-else
+          @submit.prevent="submitOperator"
+          class="space-y-4"
+        >
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <input
+              v-model="opForm.name"
+              required
+              maxlength="200"
+              placeholder="기관명 또는 이름 *"
+              class="bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-sky-400"
+            />
+            <select
+              v-model="opForm.orgType"
+              required
+              class="bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sky-400"
+            >
+              <option value="" disabled class="ieum-panel">유형 선택 *</option>
+              <option
+                v-for="t in orgTypes"
+                :key="t"
+                :value="t"
+                class="ieum-panel"
+              >
+                {{ t }}
+              </option>
+            </select>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <input
+              v-model="opForm.businessNumber"
+              maxlength="50"
+              :placeholder="isCareType ? '자격증/자격 (선택)' : '사업자등록번호'"
+              class="bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-sky-400"
+            />
+            <input
+              v-model="opForm.phone"
+              maxlength="50"
+              placeholder="대표 연락처"
+              class="bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-sky-400"
+            />
+          </div>
+          <input
+            v-model="opForm.address"
+            maxlength="500"
+            :placeholder="isCareType ? '서비스 지역' : '주소'"
+            class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-sky-400"
+          />
+          <textarea
+            v-model="opForm.description"
+            rows="2"
+            maxlength="2000"
+            :placeholder="isCareType ? '자기소개·경력·서비스 안내' : '기관 소개'"
+            class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-sky-400"
+          ></textarea>
+
+          <div class="border-t border-white/10 pt-3">
+            <p class="text-xs text-white/50 mb-2">
+              정산 계좌 (선택) — 예약 대금에서 수수료를 제외한 금액이 입금됩니다
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <input
+                v-model="opForm.bankName"
+                maxlength="50"
+                placeholder="은행명"
+                class="bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-sky-400"
+              />
+              <input
+                v-model="opForm.bankAccount"
+                maxlength="100"
+                placeholder="계좌번호"
+                class="bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-sky-400"
+              />
+              <input
+                v-model="opForm.accountHolder"
+                maxlength="100"
+                placeholder="예금주"
+                class="bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-sky-400"
+              />
+            </div>
+          </div>
+
+          <p v-if="opError" class="text-sm text-red-300">{{ opError }}</p>
+          <p v-if="opSuccess" class="text-sm text-emerald-300">{{ opSuccess }}</p>
+
+          <button
+            type="submit"
+            :disabled="opLoading"
+            class="w-full bg-sky-500 text-white font-bold py-3.5 rounded-xl hover:bg-sky-400 transition disabled:opacity-40"
+          >
+            {{ opLoading ? "신청 중..." : "등록 신청하기" }}
+          </button>
+        </form>
+      </section>
+
       <!-- 계정 / 로그아웃 -->
       <section class="bg-white/10 rounded-2xl p-6 mb-4">
         <h2 class="font-semibold text-white mb-1">
@@ -180,8 +346,11 @@
 </template>
 
 <script setup lang="ts">
+import { apiFetch } from "~/utils/auth";
+
 const router = useRouter();
 const runtimeConfig = useRuntimeConfig();
+const apiBase = runtimeConfig.public.apiBase as string;
 const STORAGE_KEY = "notificationDisplayCount";
 const VIBRATION_KEY = "ieum_vibration";
 const DEFAULT_COUNT = 2;
@@ -244,15 +413,96 @@ const selectCount = (n: number) => {
   localStorage.setItem(STORAGE_KEY, String(n));
 };
 
+// 기관·사업자 등록 신청
+const orgTypes = [
+  "행복복지센터",
+  "실버타운",
+  "노인회관",
+  "복지관",
+  "요양보호사",
+  "간병인",
+  "기타",
+];
+const isCareType = computed(() =>
+  ["요양보호사", "간병인"].includes(opForm.orgType),
+);
+const opForm = reactive({
+  name: "",
+  orgType: "",
+  businessNumber: "",
+  phone: "",
+  address: "",
+  description: "",
+  bankName: "",
+  bankAccount: "",
+  accountHolder: "",
+});
+const myOperator = ref<any>(null);
+const opLoading = ref(false);
+const opError = ref("");
+const opSuccess = ref("");
+const userId = ref<number | null>(null);
+
+const loadMyOperator = async () => {
+  if (!userId.value) return;
+  try {
+    const res = await apiFetch(apiBase, `/operators/me/${userId.value}`);
+    if (res.ok) myOperator.value = await res.json();
+  } catch {
+    /* 조회 실패 시 신청 폼 표시 */
+  }
+};
+
+const submitOperator = async () => {
+  if (!userId.value) return;
+  opLoading.value = true;
+  opError.value = "";
+  opSuccess.value = "";
+  try {
+    const res = await apiFetch(apiBase, "/operators", {
+      method: "POST",
+      body: JSON.stringify({
+        userId: userId.value,
+        name: opForm.name,
+        orgType: opForm.orgType,
+        businessNumber: opForm.businessNumber || undefined,
+        phone: opForm.phone || undefined,
+        address: opForm.address || undefined,
+        description: opForm.description || undefined,
+        bankName: opForm.bankName || undefined,
+        bankAccount: opForm.bankAccount || undefined,
+        accountHolder: opForm.accountHolder || undefined,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(
+        Array.isArray(data.message)
+          ? data.message[0]
+          : data.message || "신청에 실패했습니다.",
+      );
+    }
+    opSuccess.value = "등록 신청이 완료되었습니다. 관리자 승인 후 이용할 수 있습니다.";
+    await loadMyOperator();
+  } catch (e: any) {
+    opError.value = e?.message || "신청에 실패했습니다.";
+  } finally {
+    opLoading.value = false;
+  }
+};
+
 onMounted(() => {
   // 로그인 상태 확인
   const token = localStorage.getItem("accessToken");
   loggedIn.value = !!token;
   if (token) {
     try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      userId.value = payload.sub ? Number(payload.sub) : null;
       const user = JSON.parse(localStorage.getItem("user") || "null");
       userEmail.value = user?.email || user?.name || "";
     } catch {}
+    loadMyOperator();
   }
 
   // 설정은 로컬 저장소 기반이라 로그인 없이도 사용 가능

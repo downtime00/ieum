@@ -124,6 +124,7 @@
 </template>
 
 <script setup lang="ts">
+import { apiFetch } from "~/utils/auth";
 const config = useRuntimeConfig();
 const route = useRoute();
 const router = useRouter();
@@ -163,13 +164,12 @@ const formatDate = (d?: string) => {
 
 onMounted(async () => {
   try {
-    const res = await fetch(`${config.public.apiBase}/operators/${route.params.id}`);
+    const res = await apiFetch(config.public.apiBase, `/operators/${route.params.id}`);
     operator.value = res.ok ? await res.json() : null;
-    const pres = await fetch(
-      `${config.public.apiBase}/operators/${route.params.id}/programs`,
+    const pres = await apiFetch(config.public.apiBase, `/operators/${route.params.id}/programs`,
     );
     programs.value = pres.ok ? await pres.json() : [];
-    const rres = await fetch(`${config.public.apiBase}/operators/${route.params.id}/reviews`);
+    const rres = await apiFetch(config.public.apiBase, `/operators/${route.params.id}/reviews`);
     if (rres.ok) {
       const rdata = await rres.json();
       reviews.value = rdata || reviews.value;

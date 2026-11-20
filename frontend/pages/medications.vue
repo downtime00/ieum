@@ -452,6 +452,7 @@
 </template>
 
 <script setup lang="ts">
+import { apiFetch } from "~/utils/auth";
 const router = useRouter();
 const config = useRuntimeConfig();
 const { t } = useI18n();
@@ -523,8 +524,7 @@ const loadDoses = async () => {
   if (!userId.value || !doseDate.value) return;
   doseLoading.value = true;
   try {
-    const res = await fetch(
-      `${config.public.apiBase}/medications/doses?userId=${userId.value}&date=${doseDate.value}`,
+    const res = await apiFetch(config.public.apiBase, `/medications/doses?userId=${userId.value}&date=${doseDate.value}`,
     );
     if (res.ok) doses.value = await res.json();
   } catch (e) {
@@ -639,8 +639,7 @@ const load = async () => {
   if (!userId.value) return;
   loading.value = true;
   try {
-    const res = await fetch(
-      `${config.public.apiBase}/medications?userId=${userId.value}`,
+    const res = await apiFetch(config.public.apiBase, `/medications?userId=${userId.value}`,
     );
     if (res.ok) items.value = await res.json();
   } catch (e) {
@@ -684,8 +683,7 @@ const postMedToFamilyBoard = async (
   reminderTimes: string,
 ) => {
   try {
-    const famRes = await fetch(
-      `${config.public.apiBase}/board/families?userId=${userId.value}`,
+    const famRes = await apiFetch(config.public.apiBase, `/board/families?userId=${userId.value}`,
     );
     if (!famRes.ok) return;
     const families = await famRes.json();
@@ -709,7 +707,7 @@ const postMedToFamilyBoard = async (
     ]
       .filter(Boolean)
       .join("\n");
-    await fetch(`${config.public.apiBase}/board/posts`, {
+    await apiFetch(config.public.apiBase, `/board/posts`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -779,8 +777,7 @@ const save = async () => {
 const remove = async (m: Medication) => {
   if (!confirm(t("medications.deleteConfirm", { name: m.name }))) return;
   try {
-    await fetch(
-      `${config.public.apiBase}/medications/${m.id}?userId=${userId.value}`,
+    await apiFetch(config.public.apiBase, `/medications/${m.id}?userId=${userId.value}`,
       { method: "DELETE" },
     );
     await load();

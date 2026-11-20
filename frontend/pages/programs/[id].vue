@@ -152,6 +152,7 @@
 </template>
 
 <script setup lang="ts">
+import { apiFetch } from "~/utils/auth";
 import { loadNaverMaps } from "~/utils/naver-maps";
 
 const config = useRuntimeConfig();
@@ -226,8 +227,7 @@ const submit = async () => {
   error.value = "";
   success.value = "";
   try {
-    const res = await fetch(
-      `${config.public.apiBase}/programs/${route.params.id}/bookings`,
+    const res = await apiFetch(config.public.apiBase, `/programs/${route.params.id}/bookings`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -258,8 +258,7 @@ const searchDesiredLocation = async () => {
   geoLoading.value = true;
   geoResults.value = [];
   try {
-    const res = await fetch(
-      `${config.public.apiBase}/contents/geocode?query=${encodeURIComponent(q)}`,
+    const res = await apiFetch(config.public.apiBase, `/contents/geocode?query=${encodeURIComponent(q)}`,
     );
     if (res.ok) geoResults.value = await res.json();
   } finally {
@@ -335,16 +334,16 @@ const toggleLocationMap = async () => {
 
 onMounted(async () => {
   try {
-    const res = await fetch(`${config.public.apiBase}/programs/${route.params.id}`);
+    const res = await apiFetch(config.public.apiBase, `/programs/${route.params.id}`);
     program.value = res.ok ? await res.json() : null;
     if (program.value) {
-      const ores = await fetch(`${config.public.apiBase}/operators/${program.value.operatorId}`);
+      const ores = await apiFetch(config.public.apiBase, `/operators/${program.value.operatorId}`);
       const op = ores.ok ? await ores.json() : null;
       operatorName.value = op?.name || "";
       // 내가 그룹장(HEAD)인 가족 목록 — 그룹 예약 옵션
       const uid = getUserId();
       if (uid) {
-        const fres = await fetch(`${config.public.apiBase}/board/families?userId=${uid}`);
+        const fres = await apiFetch(config.public.apiBase, `/board/families?userId=${uid}`);
         const fams: any[] = fres.ok ? await fres.json() : [];
         headFamilies.value = fams.filter((f) => f.role === "HEAD");
         if (isCareService.value && headFamilies.value.length > 0) {

@@ -20,10 +20,11 @@
               기관 관리
             </NuxtLink>
             <NuxtLink
-              to="/operators/register"
-              class="bg-blue-800 text-white font-semibold py-2.5 px-5 rounded-xl hover:bg-blue-900 transition text-sm"
+              v-if="!isOperator"
+              to="/settings"
+              class="bg-white/10 text-white/80 border border-white/25 font-semibold py-2.5 px-5 rounded-xl hover:bg-white/20 transition text-sm"
             >
-              기관 등록
+              등록 신청
             </NuxtLink>
           </div>
         </div>
@@ -106,6 +107,7 @@
 </template>
 
 <script setup lang="ts">
+import { apiFetch } from "~/utils/auth";
 const config = useRuntimeConfig();
 
 interface Operator {
@@ -143,8 +145,7 @@ const fetchOperators = async () => {
     const params = new URLSearchParams();
     if (keyword.value.trim()) params.set("keyword", keyword.value.trim());
     if (orgType.value) params.set("type", orgType.value);
-    const res = await fetch(
-      `${config.public.apiBase}/operators?${params.toString()}`,
+    const res = await apiFetch(config.public.apiBase, `/operators?${params.toString()}`,
     );
     operators.value = res.ok ? await res.json() : [];
   } catch {
@@ -159,8 +160,7 @@ onMounted(async () => {
   const uid = getUserId();
   if (uid) {
     try {
-      const res = await fetch(
-        `${config.public.apiBase}/operators/me/${uid}`,
+      const res = await apiFetch(config.public.apiBase, `/operators/me/${uid}`,
       );
       isOperator.value = res.ok && !!(await res.json());
     } catch {}

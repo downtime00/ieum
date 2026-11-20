@@ -271,6 +271,23 @@
             </div>
           </NuxtLink>
           <NuxtLink
+            to="/admin/operators"
+            class="bg-white rounded-2xl border border-slate-200/70 shadow-sm p-6 hover:border-blue-400 hover:shadow-md transition group"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="font-semibold text-slate-800">기관·사업자 승인</h3>
+                <p class="text-sm text-slate-500 mt-0.5">
+                  기관/요양보호사 등록 신청 승인·반려
+                </p>
+              </div>
+              <span
+                class="text-slate-400 group-hover:text-blue-700 text-xl transition"
+                >→</span
+              >
+            </div>
+          </NuxtLink>
+          <NuxtLink
             to="/admin/notices"
             class="bg-white rounded-2xl border border-slate-200/70 shadow-sm p-6 hover:border-blue-400 hover:shadow-md transition group"
           >
