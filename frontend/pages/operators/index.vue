@@ -121,7 +121,7 @@ interface Operator {
   reviewCount?: number;
 }
 
-const orgTypes = ["행복복지센터", "실버타운", "노인회관", "복지관", "요양보호사", "간병인", "기타"];
+const orgTypes = ["행복복지센터", "실버타운", "노인회관", "복지관", "요양보호사", "간병인", "강사", "기타"];
 const operators = ref<Operator[]>([]);
 const loading = ref(false);
 const keyword = ref("");

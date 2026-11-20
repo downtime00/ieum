@@ -143,9 +143,9 @@
       <section class="bg-white/10 rounded-2xl p-6 mb-4">
         <h2 class="font-semibold text-white mb-1">기관·사업자 등록 신청</h2>
         <p class="text-sm text-white/60 mb-5">
-          행복복지센터·실버타운·요양보호사·간병인 등 기관/개인 사업자를
-          등록하면 프로그램 등록과 예약 관리가 가능합니다. 관리자 승인 후
-          이용할 수 있습니다.
+          행복복지센터·실버타운·요양보호사·간병인·강사 등 기관/개인
+          사업자를 등록하면 프로그램 등록과 예약 관리가 가능합니다.
+          관리자 승인 후 이용할 수 있습니다.
         </p>
 
         <!-- 로그인 필요 -->
@@ -228,14 +228,26 @@
               class="bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sky-400"
             >
               <option value="" disabled class="ieum-panel">유형 선택 *</option>
-              <option
-                v-for="t in orgTypes"
-                :key="t"
-                :value="t"
-                class="ieum-panel"
-              >
-                {{ t }}
-              </option>
+              <optgroup label="기관" class="ieum-panel">
+                <option
+                  v-for="t in orgTypeGroups.institutions"
+                  :key="t"
+                  :value="t"
+                  class="ieum-panel"
+                >
+                  {{ t }}
+                </option>
+              </optgroup>
+              <optgroup label="개인" class="ieum-panel">
+                <option
+                  v-for="t in orgTypeGroups.individuals"
+                  :key="t"
+                  :value="t"
+                  class="ieum-panel"
+                >
+                  {{ t }}
+                </option>
+              </optgroup>
             </select>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -414,15 +426,10 @@ const selectCount = (n: number) => {
 };
 
 // 기관·사업자 등록 신청
-const orgTypes = [
-  "행복복지센터",
-  "실버타운",
-  "노인회관",
-  "복지관",
-  "요양보호사",
-  "간병인",
-  "기타",
-];
+const orgTypeGroups = {
+  institutions: ["행복복지센터", "실버타운", "노인회관", "복지관"],
+  individuals: ["요양보호사", "간병인", "강사", "기타"],
+};
 const isCareType = computed(() =>
   ["요양보호사", "간병인"].includes(opForm.orgType),
 );
