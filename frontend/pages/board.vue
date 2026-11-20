@@ -274,7 +274,7 @@
               <div class="flex items-center gap-2 mb-1">
                 <span
                   v-if="p.isNotice"
-                  class="text-xs font-bold bg-red-400/30 text-red-200 px-2 py-0.5 rounded-full"
+                  class="text-xs font-bold bg-red-500 text-white px-2.5 py-1 rounded-full"
                   >{{ $t("board.noticeBadge") }}</span
                 >
                 <span class="text-xs font-semibold bg-white/15 text-white/70 px-2 py-0.5 rounded-full">
@@ -330,7 +330,7 @@
               <div class="flex items-center gap-2 mb-1">
                 <span
                   v-if="p.isNotice"
-                  class="text-xs font-bold bg-red-400/30 text-red-200 px-2 py-0.5 rounded-full"
+                  class="text-xs font-bold bg-red-500 text-white px-2.5 py-1 rounded-full"
                   >{{ $t("board.noticeBadge") }}</span
                 >
                 <h3 class="font-semibold text-white">
@@ -370,7 +370,7 @@
           <div>
             <span
               v-if="selectedPost.isNotice"
-              class="text-xs font-bold bg-red-400/30 text-red-200 px-2 py-0.5 rounded-full"
+              class="text-xs font-bold bg-red-500 text-white px-2.5 py-1 rounded-full"
               >{{ $t("board.noticeBadge") }}</span
             >
             <h2 class="text-xl font-bold text-slate-900 mt-1">
