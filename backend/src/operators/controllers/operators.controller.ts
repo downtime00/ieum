@@ -36,6 +36,13 @@ export class OperatorsController {
     return this.operatorsService.findByOwner(userId);
   }
 
+  // 관리자용: 전체 기관 목록 (승인 대기 포함) — ':id'보다 먼저 선언
+  @Get('operators/manage')
+  @UseGuards(AdminAuthGuard)
+  listOperatorsForAdmin(@Query('status') status?: string) {
+    return this.operatorsService.findAllForAdmin(status);
+  }
+
   @Get('operators/:id')
   getOperator(@Param('id', ParseIntPipe) id: number) {
     return this.operatorsService.findOne(id);

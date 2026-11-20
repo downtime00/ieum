@@ -72,6 +72,18 @@ export class OperatorsService {
     });
   }
 
+  /** 관리자용 전체 기관 목록 — status 필터 optional (PENDING/APPROVED/REJECTED) */
+  async findAllForAdmin(status?: string): Promise<Operator[]> {
+    const qb = this.operatorRepo
+      .createQueryBuilder('o')
+      .orderBy('o.created_at', 'DESC')
+      .take(300);
+    if (status && ['PENDING', 'APPROVED', 'REJECTED'].includes(status)) {
+      qb.where('o.status = :status', { status });
+    }
+    return qb.getMany();
+  }
+
   async findOne(id: number): Promise<Operator> {
     const op = await this.operatorRepo.findOne({ where: { id: String(id) } });
     if (!op) throw new NotFoundException('기관을 찾을 수 없습니다');
