@@ -54,15 +54,24 @@ export class OperatorsService {
         (a, b) =>
           (a.group === b.group ? a.sortOrder - b.sortOrder : a.group === 'institution' ? -1 : 1),
       );
-    let types = sortTypes(
-      await this.orgTypeRepo.find({ where: { isActive: true } }),
+    const fallback = sortTypes(
+      DEFAULT_ORG_TYPES.map((t, i) =>
+        this.orgTypeRepo.create({ ...t, id: String(i + 1) }),
+      ),
     );
-    if (types.length === 0) {
-      // 마이그레이션 없이 synchronize로 뜬 환경 대비 자동 시드
-      await this.orgTypeRepo.save(
-        DEFAULT_ORG_TYPES.map((t) => this.orgTypeRepo.create(t)),
-      );
+    let types: OperatorOrgType[];
+    try {
       types = sortTypes(await this.orgTypeRepo.find({ where: { isActive: true } }));
+      if (types.length === 0) {
+        // 테이블은 있지만 비어 있는 경우(마이그레이션 시드 누락 등) 자동 시드
+        await this.orgTypeRepo.save(
+          DEFAULT_ORG_TYPES.map((t) => this.orgTypeRepo.create(t)),
+        );
+        types = sortTypes(await this.orgTypeRepo.find({ where: { isActive: true } }));
+      }
+    } catch {
+      // 테이블 자체가 없는 환경(마이그레이션 미적용) — 기본값으로 폴백
+      types = fallback;
     }
     await this.redis.set(ORG_TYPES_CACHE_KEY, JSON.stringify(types), ORG_TYPES_CACHE_TTL);
     return types;
