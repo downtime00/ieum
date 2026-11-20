@@ -5,6 +5,7 @@ import { OperatorProgram } from './entities/operator-program.entity';
 import { ProgramBooking } from './entities/program-booking.entity';
 import { OperatorReview } from './entities/operator-review.entity';
 import { OperatorOrgType } from './entities/operator-org-type.entity';
+import { OperatorProgramCategory } from './entities/operator-program-category.entity';
 import { FamilyMember } from '../family/entities/family-member.entity';
 import { User } from '../users/entities/user.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
@@ -15,7 +16,7 @@ import { UserAuthGuard, AdminAuthGuard } from './guards/user-auth.guard';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Operator, OperatorProgram, ProgramBooking, OperatorReview, OperatorOrgType, FamilyMember, User]),
+    TypeOrmModule.forFeature([Operator, OperatorProgram, ProgramBooking, OperatorReview, OperatorOrgType, OperatorProgramCategory, FamilyMember, User]),
     NotificationsModule,
   ],
   controllers: [OperatorsController],

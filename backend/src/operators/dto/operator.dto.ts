@@ -12,7 +12,15 @@ export type CreateOrgTypeDto = z.infer<typeof createOrgTypeSchema>;
 export const updateOrgTypeSchema = createOrgTypeSchema.partial();
 export type UpdateOrgTypeDto = z.infer<typeof updateOrgTypeSchema>;
 
-export const PROGRAM_CATEGORIES = ['공연', '강의', '체험', '요양·간병', '방문서비스', '기타'] as const;
+// 유효값은 operator_program_categories 테이블(DB)에서 관리 — 서비스 레이어에서 검증
+export const createProgramCategorySchema = z.object({
+  name: z.string().min(1, '분류명이 필요합니다').max(50),
+  sortOrder: z.number().int().min(0).max(999).optional(),
+  isActive: z.boolean().optional(),
+});
+export type CreateProgramCategoryDto = z.infer<typeof createProgramCategorySchema>;
+export const updateProgramCategorySchema = createProgramCategorySchema.partial();
+export type UpdateProgramCategoryDto = z.infer<typeof updateProgramCategorySchema>;
 
 export const createOperatorSchema = z.object({
   userId: z.number().int().positive(),
@@ -40,7 +48,7 @@ export const createProgramSchema = z.object({
   userId: z.number().int().positive(),
   title: z.string().min(1, '제목이 필요합니다').max(200),
   description: z.string().max(5000).optional(),
-  category: z.enum(PROGRAM_CATEGORIES).default('기타'),
+  category: z.string().min(1).max(50).default('기타'),
   eventDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '날짜 형식은 YYYY-MM-DD 입니다'),
   startTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
   durationMin: z.number().int().positive().max(1440).optional(),

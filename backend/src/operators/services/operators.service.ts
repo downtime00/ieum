@@ -5,11 +5,14 @@ import { Operator } from '../entities/operator.entity';
 import { OperatorProgram } from '../entities/operator-program.entity';
 import { OperatorReview } from '../entities/operator-review.entity';
 import { OperatorOrgType } from '../entities/operator-org-type.entity';
+import { OperatorProgramCategory } from '../entities/operator-program-category.entity';
 import { RedisService } from '../../common/redis/redis.service';
 import type { CreateOperatorDto, UpdateOperatorDto, CreateProgramDto, UpdateProgramDto } from '../dto/operator.dto';
 
 const ORG_TYPES_CACHE_KEY = 'operators:org_types';
 const ORG_TYPES_CACHE_TTL = 3600; // 1시간
+const PROGRAM_CATEGORIES_CACHE_KEY = 'operators:program_categories';
+const PROGRAM_CATEGORIES_CACHE_TTL = 3600;
 
 // 테이블이 비어 있을 때(마이그레이션 미적용 환경) 사용하는 기본 시드
 const DEFAULT_ORG_TYPES: Array<{ name: string; group: 'institution' | 'individual'; sortOrder: number }> = [
@@ -23,6 +26,9 @@ const DEFAULT_ORG_TYPES: Array<{ name: string; group: 'institution' | 'individua
   { name: '기타', group: 'individual', sortOrder: 4 },
 ];
 
+// 프로그램 분류 기본값 (테이블 시드/폴백 공용)
+const DEFAULT_PROGRAM_CATEGORIES = ['공연', '강의', '체험', '요양·간병', '방문서비스', '기타'];
+
 @Injectable()
 export class OperatorsService {
   constructor(
@@ -34,6 +40,8 @@ export class OperatorsService {
     private readonly reviewRepo: Repository<OperatorReview>,
     @InjectRepository(OperatorOrgType)
     private readonly orgTypeRepo: Repository<OperatorOrgType>,
+    @InjectRepository(OperatorProgramCategory)
+    private readonly programCategoryRepo: Repository<OperatorProgramCategory>,
     private readonly redis: RedisService,
   ) {}
 
@@ -98,6 +106,91 @@ export class OperatorsService {
         (a.group === b.group ? a.sortOrder - b.sortOrder : a.group === 'institution' ? -1 : 1) ||
         a.name.localeCompare(b.name, 'ko'),
     );
+  }
+
+  // ── 프로그램 분류 (DB + Redis 캐시) ─────────────────────
+
+  async getProgramCategories(): Promise<OperatorProgramCategory[]> {
+    const cached = await this.redis.get(PROGRAM_CATEGORIES_CACHE_KEY);
+    if (cached) {
+      try {
+        return JSON.parse(cached) as OperatorProgramCategory[];
+      } catch {
+        // 캐시 파손 시 DB로 폴백
+      }
+    }
+    const fallback = DEFAULT_PROGRAM_CATEGORIES.map((name, i) =>
+      this.programCategoryRepo.create({ name, sortOrder: i + 1, id: String(i + 1) }),
+    );
+    let types: OperatorProgramCategory[];
+    try {
+      types = await this.programCategoryRepo.find({ where: { isActive: true } });
+      types.sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'ko'));
+      if (types.length === 0) {
+        await this.programCategoryRepo.save(
+          DEFAULT_PROGRAM_CATEGORIES.map((name, i) =>
+            this.programCategoryRepo.create({ name, sortOrder: i + 1 }),
+          ),
+        );
+        types = await this.programCategoryRepo.find({ where: { isActive: true } });
+        types.sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'ko'));
+      }
+    } catch {
+      types = fallback;
+    }
+    await this.redis.set(PROGRAM_CATEGORIES_CACHE_KEY, JSON.stringify(types), PROGRAM_CATEGORIES_CACHE_TTL);
+    return types;
+  }
+
+  private async assertValidProgramCategory(category: string): Promise<void> {
+    const cats = await this.getProgramCategories();
+    if (!cats.some((c) => c.name === category)) {
+      throw new BadRequestException('등록되지 않은 프로그램 분류입니다');
+    }
+  }
+
+  async invalidateProgramCategoryCache(): Promise<void> {
+    await this.redis.del(PROGRAM_CATEGORIES_CACHE_KEY);
+  }
+
+  async listAllProgramCategories(): Promise<OperatorProgramCategory[]> {
+    const cats = await this.programCategoryRepo.find();
+    return cats.sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'ko'));
+  }
+
+  async createProgramCategory(data: { name: string; sortOrder?: number; isActive?: boolean }): Promise<OperatorProgramCategory> {
+    const name = data.name.trim();
+    const exists = await this.programCategoryRepo.findOne({ where: { name } });
+    if (exists) throw new BadRequestException('이미 등록된 분류입니다');
+    const c = await this.programCategoryRepo.save(
+      this.programCategoryRepo.create({ name, sortOrder: data.sortOrder ?? 99, isActive: data.isActive ?? true }),
+    );
+    await this.invalidateProgramCategoryCache();
+    return c;
+  }
+
+  async updateProgramCategory(id: number, data: { name?: string; sortOrder?: number; isActive?: boolean }): Promise<OperatorProgramCategory> {
+    const c = await this.programCategoryRepo.findOne({ where: { id: String(id) } });
+    if (!c) throw new NotFoundException('프로그램 분류를 찾을 수 없습니다');
+    if (data.name !== undefined) {
+      const name = data.name.trim();
+      const dup = await this.programCategoryRepo.findOne({ where: { name } });
+      if (dup && dup.id !== c.id) throw new BadRequestException('이미 등록된 분류입니다');
+      c.name = name;
+    }
+    if (data.sortOrder !== undefined) c.sortOrder = data.sortOrder;
+    if (data.isActive !== undefined) c.isActive = data.isActive;
+    const saved = await this.programCategoryRepo.save(c);
+    await this.invalidateProgramCategoryCache();
+    return saved;
+  }
+
+  async deactivateProgramCategory(id: number): Promise<void> {
+    const c = await this.programCategoryRepo.findOne({ where: { id: String(id) } });
+    if (!c) throw new NotFoundException('프로그램 분류를 찾을 수 없습니다');
+    c.isActive = false;
+    await this.programCategoryRepo.save(c);
+    await this.invalidateProgramCategoryCache();
   }
 
   /** 관리자: 기관 유형 추가 */
@@ -264,6 +357,7 @@ export class OperatorsService {
     if (op.status !== 'APPROVED') {
       throw new BadRequestException('승인된 기관만 프로그램을 등록할 수 있습니다');
     }
+    await this.assertValidProgramCategory(data.category);
     const program = this.programRepo.create({
       operatorId,
       title: data.title,
@@ -301,6 +395,7 @@ export class OperatorsService {
   async updateProgram(programId: number, ownerUserId: number, data: UpdateProgramDto): Promise<OperatorProgram> {
     const p = await this.findProgram(programId);
     await this.findOwned(Number(p.operatorId), ownerUserId);
+    if (data.category !== undefined) await this.assertValidProgramCategory(data.category);
     Object.assign(p, {
       ...(data.title !== undefined && { title: data.title }),
       ...(data.description !== undefined && { description: data.description ?? null }),

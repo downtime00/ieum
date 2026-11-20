@@ -7,11 +7,13 @@ import {
   createProgramSchema, updateProgramSchema, createBookingSchema, bookingActionSchema,
   createReviewSchema, sendBookingNoticeSchema,
   createOrgTypeSchema, updateOrgTypeSchema,
+  createProgramCategorySchema, updateProgramCategorySchema,
 } from '../dto/operator.dto';
 import type {
   CreateOperatorDto, UpdateOperatorDto, OperatorStatusDto,
   CreateProgramDto, UpdateProgramDto, CreateBookingDto, BookingActionDto, CreateReviewDto,
   SendBookingNoticeDto, CreateOrgTypeDto, UpdateOrgTypeDto,
+  CreateProgramCategoryDto, UpdateProgramCategoryDto,
 } from '../dto/operator.dto';
 import { UserAuthGuard, AdminAuthGuard } from '../guards/user-auth.guard';
 
@@ -62,6 +64,39 @@ export class OperatorsController {
   @UseGuards(AdminAuthGuard)
   deactivateOrgType(@Param('id', ParseIntPipe) id: number) {
     return this.operatorsService.deactivateOrgType(id);
+  }
+
+  // 프로그램 분류 (DB + Redis 캐시) — 공개, 프로그램 등록 폼 옵션용
+  @Get('operators/program-categories')
+  listProgramCategories() {
+    return this.operatorsService.getProgramCategories();
+  }
+
+  // 프로그램 분류 전체 목록 (관리자 — 비활성 포함)
+  @Get('operators/program-categories/all')
+  @UseGuards(AdminAuthGuard)
+  listAllProgramCategories() {
+    return this.operatorsService.listAllProgramCategories();
+  }
+
+  @Post('operators/program-categories')
+  @UseGuards(AdminAuthGuard)
+  @UsePipes(new ZodValidationPipe(createProgramCategorySchema))
+  createProgramCategory(@Body() data: CreateProgramCategoryDto) {
+    return this.operatorsService.createProgramCategory(data);
+  }
+
+  @Put('operators/program-categories/:id')
+  @UseGuards(AdminAuthGuard)
+  @UsePipes(new ZodValidationPipe(updateProgramCategorySchema))
+  updateProgramCategory(@Param('id', ParseIntPipe) id: number, @Body() data: UpdateProgramCategoryDto) {
+    return this.operatorsService.updateProgramCategory(id, data);
+  }
+
+  @Delete('operators/program-categories/:id')
+  @UseGuards(AdminAuthGuard)
+  deactivateProgramCategory(@Param('id', ParseIntPipe) id: number) {
+    return this.operatorsService.deactivateProgramCategory(id);
   }
 
   // 'me'는 ':id'보다 먼저 선언해야 함 (ParseIntPipe 충돌 방지)
