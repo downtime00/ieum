@@ -170,7 +170,9 @@ onMounted(async () => {
     try {
       const res = await apiFetch(config.public.apiBase, `/operators/me/${uid}`,
       );
-      isOperator.value = res.ok && !!(await res.json());
+      // 승인된 기관/개인(기관·강사 등)만 '기관 관리' 버튼 표시
+      const op = res.ok ? await res.json() : null;
+      isOperator.value = op?.status === "APPROVED";
     } catch {}
   }
 });
