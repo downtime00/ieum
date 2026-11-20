@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const ORG_TYPES = [
   '행복복지센터', '실버타운', '노인회관', '복지관',
-  '요양보호사', '간병인', '기타',
+  '요양보호사', '간병인', '강사', '기타',
 ] as const;
 export const PROGRAM_CATEGORIES = ['공연', '강의', '체험', '요양·간병', '방문서비스', '기타'] as const;
 

@@ -12,7 +12,7 @@ export class Operator {
   @Column({ type: 'varchar', length: 200 })
   name: string;
 
-  // 기관 유형: 행복복지센터 / 실버타운 / 노인회관 / 복지관 / 기타
+  // 기관 유형: 행복복지센터 / 실버타운 / 노인회관 / 복지관 / 요양보호사 / 간병인 / 강사 / 기타
   @Column({ name: 'org_type', type: 'varchar', length: 50 })
   orgType: string;
 
