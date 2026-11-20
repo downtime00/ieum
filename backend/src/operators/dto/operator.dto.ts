@@ -1,6 +1,17 @@
 import { z } from 'zod';
 
 // 유효값은 operator_org_types 테이블(DB)에서 관리 — 서비스 레이어에서 검증
+export const ORG_TYPE_GROUPS = ['institution', 'individual'] as const;
+export const createOrgTypeSchema = z.object({
+  name: z.string().min(1, '유형명이 필요합니다').max(50),
+  group: z.enum(ORG_TYPE_GROUPS),
+  sortOrder: z.number().int().min(0).max(999).optional(),
+  isActive: z.boolean().optional(),
+});
+export type CreateOrgTypeDto = z.infer<typeof createOrgTypeSchema>;
+export const updateOrgTypeSchema = createOrgTypeSchema.partial();
+export type UpdateOrgTypeDto = z.infer<typeof updateOrgTypeSchema>;
+
 export const PROGRAM_CATEGORIES = ['공연', '강의', '체험', '요양·간병', '방문서비스', '기타'] as const;
 
 export const createOperatorSchema = z.object({

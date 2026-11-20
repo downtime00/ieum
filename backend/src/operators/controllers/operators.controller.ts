@@ -6,11 +6,12 @@ import {
   createOperatorSchema, updateOperatorSchema, operatorStatusSchema,
   createProgramSchema, updateProgramSchema, createBookingSchema, bookingActionSchema,
   createReviewSchema, sendBookingNoticeSchema,
+  createOrgTypeSchema, updateOrgTypeSchema,
 } from '../dto/operator.dto';
 import type {
   CreateOperatorDto, UpdateOperatorDto, OperatorStatusDto,
   CreateProgramDto, UpdateProgramDto, CreateBookingDto, BookingActionDto, CreateReviewDto,
-  SendBookingNoticeDto,
+  SendBookingNoticeDto, CreateOrgTypeDto, UpdateOrgTypeDto,
 } from '../dto/operator.dto';
 import { UserAuthGuard, AdminAuthGuard } from '../guards/user-auth.guard';
 
@@ -33,6 +34,34 @@ export class OperatorsController {
   @Get('operators/org-types')
   listOrgTypes() {
     return this.operatorsService.getOrgTypes();
+  }
+
+  // 기관 유형 전체 목록 (관리자 — 비활성 포함)
+  @Get('operators/org-types/all')
+  @UseGuards(AdminAuthGuard)
+  listAllOrgTypes() {
+    return this.operatorsService.listAllOrgTypes();
+  }
+
+  // 기관 유형 관리 (관리자 전용)
+  @Post('operators/org-types')
+  @UseGuards(AdminAuthGuard)
+  @UsePipes(new ZodValidationPipe(createOrgTypeSchema))
+  createOrgType(@Body() data: CreateOrgTypeDto) {
+    return this.operatorsService.createOrgType(data);
+  }
+
+  @Put('operators/org-types/:id')
+  @UseGuards(AdminAuthGuard)
+  @UsePipes(new ZodValidationPipe(updateOrgTypeSchema))
+  updateOrgType(@Param('id', ParseIntPipe) id: number, @Body() data: UpdateOrgTypeDto) {
+    return this.operatorsService.updateOrgType(id, data);
+  }
+
+  @Delete('operators/org-types/:id')
+  @UseGuards(AdminAuthGuard)
+  deactivateOrgType(@Param('id', ParseIntPipe) id: number) {
+    return this.operatorsService.deactivateOrgType(id);
   }
 
   // 'me'는 ':id'보다 먼저 선언해야 함 (ParseIntPipe 충돌 방지)

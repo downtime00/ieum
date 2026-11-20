@@ -90,6 +90,60 @@ export class OperatorsService {
     await this.redis.del(ORG_TYPES_CACHE_KEY);
   }
 
+  /** 관리자: 활성/비활성 포함 전체 기관 유형 */
+  async listAllOrgTypes(): Promise<OperatorOrgType[]> {
+    const types = await this.orgTypeRepo.find();
+    return types.sort(
+      (a, b) =>
+        (a.group === b.group ? a.sortOrder - b.sortOrder : a.group === 'institution' ? -1 : 1) ||
+        a.name.localeCompare(b.name, 'ko'),
+    );
+  }
+
+  /** 관리자: 기관 유형 추가 */
+  async createOrgType(data: { name: string; group: string; sortOrder?: number; isActive?: boolean }): Promise<OperatorOrgType> {
+    const name = data.name.trim();
+    const exists = await this.orgTypeRepo.findOne({ where: { name } });
+    if (exists) throw new BadRequestException('이미 등록된 기관 유형입니다');
+    const t = await this.orgTypeRepo.save(
+      this.orgTypeRepo.create({
+        name,
+        group: data.group as OperatorOrgType['group'],
+        sortOrder: data.sortOrder ?? 99,
+        isActive: data.isActive ?? true,
+      }),
+    );
+    await this.invalidateOrgTypeCache();
+    return t;
+  }
+
+  /** 관리자: 기관 유형 수정 (이름/그룹/정렬/활성 여부) */
+  async updateOrgType(id: number, data: { name?: string; group?: string; sortOrder?: number; isActive?: boolean }): Promise<OperatorOrgType> {
+    const t = await this.orgTypeRepo.findOne({ where: { id: String(id) } });
+    if (!t) throw new NotFoundException('기관 유형을 찾을 수 없습니다');
+    if (data.name !== undefined) {
+      const name = data.name.trim();
+      const dup = await this.orgTypeRepo.findOne({ where: { name } });
+      if (dup && dup.id !== t.id) throw new BadRequestException('이미 등록된 기관 유형입니다');
+      t.name = name;
+    }
+    if (data.group !== undefined) t.group = data.group as OperatorOrgType['group'];
+    if (data.sortOrder !== undefined) t.sortOrder = data.sortOrder;
+    if (data.isActive !== undefined) t.isActive = data.isActive;
+    const saved = await this.orgTypeRepo.save(t);
+    await this.invalidateOrgTypeCache();
+    return saved;
+  }
+
+  /** 관리자: 기관 유형 비활성화 (삭제 대신 소프트 삭제 — 기존 기관 데이터 보존) */
+  async deactivateOrgType(id: number): Promise<void> {
+    const t = await this.orgTypeRepo.findOne({ where: { id: String(id) } });
+    if (!t) throw new NotFoundException('기관 유형을 찾을 수 없습니다');
+    t.isActive = false;
+    await this.orgTypeRepo.save(t);
+    await this.invalidateOrgTypeCache();
+  }
+
   // ── 기관 ──────────────────────────────────────────────
 
   async create(data: CreateOperatorDto): Promise<Operator> {
