@@ -271,6 +271,23 @@
             </div>
           </NuxtLink>
           <NuxtLink
+            to="/admin/org-types"
+            class="bg-white rounded-2xl border border-slate-200/70 shadow-sm p-6 hover:border-blue-400 hover:shadow-md transition group"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="font-semibold text-slate-800">기관 유형 관리</h3>
+                <p class="text-sm text-slate-500 mt-0.5">
+                  기관/개인 유형 추가·수정·비활성화
+                </p>
+              </div>
+              <span
+                class="text-slate-400 group-hover:text-blue-700 text-xl transition"
+                >→</span
+              >
+            </div>
+          </NuxtLink>
+          <NuxtLink
             to="/admin/operators"
             class="bg-white rounded-2xl border border-slate-200/70 shadow-sm p-6 hover:border-blue-400 hover:shadow-md transition group"
           >
