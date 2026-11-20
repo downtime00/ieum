@@ -87,6 +87,11 @@
         >
           {{ f.name }}
           <span v-if="f.role === 'HEAD'" class="ml-1" title="가족장">👑</span>
+          <span
+            v-if="hasNew(f)"
+            class="ml-1.5 inline-block w-2.5 h-2.5 rounded-full bg-red-500 align-middle"
+            title="새 글 있음"
+          ></span>
         </button>
         <span class="flex-1"></span>
         <button
@@ -867,6 +872,7 @@ interface Family {
   role: string;
   isPublic?: boolean;
   commentsEnabled?: boolean;
+  lastPostAt?: string | null;
 }
 interface Post {
   id: string;
@@ -1011,10 +1017,40 @@ const formatExpiry = (d?: string | null) =>
       })
     : "-";
 
+// 그룹별 마지막 열람 시각 (localStorage) — 새 글 뱃지 판별용
+const seenMap = reactive<Record<number, string>>({});
+const seenKey = () => `ieum:board-seen:${userId.value ?? "anon"}`;
+const loadSeen = () => {
+  try {
+    Object.assign(seenMap, JSON.parse(localStorage.getItem(seenKey()) || "{}"));
+  } catch {}
+};
+const saveSeen = () => {
+  try {
+    localStorage.setItem(seenKey(), JSON.stringify(seenMap));
+  } catch {}
+};
+const hasNew = (f: Family) =>
+  !!(
+    f.lastPostAt &&
+    seenMap[f.id] &&
+    new Date(f.lastPostAt) > new Date(seenMap[f.id])
+  );
+const markSeen = (familyId: number, iso?: string) => {
+  seenMap[familyId] = iso || new Date().toISOString();
+  saveSeen();
+};
+
 const loadFamilies = async () => {
   const res = await fetch(api(`/board/families?userId=${userId.value}`));
   if (res.ok) {
     families.value = await res.json();
+    loadSeen();
+    // 열람 기록이 없는 그룹은 현재 최신글을 기준선으로 — 이후 새 글만 뱃지 표시
+    for (const f of families.value) {
+      if (f.lastPostAt && !seenMap[f.id]) seenMap[f.id] = f.lastPostAt;
+    }
+    saveSeen();
     if (
       families.value.length > 0 &&
       !currentFamily.value &&
@@ -1187,6 +1223,14 @@ const loadPosts = async () => {
       ),
     );
     posts.value = res.ok ? await res.json() : [];
+    // 그룹을 열람했으므로 최신글 시각까지 '읽음' 처리 → 뱃지 해제
+    if (currentFamily.value) {
+      const latest = posts.value.reduce(
+        (m, p) => (p.createdAt > m ? p.createdAt : m),
+        "",
+      );
+      markSeen(currentFamily.value.id, latest || undefined);
+    }
     // 대시보드 등에서 ?post=ID 로 들어온 경우 상세 바로 열기
     const pid = Number(route.query.post);
     if (pid && !selectedPost.value) {
