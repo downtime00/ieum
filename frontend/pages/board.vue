@@ -1266,15 +1266,20 @@ const openPost = async (p: Post) => {
   comments.value = res.ok ? await res.json() : [];
 };
 
+// 게시글이 속한 그룹에서의 내 역할 — 전체보기에서도 게시글별 권한 판별용
+const roleInFamily = (familyId: string | number) =>
+  families.value.find((f) => Number(f.id) === Number(familyId))?.role;
+
 const canDeletePost = () =>
-  selectedPost.value &&
+  !!selectedPost.value &&
   (String(selectedPost.value.authorUserId) === String(userId.value) ||
-    currentFamily.value?.role === "HEAD");
+    roleInFamily(selectedPost.value.familyId) === "HEAD");
 
 const canDeleteComment = (c: Comment) =>
   String(c.authorUserId) === String(userId.value) ||
   String(selectedPost.value?.authorUserId) === String(userId.value) ||
-  currentFamily.value?.role === "HEAD";
+  (!!selectedPost.value &&
+    roleInFamily(selectedPost.value.familyId) === "HEAD");
 
 const openPostForm = () => {
   postForm.title = "";
