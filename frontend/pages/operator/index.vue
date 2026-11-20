@@ -470,14 +470,13 @@ const saveInfo = async () => {
 };
 
 const fetchProgramCategories = async () => {
-  try {
-    const res = await fetch(`${config.public.apiBase}/operators/program-categories`);
-    if (!res.ok) return;
-    const list = (await res.json()) as Array<{ name: string }>;
-    if (list.length) programCategories.value = list.map((c) => c.name);
-  } catch {
-    /* 오프라인 등 — 기본 목록 사용 */
-  }
+  // localStorage 10분 캐시 경유 — 실패 시 기본 목록 유지
+  const list = await fetchMasterData<{ name: string }>(
+    config.public.apiBase as string,
+    "/operators/program-categories",
+    "ieum:program-categories",
+  );
+  if (list?.length) programCategories.value = list.map((c) => c.name);
 };
 
 onMounted(async () => {

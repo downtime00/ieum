@@ -160,14 +160,13 @@ const fetchOperators = async () => {
 };
 
 const fetchOrgTypes = async () => {
-  try {
-    const res = await fetch(`${config.public.apiBase}/operators/org-types`);
-    if (!res.ok) return;
-    const list = (await res.json()) as Array<{ name: string }>;
-    if (list.length) orgTypes.value = list.map((t) => t.name);
-  } catch {
-    /* 오프라인 등 — 기본 목록 사용 */
-  }
+  // localStorage 10분 캐시 경유 — 실패 시 기본 목록 유지
+  const list = await fetchMasterData<{ name: string }>(
+    config.public.apiBase as string,
+    "/operators/org-types",
+    "ieum:org-types",
+  );
+  if (list?.length) orgTypes.value = list.map((t) => t.name);
 };
 
 onMounted(async () => {

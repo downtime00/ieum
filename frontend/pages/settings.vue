@@ -431,20 +431,19 @@ const orgTypeGroups = reactive({
   individuals: ["요양보호사", "간병인", "강사", "기타"],
 });
 
-// 기관 유형은 백엔드 DB(operator_org_types)에서 조회 — 실패 시 기본 목록 유지
+// 기관 유형은 백엔드 DB(operator_org_types)에서 조회 — localStorage 10분 캐시, 실패 시 기본 목록 유지
 const loadOrgTypes = async () => {
-  try {
-    const res = await fetch(`${apiBase}/operators/org-types`);
-    if (!res.ok) return;
-    const list = (await res.json()) as Array<{ name: string; group: string }>;
-    const inst = list.filter((t) => t.group === "institution").map((t) => t.name);
-    const ind = list.filter((t) => t.group === "individual").map((t) => t.name);
-    if (inst.length || ind.length) {
-      orgTypeGroups.institutions = inst;
-      orgTypeGroups.individuals = ind;
-    }
-  } catch {
-    /* 오프라인 등 — 기본 목록 사용 */
+  const list = await fetchMasterData<{ name: string; group: string }>(
+    apiBase,
+    "/operators/org-types",
+    "ieum:org-types",
+  );
+  if (!list) return;
+  const inst = list.filter((t) => t.group === "institution").map((t) => t.name);
+  const ind = list.filter((t) => t.group === "individual").map((t) => t.name);
+  if (inst.length || ind.length) {
+    orgTypeGroups.institutions = inst;
+    orgTypeGroups.individuals = ind;
   }
 };
 const isCareType = computed(() =>
