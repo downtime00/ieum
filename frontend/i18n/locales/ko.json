@@ -280,6 +280,7 @@
     "postTitle": "제목",
     "postContent": "내용",
     "notice": "공지사항으로 등록",
+    "noticeBadge": "공지사항",
     "submit": "등록",
     "cancel": "취소",
     "comments": "댓글",

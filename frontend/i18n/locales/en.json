@@ -279,6 +279,7 @@
     "postTitle": "Title",
     "postContent": "Content",
     "notice": "Post as notice",
+    "noticeBadge": "Notice",
     "submit": "Post",
     "cancel": "Cancel",
     "comments": "Comments",

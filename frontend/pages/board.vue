@@ -275,7 +275,7 @@
                 <span
                   v-if="p.isNotice"
                   class="text-xs font-bold bg-red-400/30 text-red-200 px-2 py-0.5 rounded-full"
-                  >{{ $t("board.notice") }}</span
+                  >{{ $t("board.noticeBadge") }}</span
                 >
                 <span class="text-xs font-semibold bg-white/15 text-white/70 px-2 py-0.5 rounded-full">
                   {{ p.familyName }}
@@ -331,7 +331,7 @@
                 <span
                   v-if="p.isNotice"
                   class="text-xs font-bold bg-red-400/30 text-red-200 px-2 py-0.5 rounded-full"
-                  >{{ $t("board.notice") }}</span
+                  >{{ $t("board.noticeBadge") }}</span
                 >
                 <h3 class="font-semibold text-white">
                   {{ p.title }}
@@ -371,7 +371,7 @@
             <span
               v-if="selectedPost.isNotice"
               class="text-xs font-bold bg-red-400/30 text-red-200 px-2 py-0.5 rounded-full"
-              >{{ $t("board.notice") }}</span
+              >{{ $t("board.noticeBadge") }}</span
             >
             <h2 class="text-xl font-bold text-slate-900 mt-1">
               {{ selectedPost.title }}
