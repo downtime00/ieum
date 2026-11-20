@@ -1089,6 +1089,16 @@ const loadAllPosts = async (append = false) => {
         : data.items;
       allPage.value = data.page;
       allHasMore.value = data.hasMore;
+      // 전체 보기에서 로드된 글 기준 그룹별 읽음 처리 — 아직 안 읽은 새 글이 있으면 뱃지 유지
+      const latestByFamily = new Map<string, string>();
+      for (const p of allPosts.value) {
+        const prev = latestByFamily.get(p.familyId) || "";
+        if (p.createdAt > prev) latestByFamily.set(p.familyId, p.createdAt);
+      }
+      for (const [fid, iso] of latestByFamily) {
+        const id = Number(fid);
+        if (seenMap[id] && iso > seenMap[id]) markSeen(id, iso);
+      }
     } else if (!append) {
       allPosts.value = [];
       allHasMore.value = false;
