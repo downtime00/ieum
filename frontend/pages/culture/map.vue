@@ -15,7 +15,7 @@
             </p>
           </div>
         </div>
-        <div class="flex gap-2 shrink-0">
+        <div class="flex gap-2 shrink-0 ml-auto">
           <button
             @click="locateMe"
             :disabled="geoStatus === 'requesting'"
@@ -31,7 +31,7 @@
       </div>
 
       <!-- 지역 검색 -->
-      <div class="container mx-auto mt-3 relative px-4">
+      <div class="container mx-auto mt-3 relative px-4 sm:max-w-3xl sm:ml-auto sm:mr-0">
         <div class="flex gap-2">
           <input
             v-model="searchQuery"
