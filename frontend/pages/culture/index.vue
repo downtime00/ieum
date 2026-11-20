@@ -243,7 +243,7 @@
 
       <!-- 로딩/개수 표시 -->
       <div class="py-3 text-center">
-        <p v-if="loading" class="text-white/50">{{ $t("culture.loading") }}</p>
+        <p v-if="loading && items.length > 0" class="text-white/50">{{ $t("culture.loading") }}</p>
         <p
           v-else-if="items.length >= total && items.length > 0"
           class="text-sm text-white/40"
