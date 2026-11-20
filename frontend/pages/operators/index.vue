@@ -19,13 +19,6 @@
             >
               기관 관리
             </NuxtLink>
-            <NuxtLink
-              v-if="!isOperator"
-              to="/settings"
-              class="bg-white/10 text-white/80 border border-white/25 font-semibold py-2.5 px-5 rounded-xl hover:bg-white/20 transition text-sm"
-            >
-              등록 신청
-            </NuxtLink>
           </div>
         </div>
 
