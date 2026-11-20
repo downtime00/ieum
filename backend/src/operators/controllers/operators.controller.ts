@@ -34,6 +34,7 @@ export class OperatorsController {
 
   // 기관 유형 마스터 (DB + Redis 캐시) — 공개, 프론트 select 옵션용
   @Get('operators/org-types')
+  @Header('Cache-Control', 'public, max-age=300')
   listOrgTypes() {
     return this.operatorsService.getOrgTypes();
   }
@@ -68,6 +69,7 @@ export class OperatorsController {
 
   // 프로그램 분류 (DB + Redis 캐시) — 공개, 프로그램 등록 폼 옵션용
   @Get('operators/program-categories')
+  @Header('Cache-Control', 'public, max-age=300')
   listProgramCategories() {
     return this.operatorsService.getProgramCategories();
   }
