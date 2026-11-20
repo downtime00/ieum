@@ -48,11 +48,13 @@ export class BookingsService {
     }
 
     const isCareService = BookingsService.CARE_CATEGORIES.includes(program.category);
-    if (isCareService && !familyId) {
+    // B2B는 기관이 신청하므로 가족 지정 불필요 — 희망 장소만 필수
+    const isB2B = program.programType === 'B2B';
+    if (isCareService && !isB2B && !familyId) {
       throw new BadRequestException('요양·간병/방문서비스는 가족(그룹)을 지정해 예약해야 합니다');
     }
-    if (isCareService && !desiredAddress && desiredLat === undefined) {
-      throw new BadRequestException('요양·간병/방문서비스는 서비스 받을 희망 장소를 지도에서 선택해주세요');
+    if ((isCareService || isB2B) && !desiredAddress && desiredLat === undefined) {
+      throw new BadRequestException('서비스 받을 희망 장소를 지도에서 선택해주세요');
     }
     if (familyId) {
       const membership = await this.familyMemberRepo.findOne({
@@ -71,8 +73,7 @@ export class BookingsService {
       throw new BadRequestException('아직 승인되지 않은 기관의 프로그램입니다');
     }
 
-    // B2B 프로그램: 승인된 기관 회원만 신청 가능, 희망 장소 필수
-    const isB2B = program.programType === 'B2B';
+    // B2B 프로그램: 승인된 기관 회원만 신청 가능
     let bookerOperator: Operator | null = null;
     if (isB2B) {
       bookerOperator = await this.operatorRepo.findOne({
@@ -80,9 +81,6 @@ export class BookingsService {
       });
       if (!bookerOperator) {
         throw new ForbiddenException('기관 대상(B2B) 프로그램은 승인된 기관 회원만 신청할 수 있습니다');
-      }
-      if (!desiredAddress && desiredLat === undefined) {
-        throw new BadRequestException('기관 대상 프로그램은 서비스를 받을 희망 장소를 지정해야 합니다');
       }
     }
 
