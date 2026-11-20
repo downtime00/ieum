@@ -76,14 +76,14 @@
         <div class="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
           <button
             @click="zoomIn"
-            class="w-14 h-14 rounded-full bg-white border-2 border-slate-300 shadow-lg text-3xl font-bold text-slate-700 hover:bg-slate-100 active:bg-slate-200 flex items-center justify-center pb-1"
+            class="w-14 h-14 rounded-full bg-white border-2 border-slate-300 shadow-lg text-3xl font-bold text-slate-700 hover:bg-slate-100 active:bg-slate-200 flex items-center justify-center"
             aria-label="확대"
           >
             +
           </button>
           <button
             @click="zoomOut"
-            class="w-14 h-14 rounded-full bg-white border-2 border-slate-300 shadow-lg text-3xl font-bold text-slate-700 hover:bg-slate-100 active:bg-slate-200 flex items-center justify-center pb-1"
+            class="w-14 h-14 rounded-full bg-white border-2 border-slate-300 shadow-lg text-3xl font-bold text-slate-700 hover:bg-slate-100 active:bg-slate-200 flex items-center justify-center"
             aria-label="축소"
           >
             −
