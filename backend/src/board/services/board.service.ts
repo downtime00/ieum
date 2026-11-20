@@ -36,17 +36,30 @@ export class BoardService {
   }
 
   /** 내가 속한 가족 목록 */
-  async myFamilies(userId: number): Promise<{ id: number; name: string; role: string; isPublic: boolean; commentsEnabled: boolean }[]> {
+  async myFamilies(userId: number): Promise<{ id: number; name: string; role: string; isPublic: boolean; commentsEnabled: boolean; lastPostAt: string | null }[]> {
     const members = await this.memberRepo.find({ where: { userId } });
     if (members.length === 0) return [];
     const families = await this.familyRepo.findBy({ id: In(members.map((m) => Number(m.familyId))) });
     const roleMap = new Map(members.map((m) => [Number(m.familyId), m.role]));
+    const familyIds = families.map((f) => Number(f.id));
+    // 각 그룹의 최신 게시글 시각 — 프론트에서 '새 글' 뱃지 판별용
+    const lastRows = familyIds.length
+      ? await this.postRepo
+          .createQueryBuilder('p')
+          .select('p.family_id', 'familyId')
+          .addSelect('MAX(p.created_at)', 'lastPostAt')
+          .where('p.family_id IN (:...ids)', { ids: familyIds })
+          .groupBy('p.family_id')
+          .getRawMany<{ familyId: string; lastPostAt: string }>()
+      : [];
+    const lastMap = new Map(lastRows.map((r) => [Number(r.familyId), r.lastPostAt]));
     return families.map((f) => ({
       id: f.id,
       name: f.name,
       role: roleMap.get(f.id) || 'MEMBER',
       isPublic: !!f.isPublic,
       commentsEnabled: f.commentsEnabled !== false,
+      lastPostAt: lastMap.get(Number(f.id)) ?? null,
     }));
   }
 
