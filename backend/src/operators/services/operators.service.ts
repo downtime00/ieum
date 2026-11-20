@@ -49,19 +49,20 @@ export class OperatorsService {
         // 캐시 파손 시 DB로 폴백
       }
     }
-    let types = await this.orgTypeRepo.find({
-      where: { isActive: true },
-      order: { group: 'ASC', sortOrder: 'ASC', name: 'ASC' },
-    });
+    const sortTypes = (list: OperatorOrgType[]) =>
+      [...list].sort(
+        (a, b) =>
+          (a.group === b.group ? a.sortOrder - b.sortOrder : a.group === 'institution' ? -1 : 1),
+      );
+    let types = sortTypes(
+      await this.orgTypeRepo.find({ where: { isActive: true } }),
+    );
     if (types.length === 0) {
       // 마이그레이션 없이 synchronize로 뜬 환경 대비 자동 시드
       await this.orgTypeRepo.save(
         DEFAULT_ORG_TYPES.map((t) => this.orgTypeRepo.create(t)),
       );
-      types = await this.orgTypeRepo.find({
-        where: { isActive: true },
-        order: { group: 'ASC', sortOrder: 'ASC', name: 'ASC' },
-      });
+      types = sortTypes(await this.orgTypeRepo.find({ where: { isActive: true } }));
     }
     await this.redis.set(ORG_TYPES_CACHE_KEY, JSON.stringify(types), ORG_TYPES_CACHE_TTL);
     return types;
