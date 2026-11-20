@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Operator } from '../entities/operator.entity';
@@ -363,6 +363,7 @@ export class OperatorsService {
       title: data.title,
       description: data.description ?? null,
       category: data.category,
+      programType: data.programType ?? 'B2C',
       eventDate: data.eventDate,
       startTime: data.startTime ?? null,
       durationMin: data.durationMin ?? null,
@@ -377,13 +378,32 @@ export class OperatorsService {
     return this.programRepo.save(program);
   }
 
-  async listPrograms(operatorId: number, includeInactive = false): Promise<OperatorProgram[]> {
+  // includeB2b=false (공개 목록): B2B 프로그램 제외 — 기관 회원만 별도 조회
+  async listPrograms(operatorId: number, includeInactive = false, includeB2b = false): Promise<OperatorProgram[]> {
     const qb = this.programRepo
       .createQueryBuilder('p')
       .where('p.operator_id = :operatorId', { operatorId })
       .orderBy('p.event_date', 'ASC');
     if (!includeInactive) qb.andWhere('p.is_active = true');
+    if (!includeB2b) qb.andWhere("p.program_type = 'B2C'");
     return qb.getMany();
+  }
+
+  /** B2B 프로그램 목록 — 승인된 기관 회원만 조회 가능 */
+  async listB2bPrograms(operatorId: number, userId: number): Promise<OperatorProgram[]> {
+    const requester = await this.operatorRepo.findOne({
+      where: { ownerUserId: userId, status: 'APPROVED' },
+    });
+    if (!requester) {
+      throw new ForbiddenException('승인된 기관 회원만 기관 대상 프로그램을 볼 수 있습니다');
+    }
+    return this.programRepo
+      .createQueryBuilder('p')
+      .where('p.operator_id = :operatorId', { operatorId })
+      .andWhere('p.is_active = true')
+      .andWhere("p.program_type = 'B2B'")
+      .orderBy('p.event_date', 'ASC')
+      .getMany();
   }
 
   async findProgram(programId: number): Promise<OperatorProgram> {
@@ -400,6 +420,7 @@ export class OperatorsService {
       ...(data.title !== undefined && { title: data.title }),
       ...(data.description !== undefined && { description: data.description ?? null }),
       ...(data.category !== undefined && { category: data.category }),
+      ...(data.programType !== undefined && { programType: data.programType }),
       ...(data.eventDate !== undefined && { eventDate: data.eventDate }),
       ...(data.startTime !== undefined && { startTime: data.startTime ?? null }),
       ...(data.durationMin !== undefined && { durationMin: data.durationMin ?? null }),

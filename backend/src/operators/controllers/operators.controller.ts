@@ -178,7 +178,18 @@ export class OperatorsController {
     @Query('userId', ParseIntPipe) userId: number,
   ) {
     return this.operatorsService.findOwned(id, userId)
-      .then(() => this.operatorsService.listPrograms(id, true));
+      .then(() => this.operatorsService.listPrograms(id, true, true));
+  }
+
+  // B2B(기관 대상) 프로그램 — 승인된 기관 회원만 조회
+  @Get('operators/:id/programs/b2b')
+  @UseGuards(UserAuthGuard)
+  @Header('Cache-Control', 'no-store')
+  listB2bPrograms(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('userId', ParseIntPipe) userId: number,
+  ) {
+    return this.operatorsService.listB2bPrograms(id, userId);
   }
 
   @Get('programs/:id')

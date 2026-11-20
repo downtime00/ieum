@@ -24,6 +24,10 @@ export class ProgramBooking {
   @Column({ name: 'requester_user_id', type: 'bigint' })
   requesterUserId: number;
 
+  // B2B 예약 시 신청한 기관(요청자 소속 operator) — 개인 예약이면 null
+  @Column({ name: 'booker_operator_id', type: 'bigint', nullable: true })
+  bookerOperatorId: number | null;
+
   @Column({ name: 'requester_name', type: 'varchar', length: 100, nullable: true })
   requesterName: string | null;
 

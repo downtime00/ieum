@@ -71,6 +71,21 @@ export class BookingsService {
       throw new BadRequestException('아직 승인되지 않은 기관의 프로그램입니다');
     }
 
+    // B2B 프로그램: 승인된 기관 회원만 신청 가능, 희망 장소 필수
+    const isB2B = program.programType === 'B2B';
+    let bookerOperator: Operator | null = null;
+    if (isB2B) {
+      bookerOperator = await this.operatorRepo.findOne({
+        where: { ownerUserId: userId, status: 'APPROVED' },
+      });
+      if (!bookerOperator) {
+        throw new ForbiddenException('기관 대상(B2B) 프로그램은 승인된 기관 회원만 신청할 수 있습니다');
+      }
+      if (!desiredAddress && desiredLat === undefined) {
+        throw new BadRequestException('기관 대상 프로그램은 서비스를 받을 희망 장소를 지정해야 합니다');
+      }
+    }
+
     // 동일 프로그램 중복 신청 방지 (진행 중 상태만)
     const dup = await this.bookingRepo.findOne({
       where: {
@@ -97,7 +112,8 @@ export class BookingsService {
       programId,
       operatorId: Number(program.operatorId),
       requesterUserId: userId,
-      requesterName: requesterName ?? null,
+      requesterName: requesterName ?? bookerOperator?.name ?? null,
+      bookerOperatorId: bookerOperator ? Number(bookerOperator.id) : null,
       familyId: familyId ?? null,
       desiredAddress: desiredAddress ?? null,
       desiredLat: desiredLat ?? null,

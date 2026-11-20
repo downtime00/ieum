@@ -18,6 +18,10 @@ export class OperatorProgram {
   @Column({ type: 'varchar', length: 50, default: '기타' })
   category: string;
 
+  // B2C: 개인 이용자 대상 / B2B: 기관·요양원 대상 (승인된 기관 회원만 열람·신청)
+  @Column({ name: 'program_type', type: 'varchar', length: 10, default: 'B2C' })
+  programType: string;
+
   @Column({ name: 'event_date', type: 'date' })
   eventDate: string;
 

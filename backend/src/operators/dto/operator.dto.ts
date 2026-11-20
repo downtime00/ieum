@@ -49,6 +49,8 @@ export const createProgramSchema = z.object({
   title: z.string().min(1, '제목이 필요합니다').max(200),
   description: z.string().max(5000).optional(),
   category: z.string().min(1).max(50).default('기타'),
+  // B2C: 개인 이용자 대상 / B2B: 기관·요양원 대상 (기관 회원만 신청)
+  programType: z.enum(['B2C', 'B2B']).optional(),
   eventDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '날짜 형식은 YYYY-MM-DD 입니다'),
   startTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
   durationMin: z.number().int().positive().max(1440).optional(),
