@@ -50,6 +50,9 @@
                     <span class="bg-amber-400/30 text-amber-200 text-xs font-semibold px-2.5 py-1 rounded-full">
                       {{ p.category }}
                     </span>
+                    <span v-if="p.programType === 'B2B'" class="bg-violet-400/30 text-violet-200 text-xs font-bold px-2.5 py-1 rounded-full">
+                      B2B 기관전용
+                    </span>
                     <span class="text-white/60 text-sm">
                       {{ formatDate(p.eventDate) }}<span v-if="p.startTime"> {{ p.startTime }}</span>
                     </span>
@@ -162,6 +165,17 @@ const formatDate = (d?: string) => {
   });
 };
 
+const getUserId = (): number | null => {
+  try {
+    const token = localStorage.getItem("accessToken");
+    if (!token) return null;
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.sub ? Number(payload.sub) : null;
+  } catch {
+    return null;
+  }
+};
+
 onMounted(async () => {
   try {
     const res = await apiFetch(config.public.apiBase, `/operators/${route.params.id}`);
@@ -169,6 +183,15 @@ onMounted(async () => {
     const pres = await apiFetch(config.public.apiBase, `/operators/${route.params.id}/programs`,
     );
     programs.value = pres.ok ? await pres.json() : [];
+    // 승인된 기관 회원이면 기관 대상(B2B) 프로그램도 함께 표시
+    const uid = getUserId();
+    if (uid) {
+      const bres = await apiFetch(config.public.apiBase, `/operators/${route.params.id}/programs/b2b?userId=${uid}`);
+      if (bres.ok) {
+        const b2b = await bres.json();
+        programs.value = [...programs.value, ...(Array.isArray(b2b) ? b2b : [])];
+      }
+    }
     const rres = await apiFetch(config.public.apiBase, `/operators/${route.params.id}/reviews`);
     if (rres.ok) {
       const rdata = await rres.json();

@@ -63,13 +63,21 @@
               <input v-model="pf.title" required maxlength="200" placeholder="프로그램 제목 *"
                 class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-sky-400" />
               <div class="grid grid-cols-2 gap-3">
+                <select v-model="pf.programType"
+                  class="bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none">
+                  <option value="B2C" class="ieum-panel">개인 이용자 대상 (B2C)</option>
+                  <option value="B2B" class="ieum-panel">기관·요양원 대상 (B2B)</option>
+                </select>
                 <select v-model="pf.category"
                   class="bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none">
                   <option v-for="c in programCategories" :key="c" :value="c" class="ieum-panel">{{ c }}</option>
                 </select>
-                <input v-model="pf.eventDate" type="date" required
-                  class="bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sky-400" />
               </div>
+              <div v-if="pf.programType === 'B2B'" class="text-xs text-sky-300 bg-sky-400/10 border border-sky-400/30 rounded-xl px-4 py-2.5">
+                기관 대상(B2B) 프로그램은 승인된 기관 회원에게만 표시되며, 신청 시 서비스 받을 희망 장소를 지정합니다.
+              </div>
+              <input v-model="pf.eventDate" type="date" required
+                class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sky-400" />
               <div class="grid grid-cols-3 gap-3">
                 <input v-model="pf.startTime" type="time" placeholder="시작시간"
                   class="bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sky-400" />
@@ -103,6 +111,7 @@
                   <div class="min-w-0">
                     <div class="flex items-center gap-2 flex-wrap">
                       <span class="bg-amber-400/30 text-amber-200 text-xs font-semibold px-2.5 py-1 rounded-full">{{ p.category }}</span>
+                      <span v-if="p.programType === 'B2B'" class="bg-violet-400/30 text-violet-200 text-xs font-bold px-2.5 py-1 rounded-full">B2B 기관전용</span>
                       <span class="text-white/60 text-sm">{{ p.eventDate }}<span v-if="p.startTime"> {{ p.startTime }}</span></span>
                       <span v-if="!p.isActive" class="bg-red-400/30 text-red-200 text-xs px-2 py-1 rounded-full">비공개</span>
                     </div>
@@ -283,7 +292,7 @@ const showProgramForm = ref(false);
 const programSaving = ref(false);
 const programError = ref("");
 const pf = reactive({
-  title: "", category: "공연", eventDate: "", startTime: "", durationMin: null as number | null,
+  title: "", programType: "B2C", category: "공연", eventDate: "", startTime: "", durationMin: null as number | null,
   price: 0, capacity: 30, address: "", contactPhone: "", description: "",
 });
 
@@ -376,6 +385,7 @@ const createProgram = async () => {
       body: JSON.stringify({
         userId: userId.value,
         title: pf.title,
+        programType: pf.programType,
         category: pf.category,
         eventDate: pf.eventDate,
         startTime: pf.startTime || undefined,
@@ -390,7 +400,7 @@ const createProgram = async () => {
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "등록 실패");
     showProgramForm.value = false;
-    Object.assign(pf, { title: "", category: "공연", eventDate: "", startTime: "", durationMin: null, price: 0, capacity: 30, address: "", contactPhone: "", description: "" });
+    Object.assign(pf, { title: "", programType: "B2C", category: "공연", eventDate: "", startTime: "", durationMin: null, price: 0, capacity: 30, address: "", contactPhone: "", description: "" });
     await loadPrograms();
   } catch (e: any) {
     programError.value = e.message;

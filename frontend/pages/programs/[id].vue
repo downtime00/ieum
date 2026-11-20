@@ -15,6 +15,9 @@
               <span class="bg-amber-400/30 text-amber-200 text-sm font-semibold px-3 py-1 rounded-full">
                 {{ program.category }}
               </span>
+              <span v-if="program.programType === 'B2B'" class="bg-violet-400/30 text-violet-200 text-sm font-bold px-3 py-1 rounded-full">
+                B2B 기관전용
+              </span>
               <span class="text-white/70 text-sm">
                 {{ formatDate(program.eventDate) }}<span v-if="program.startTime"> {{ program.startTime }}</span>
                 <span v-if="program.durationMin"> · 약 {{ program.durationMin }}분</span>
@@ -58,10 +61,19 @@
                 로그인하러 가기
               </NuxtLink>
             </div>
+            <div v-else-if="isB2B && !canBookB2B" class="text-center py-4">
+              <p class="text-white/70 mb-1 font-semibold">기관 회원 전용 프로그램입니다</p>
+              <p class="text-sm text-white/50 mb-4">
+                기관·요양원 등 승인된 기관 회원만 신청할 수 있습니다. 기관 등록은 설정에서 신청할 수 있습니다.
+              </p>
+              <NuxtLink to="/settings" class="bg-sky-500 text-white font-semibold py-3 px-8 rounded-xl hover:bg-sky-400 transition">
+                기관 등록 신청하기
+              </NuxtLink>
+            </div>
             <form v-else @submit.prevent="submit" class="space-y-3">
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-sm text-white/70 mb-1">인원 (1~{{ Math.min(remaining, 10) }}명)</label>
+                  <label class="block text-sm text-white/70 mb-1">{{ isB2B ? "이용 인원" : "인원" }} (1~{{ Math.min(remaining, 10) }}명)</label>
                   <input v-model.number="headcount" type="number" min="1" :max="Math.min(remaining, 10)" required
                     class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sky-400" />
                 </div>
@@ -72,8 +84,8 @@
                   </p>
                 </div>
               </div>
-              <!-- 그룹(가족) 예약 선택 — 그룹장은 HEAD만, 요양·간병은 필수 -->
-              <div v-if="headFamilies.length > 0 || isCareService">
+              <!-- 그룹(가족) 예약 선택 — B2B는 기관 신청이라 불필요 -->
+              <div v-if="!isB2B && (headFamilies.length > 0 || isCareService)">
                 <label class="block text-sm text-white/70 mb-1">
                   {{ isCareService ? "예약 가족 (필수)" : "예약 대상" }}
                 </label>
@@ -93,7 +105,7 @@
               <!-- 희망 장소 — 주소 검색 또는 지도 핀 선택 -->
               <div>
                 <label class="block text-sm text-white/70 mb-1">
-                  희망 장소 {{ isCareService ? "(필수)" : "(선택)" }}
+                  {{ isB2B ? "서비스 받을 장소 (필수)" : `희망 장소 ${isCareService ? "(필수)" : "(선택)"}` }}
                 </label>
                 <div class="flex flex-wrap gap-2">
                   <input v-model="desiredAddress" maxlength="500"
@@ -135,9 +147,9 @@
               </p>
               <p v-if="error" class="text-sm text-red-300">{{ error }}</p>
               <p v-if="success" class="text-sm text-emerald-300">{{ success }}</p>
-              <button type="submit" :disabled="submitting || !!success || (isCareService && !selectedFamilyId) || (isCareService && !desiredAddress && desiredLat === null)"
+              <button type="submit" :disabled="submitting || !!success || (!isB2B && isCareService && !selectedFamilyId) || ((isCareService || isB2B) && !desiredAddress && desiredLat === null)"
                 class="w-full bg-blue-800 text-white font-bold py-4 rounded-xl hover:bg-blue-900 transition text-lg disabled:opacity-40">
-                {{ submitting ? "신청 중..." : "예약 신청하기" }}
+                {{ submitting ? "신청 중..." : isB2B ? "기관 신청하기" : "예약 신청하기" }}
               </button>
             </form>
           </div>
@@ -191,6 +203,11 @@ const isCareService = computed(() =>
   ["요양·간병", "방문서비스"].includes(program.value?.category || ""),
 );
 
+// B2B(기관 대상) 프로그램 — 승인된 기관 회원만 신청 가능
+const isB2B = computed(() => program.value?.programType === "B2B");
+const myOperator = ref<any>(null);
+const canBookB2B = computed(() => myOperator.value?.status === "APPROVED");
+
 const remaining = computed(() =>
   program.value ? Math.max(0, program.value.capacity - program.value.bookedCount) : 0,
 );
@@ -233,9 +250,10 @@ const submit = async () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: uid,
+          requesterName: isB2B.value ? myOperator.value?.name : undefined,
           headcount: headcount.value,
           message: message.value || undefined,
-          familyId: selectedFamilyId.value || undefined,
+          familyId: !isB2B.value && selectedFamilyId.value ? selectedFamilyId.value : undefined,
           desiredAddress: desiredAddress.value || undefined,
           desiredLat: desiredLat.value ?? undefined,
           desiredLng: desiredLng.value ?? undefined,
@@ -343,10 +361,13 @@ onMounted(async () => {
       // 내가 그룹장(HEAD)인 가족 목록 — 그룹 예약 옵션
       const uid = getUserId();
       if (uid) {
+        // B2B 신청 권한 확인 — 승인된 기관 보유 여부
+        const mres = await apiFetch(config.public.apiBase, `/operators/me/${uid}`);
+        myOperator.value = mres.ok ? await mres.json() : null;
         const fres = await apiFetch(config.public.apiBase, `/board/families?userId=${uid}`);
         const fams: any[] = fres.ok ? await fres.json() : [];
         headFamilies.value = fams.filter((f) => f.role === "HEAD");
-        if (isCareService.value && headFamilies.value.length > 0) {
+        if (isCareService.value && !isB2B.value && headFamilies.value.length > 0) {
           selectedFamilyId.value = headFamilies.value[0].id;
         }
       }
