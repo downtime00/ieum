@@ -317,6 +317,46 @@
         </form>
       </section>
 
+      <!-- 내 그룹 관리 -->
+      <section v-if="loggedIn" class="bg-white/10 rounded-2xl p-6 mb-4">
+        <h2 class="font-semibold text-white mb-1">내 그룹 관리</h2>
+        <p class="text-sm text-white/60 mb-4">
+          가입한 가족·모임 그룹 목록입니다. 나가기를 누르면 즉시 탈퇴됩니다.
+        </p>
+        <div v-if="groupsLoading" class="text-sm text-white/50 py-2">
+          불러오는 중...
+        </div>
+        <div
+          v-else-if="myGroups.length === 0"
+          class="text-sm text-white/50 py-2"
+        >
+          가입한 그룹이 없습니다.
+        </div>
+        <ul v-else class="flex flex-col gap-2">
+          <li
+            v-for="g in myGroups"
+            :key="g.id"
+            class="flex items-center justify-between gap-3 bg-white/5 rounded-xl px-4 py-3"
+          >
+            <div class="min-w-0">
+              <p class="font-semibold text-white truncate">{{ g.name }}</p>
+              <p class="text-xs text-white/50">
+                {{ g.role === "HEAD" ? "가족장" : g.role === "GUEST" ? "게스트" : "구성원" }}
+                <template v-if="g.isPublic"> · 공개 그룹</template>
+              </p>
+            </div>
+            <button
+              v-if="g.role !== 'GUEST'"
+              @click="leaveGroup(g)"
+              :disabled="groupLeaving === g.id"
+              class="shrink-0 text-xs font-semibold text-red-300 hover:text-red-200 border border-red-300/40 rounded-lg px-3 py-1.5 transition disabled:opacity-40"
+            >
+              {{ groupLeaving === g.id ? "..." : "나가기" }}
+            </button>
+          </li>
+        </ul>
+      </section>
+
       <!-- 계정 / 로그아웃 -->
       <section class="bg-white/10 rounded-2xl p-6 mb-4">
         <h2 class="font-semibold text-white mb-1">
@@ -466,6 +506,53 @@ const opError = ref("");
 const opSuccess = ref("");
 const userId = ref<number | null>(null);
 
+// 내 그룹 관리
+interface MyGroup {
+  id: number;
+  name: string;
+  role: string;
+  isPublic?: boolean;
+}
+const myGroups = ref<MyGroup[]>([]);
+const groupsLoading = ref(false);
+const groupLeaving = ref<number | null>(null);
+
+const loadMyGroups = async () => {
+  if (!userId.value) return;
+  groupsLoading.value = true;
+  try {
+    const res = await apiFetch(
+      apiBase,
+      `/board/families?userId=${userId.value}`,
+    );
+    if (res.ok) myGroups.value = await res.json();
+  } catch {
+    /* 조회 실패 시 빈 목록 */
+  } finally {
+    groupsLoading.value = false;
+  }
+};
+
+const leaveGroup = async (g: MyGroup) => {
+  if (!userId.value) return;
+  if (!confirm(`'${g.name}' 그룹에서 나가시겠습니까?`)) return;
+  groupLeaving.value = g.id;
+  try {
+    const res = await apiFetch(apiBase, `/board/families/${g.id}/leave`, {
+      method: "POST",
+      body: JSON.stringify({ userId: userId.value }),
+    });
+    if (res.ok) {
+      myGroups.value = myGroups.value.filter((x) => x.id !== g.id);
+    } else {
+      const err = await res.json().catch(() => ({}));
+      alert(err?.message || "처리에 실패했습니다.");
+    }
+  } finally {
+    groupLeaving.value = null;
+  }
+};
+
 const loadMyOperator = async () => {
   if (!userId.value) return;
   try {
@@ -527,6 +614,7 @@ onMounted(() => {
       userEmail.value = user?.email || user?.name || "";
     } catch {}
     loadMyOperator();
+    loadMyGroups();
   }
 
   // 설정은 로컬 저장소 기반이라 로그인 없이도 사용 가능
