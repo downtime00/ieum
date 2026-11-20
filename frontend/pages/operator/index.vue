@@ -260,7 +260,8 @@ const tabs = [
   { key: "history", label: "공연 이력" },
   { key: "info", label: "기관 정보" },
 ];
-const programCategories = ["공연", "강의", "체험", "요양·간병", "방문서비스", "기타"];
+// 프로그램 분류는 백엔드 DB(operator_program_categories)에서 조회 — 실패 시 기본 목록 유지
+const programCategories = ref(["공연", "강의", "체험", "요양·간병", "방문서비스", "기타"]);
 const bookingFilters = [
   { key: "", label: "전체", value: "" },
   { key: "REQUESTED", label: "신청됨", value: "REQUESTED" },
@@ -468,8 +469,20 @@ const saveInfo = async () => {
   }
 };
 
+const fetchProgramCategories = async () => {
+  try {
+    const res = await fetch(`${config.public.apiBase}/operators/program-categories`);
+    if (!res.ok) return;
+    const list = (await res.json()) as Array<{ name: string }>;
+    if (list.length) programCategories.value = list.map((c) => c.name);
+  } catch {
+    /* 오프라인 등 — 기본 목록 사용 */
+  }
+};
+
 onMounted(async () => {
   userId.value = getTokenUserId();
+  fetchProgramCategories();
   if (!userId.value) {
     needLogin.value = true;
     loading.value = false;

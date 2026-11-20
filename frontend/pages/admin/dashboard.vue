@@ -276,9 +276,9 @@
           >
             <div class="flex items-center justify-between">
               <div>
-                <h3 class="font-semibold text-slate-800">기관 유형 관리</h3>
+                <h3 class="font-semibold text-slate-800">분류 관리</h3>
                 <p class="text-sm text-slate-500 mt-0.5">
-                  기관/개인 유형 추가·수정·비활성화
+                  기관 유형·프로그램 분류 추가·수정·비활성화
                 </p>
               </div>
               <span
