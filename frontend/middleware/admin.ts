@@ -8,7 +8,7 @@ export default defineNuxtRouteMiddleware((to) => {
     allowed =
       !!token &&
       !!user &&
-      ["ADMIN", "SUPER_ADMIN", "REVIEWER"].includes(user.role);
+      ["ADMIN", "SUPER_ADMIN"].includes(user.role);
   } catch {}
   if (!allowed) return navigateTo("/dashboard");
 });
