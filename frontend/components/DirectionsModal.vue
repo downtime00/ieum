@@ -83,7 +83,7 @@ const dirVoice = useVoiceInput(dirDest);
 watch(
   () => props.open,
   (open) => {
-    if (open && props.initialDest) dirDest.value = props.initialDest;
+    if (open) dirDest.value = props.initialDest || "";
   },
 );
 const voiceErrorText = (code: string) => {

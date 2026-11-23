@@ -335,6 +335,31 @@
         </NuxtLink>
       </div>
 
+      <!-- 바로가기: 콜택시 / 길찾기 -->
+      <div class="mb-4">
+        <p class="text-xs font-bold text-white/60 uppercase mb-2">
+          {{ $t("settings.shortcuts") }}
+        </p>
+        <div class="grid grid-cols-2 gap-2">
+          <button
+            @click="showTaxiModal = true"
+            class="bg-amber-500 hover:bg-amber-400 rounded-xl p-3 min-h-[64px] flex items-center justify-center transition"
+          >
+            <span class="text-sm font-semibold text-white text-center leading-tight">{{
+              $t("dashboard.callTaxi")
+            }}</span>
+          </button>
+          <button
+            @click="dirInitialDest = ''; showDirModal = true"
+            class="bg-indigo-500 hover:bg-indigo-400 rounded-xl p-3 min-h-[64px] flex items-center justify-center transition"
+          >
+            <span class="text-sm font-semibold text-white text-center leading-tight">{{
+              $t("dashboard.directions")
+            }}</span>
+          </button>
+        </div>
+      </div>
+
       <!-- 관리자 메뉴 -->
       <section
         v-if="isAdmin"
@@ -470,12 +495,13 @@
       </div>
     </div>
 
-    <!-- 길찾기 모달 (약·병원 예약에서 진입) -->
+    <!-- 길찾기 모달 (바로가기/약·병원 예약에서 진입) -->
     <DirectionsModal
       :open="showDirModal"
       :initial-dest="dirInitialDest"
       @close="showDirModal = false"
     />
+    <TaxiModal :open="showTaxiModal" @close="showTaxiModal = false" />
 
     <!-- 공지사항 상세 모달 -->
     <div
@@ -514,8 +540,9 @@ const router = useRouter();
 const { locale, t } = useI18n();
 const { enabled: seniorEnabled, toggle: toggleSenior } = useSeniorMode();
 const { enabled: voiceEnabled, toggle: toggleVoice, speak } = useSpeech();
-// 길찾기 모달 — 콜택시/길찾기는 설정 페이지로 이동, 여기는 약 병원 길찾기 진입용
+// 바로가기/길찾기 모달 — 콜택시·길찾기는 설정 페이지에서도 동일하게 사용
 const showDirModal = ref(false);
+const showTaxiModal = ref(false);
 const dirInitialDest = ref("");
 
 // 영역 바로가기 타일 — 기관 보유 여부로 자동 구성, 관리자가 menuKeys로 override 가능
