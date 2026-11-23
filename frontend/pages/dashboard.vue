@@ -631,7 +631,7 @@ const sortedNotifications = computed(() =>
         Number(a.isRead) - Number(b.isRead) ||
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     )
-    .slice(0, 2),
+    .slice(0, notificationLimit.value),
 );
 
 // 약·병원: 다음 복용 시간 가까운 순, 최대 3개
