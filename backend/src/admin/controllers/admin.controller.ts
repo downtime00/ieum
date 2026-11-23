@@ -8,7 +8,7 @@ import { ZodValidationPipe } from '../../common/validation/zod.validation.pipe';
 import { createAdminSchema, type CreateAdminDto } from '../dto/create-admin.dto';
 import { sendNotificationSchema, type SendNotificationDto } from '../dto/send-notification.dto';
 import { z } from 'zod';
-import { AdminAuthGuard } from '../../operators/guards/user-auth.guard';
+import { AdminAuthGuard, ReviewerAuthGuard, SuperAdminAuthGuard } from '../../operators/guards/user-auth.guard';
 import { UserRole } from '../../users/entities/user.entity';
 import { createGroupSchema, type CreateGroupDto } from '../dto/create-group.dto';
 
@@ -42,6 +42,7 @@ export class AdminController {
    * 공지사항 목록 조회
    */
   @Get('notices')
+  @UseGuards(AdminAuthGuard)
   @ApiOperation({ summary: '공지사항 목록 조회 (페이징 포함)' })
   @ApiResponse({ status: 200, description: '공지사항 목록' })
   async getNotices(
@@ -60,6 +61,7 @@ export class AdminController {
    * 공지사항 상세 조회
    */
   @Get('notices/:id')
+  @UseGuards(AdminAuthGuard)
   @ApiOperation({ summary: '공지사항 상세 조회' })
   @ApiResponse({ status: 200, description: '공지사항 상세 정보' })
   async getNoticeById(@Param('id') id: string) {
@@ -121,6 +123,7 @@ export class AdminController {
    * 기관별 공지사항 조회
    */
   @Get('organizations/:organizationId/notices')
+  @UseGuards(AdminAuthGuard)
   @ApiOperation({ summary: '기관별 공지사항 조회' })
   @ApiResponse({ status: 200, description: '기관별 공지사항 목록' })
   async getOrganizationNotices(
@@ -138,6 +141,7 @@ export class AdminController {
    * 공개 그룹 등록 (Admin) — 아파트 관리 공지, 동네 모임 등
    */
   @Post('groups')
+  @UseGuards(AdminAuthGuard)
   @UsePipes(new ZodValidationPipe(createGroupSchema))
   @ApiOperation({ summary: '공개 그룹 등록 (Admin)' })
   @ApiResponse({ status: 201, description: '그룹이 생성됨' })
@@ -149,6 +153,7 @@ export class AdminController {
    * 공개 그룹 목록 (Admin)
    */
   @Get('groups')
+  @UseGuards(AdminAuthGuard)
   @ApiOperation({ summary: '공개 그룹 목록 (Admin)' })
   async listGroups() {
     return this.adminService.listGroups();
@@ -158,6 +163,7 @@ export class AdminController {
    * 그룹 초대 코드 발급/재발급 (Admin) — QR 코드 공유용
    */
   @Post('groups/:id/invite-code')
+  @UseGuards(AdminAuthGuard)
   @ApiOperation({ summary: '그룹 초대 코드 발급 (Admin)' })
   async getGroupInviteCode(@Param('id', ParseIntPipe) id: number, @Body('regenerate') regenerate?: boolean) {
     return this.adminService.getOrCreateGroupInviteCode(id, !!regenerate);
@@ -167,6 +173,7 @@ export class AdminController {
    * 기관 등록 (Admin)
    */
   @Post('organizations')
+  @UseGuards(AdminAuthGuard)
   @UsePipes(new ZodValidationPipe(createOrganizationSchema))
   @ApiOperation({ summary: '기관 등록 (Admin)' })
   @ApiResponse({ status: 201, description: '기관이 성공적으로 생성됨' })
@@ -178,6 +185,7 @@ export class AdminController {
    * 기관 수정 (Admin)
    */
   @Put('organizations/:id')
+  @UseGuards(AdminAuthGuard)
   @UsePipes(new ZodValidationPipe(updateOrganizationSchema))
   @ApiOperation({ summary: '기관 수정 (Admin)' })
   @ApiResponse({ status: 200, description: '기관 정보가 업데이트됨' })
@@ -189,6 +197,7 @@ export class AdminController {
    * 기관 삭제 (Admin)
    */
   @Delete('organizations/:id')
+  @UseGuards(AdminAuthGuard)
   @ApiOperation({ summary: '기관 삭제 (Admin)' })
   @ApiResponse({ status: 200, description: '기관이 삭제됨' })
   async deleteOrganization(@Param('id') id: string) {
@@ -199,6 +208,7 @@ export class AdminController {
    * 대시보드 통계 조회
    */
   @Get('dashboard/stats')
+  @UseGuards(AdminAuthGuard)
   @ApiOperation({ summary: '대시보드 통계 조회 (Admin)' })
   @ApiResponse({ status: 200, description: '대시보드 통계' })
   async getDashboardStats() {
@@ -209,6 +219,7 @@ export class AdminController {
    * 사용자 활동 통계
    */
   @Get('dashboard/user-activity')
+  @UseGuards(AdminAuthGuard)
   @ApiOperation({ summary: '사용자 활동 통계 (Admin)' })
   @ApiResponse({ status: 200, description: '사용자 활동 통계' })
   async getUserActivityStats(@Query('userId') userId?: number) {
@@ -219,6 +230,7 @@ export class AdminController {
    * 인기 콘텐츠 조회
    */
   @Get('dashboard/popular-contents')
+  @UseGuards(AdminAuthGuard)
   @ApiOperation({ summary: '인기 콘텐츠 조회 (Admin)' })
   @ApiResponse({ status: 200, description: '인기 콘텐츠 목록' })
   async getPopularContents(@Query('limit') limit: number = 10) {
@@ -229,6 +241,7 @@ export class AdminController {
    * 일별 통계 조회
    */
   @Get('dashboard/daily-stats')
+  @UseGuards(AdminAuthGuard)
   @ApiOperation({ summary: '일별 통계 조회 (Admin)' })
   @ApiResponse({ status: 200, description: '일별 통계' })
   async getDailyStats() {
@@ -239,6 +252,7 @@ export class AdminController {
    * 사용자 목록 조회 (알림 대상 선택용)
    */
   @Get('users')
+  @UseGuards(AdminAuthGuard)
   @ApiOperation({ summary: '사용자 목록 조회 (Admin)' })
   @ApiResponse({ status: 200, description: '사용자 목록' })
   async getUsers(
@@ -267,6 +281,7 @@ export class AdminController {
    * 알림 발송 (특정 사용자/그룹/전체)
    */
   @Post('notifications')
+  @UseGuards(AdminAuthGuard)
   @UsePipes(new ZodValidationPipe(sendNotificationSchema))
   @ApiOperation({ summary: '알림 발송 - 특정인/그룹/전체 (Admin)' })
   @ApiResponse({ status: 201, description: '알림 발송 완료' })
@@ -278,6 +293,7 @@ export class AdminController {
    * 관리자 생성
    */
   @Post('admins')
+  @UseGuards(SuperAdminAuthGuard)
   @UsePipes(new ZodValidationPipe(createAdminSchema))
   @ApiOperation({ summary: '관리자 생성 (Super Admin 전용)' })
   @ApiResponse({ status: 201, description: '관리자 생성 성공' })
@@ -290,6 +306,7 @@ export class AdminController {
    * 관리자 목록 조회
    */
   @Get('admins')
+  @UseGuards(AdminAuthGuard)
   @ApiOperation({ summary: '관리자 목록 조회 (Admin)' })
   @ApiResponse({ status: 200, description: '관리자 목록' })
   async getAdmins() {
@@ -300,6 +317,7 @@ export class AdminController {
    * 관리자 역할 변경
    */
   @Put('admins/:id/role')
+  @UseGuards(SuperAdminAuthGuard)
   @ApiOperation({ summary: '관리자 역할 변경 (Super Admin 전용)' })
   @ApiResponse({ status: 200, description: '역할 변경 성공' })
   async updateAdminRole(
@@ -313,6 +331,7 @@ export class AdminController {
    * 관리자 삭제
    */
   @Delete('admins/:id')
+  @UseGuards(SuperAdminAuthGuard)
   @ApiOperation({ summary: '관리자 삭제 (Super Admin 전용)' })
   @ApiResponse({ status: 200, description: '삭제 성공' })
   async deleteAdmin(@Param('id') id: string) {
@@ -323,6 +342,7 @@ export class AdminController {
    * 활동 내역 조회 (페이징)
    */
   @Get('activity-logs')
+  @UseGuards(AdminAuthGuard)
   @ApiOperation({ summary: '관리자 활동 내역 조회' })
   @ApiResponse({ status: 200, description: '활동 내역 목록' })
   async getActivityLogs(
@@ -335,6 +355,7 @@ export class AdminController {
    * 특정 관리자 활동 내역 조회
    */
   @Get('admins/:id/activity-logs')
+  @UseGuards(AdminAuthGuard)
   @ApiOperation({ summary: '특정 관리자 활동 내역 조회' })
   @ApiResponse({ status: 200, description: '활동 내역 목록' })
   async getAdminActivityLogs(
@@ -348,6 +369,7 @@ export class AdminController {
    * 특정 행동별 활동 내역 조회
    */
   @Get('activity-logs/:action')
+  @UseGuards(AdminAuthGuard)
   @ApiOperation({ summary: '특정 행동별 활동 내역 조회' })
   @ApiResponse({ status: 200, description: '활동 내역 목록' })
   async getActivityLogsByAction(
@@ -361,6 +383,7 @@ export class AdminController {
    * 활동 내역 통계 (최신 N 개)
    */
   @Get('activity-stats')
+  @UseGuards(AdminAuthGuard)
   @ApiOperation({ summary: '활동 내역 통계를 조회' })
   @ApiResponse({ status: 200, description: '활동 내역 통계' })
   async getActivityStats(@Query() query?: { limit?: number }) {
@@ -371,6 +394,7 @@ export class AdminController {
    * 검수 요청 조회 (REVIEWER)
    */
   @Get('reviews')
+  @UseGuards(ReviewerAuthGuard)
   @ApiOperation({ summary: '검수 요청 목록 조회' })
   @ApiResponse({ status: 200, description: '검수 요청 목록' })
   async getReviewRequests(@Query() query?: { page?: number; limit?: number; status?: string }) {
@@ -381,6 +405,7 @@ export class AdminController {
    * 검수 요청 상세 조회
    */
   @Get('reviews/:targetType/:targetId')
+  @UseGuards(ReviewerAuthGuard)
   @ApiOperation({ summary: '검수 요청 대상 상세 조회' })
   @ApiResponse({ status: 200, description: '검수 대상 상세 정보' })
   async getReviewTargetDetails(
@@ -394,6 +419,7 @@ export class AdminController {
    * 검수 승인 처리
    */
   @Post('reviews/:targetType/:targetId/approve')
+  @UseGuards(ReviewerAuthGuard)
   @ApiOperation({ summary: '검수 요청 승인' })
   @ApiResponse({ status: 201, description: '승인 완료' })
   async approveReview(
@@ -408,6 +434,7 @@ export class AdminController {
    * 검수 거절 처리
    */
   @Post('reviews/:targetType/:targetId/reject')
+  @UseGuards(ReviewerAuthGuard)
   @ApiOperation({ summary: '검수 요청 거절' })
   @ApiResponse({ status: 201, description: '거절 완료' })
   async rejectReview(
@@ -422,6 +449,7 @@ export class AdminController {
    * REVIEWER 권한 부여
    */
   @Post('users/:userId/reviewer')
+  @UseGuards(AdminAuthGuard)
   @ApiOperation({ summary: '사용자에게 REVIEWER 권한 부여' })
   @ApiResponse({ status: 200, description: '권한 부여 완료' })
   async makeReviewer(@Param('userId') userId: string) {
@@ -432,6 +460,7 @@ export class AdminController {
    * REVIEWER 권한 해제
    */
   @Delete('users/:userId/reviewer')
+  @UseGuards(AdminAuthGuard)
   @ApiOperation({ summary: 'REVIEWER 권한 해제' })
   @ApiResponse({ status: 200, description: '권한 해제 완료' })
   async revokeReviewer(@Param('userId') userId: string) {
@@ -442,6 +471,7 @@ export class AdminController {
    * 콘텐츠 승인 처리
    */
   @Post('content/:id/approve')
+  @UseGuards(ReviewerAuthGuard)
   @ApiOperation({ summary: '콘텐츠 승인' })
   @ApiResponse({ status: 200, description: '승인 완료' })
   async approveContent(
@@ -455,6 +485,7 @@ export class AdminController {
    * 콘텐츠 거절 처리
    */
   @Post('content/:id/reject')
+  @UseGuards(ReviewerAuthGuard)
   @ApiOperation({ summary: '콘텐츠 거절' })
   @ApiResponse({ status: 200, description: '거절 완료' })
   async rejectContent(

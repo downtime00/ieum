@@ -64,3 +64,44 @@ export class AdminAuthGuard implements CanActivate {
     return true;
   }
 }
+
+/** 검수권한 — ADMIN/SUPER_ADMIN/REVIEWER */
+@Injectable()
+export class ReviewerAuthGuard implements CanActivate {
+  constructor(
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
+  ) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const req = context.switchToHttp().getRequest();
+    const userId = authenticateRequest(req);
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (
+      !user ||
+      ![UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.REVIEWER].includes(user.role)
+    ) {
+      throw new ForbiddenException('검수 권한이 필요합니다');
+    }
+    return true;
+  }
+}
+
+/** 슈퍼 관리자 전용 — 관리자 계정 생성/역할 변경/삭제 */
+@Injectable()
+export class SuperAdminAuthGuard implements CanActivate {
+  constructor(
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
+  ) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const req = context.switchToHttp().getRequest();
+    const userId = authenticateRequest(req);
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user || user.role !== UserRole.SUPER_ADMIN) {
+      throw new ForbiddenException('슈퍼 관리자 권한이 필요합니다');
+    }
+    return true;
+  }
+}
