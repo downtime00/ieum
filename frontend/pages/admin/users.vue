@@ -144,6 +144,7 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({ middleware: "admin" });
 import { apiFetch } from "~/utils/auth";
 
 const config = useRuntimeConfig();

@@ -206,7 +206,12 @@ const isCareService = computed(() =>
 // B2B(기관 대상) 프로그램 — 승인된 기관 회원만 신청 가능
 const isB2B = computed(() => program.value?.programType === "B2B");
 const myOperator = ref<any>(null);
-const canBookB2B = computed(() => myOperator.value?.status === "APPROVED");
+const myOrgGroup = ref<string | null>(null);
+// B2B는 '기관' 유형 operator만 신청 가능 (개인 사업자 제외 — 백엔드와 동일 규칙)
+const canBookB2B = computed(
+  () =>
+    myOperator.value?.status === "APPROVED" && myOrgGroup.value === "institution",
+);
 
 const remaining = computed(() =>
   program.value ? Math.max(0, program.value.capacity - program.value.bookedCount) : 0,
@@ -361,9 +366,19 @@ onMounted(async () => {
       // 내가 그룹장(HEAD)인 가족 목록 — 그룹 예약 옵션
       const uid = getUserId();
       if (uid) {
-        // B2B 신청 권한 확인 — 승인된 기관 보유 여부
+        // B2B 신청 권한 확인 — 승인된 '기관' 유형 operator 여부
         const mres = await apiFetch(config.public.apiBase, `/operators/me/${uid}`);
         myOperator.value = mres.ok ? await mres.json() : null;
+        if (myOperator.value?.orgType) {
+          const orgTypes = await fetchMasterData<{ name: string; group: string }>(
+            config.public.apiBase as string,
+            "/operators/org-types",
+            "ieum:org-types",
+          );
+          myOrgGroup.value =
+            orgTypes?.find((t) => t.name === myOperator.value.orgType)?.group ??
+            null;
+        }
         const fres = await apiFetch(config.public.apiBase, `/board/families?userId=${uid}`);
         const fams: any[] = fres.ok ? await fres.json() : [];
         headFamilies.value = fams.filter((f) => f.role === "HEAD");

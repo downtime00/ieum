@@ -98,6 +98,7 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({ middleware: "admin" });
 const config = useRuntimeConfig();
 
 const form = ref({

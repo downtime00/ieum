@@ -179,6 +179,7 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({ middleware: "admin" });
 const router = useRouter();
 const config = useRuntimeConfig();
 
