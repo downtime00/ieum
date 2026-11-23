@@ -73,12 +73,10 @@ export class BookingsService {
       throw new BadRequestException('아직 승인되지 않은 기관의 프로그램입니다');
     }
 
-    // B2B 프로그램: 승인된 기관 회원만 신청 가능
+    // B2B 프로그램: 승인된 '기관' 유형 회원만 신청 가능 (개인 사업자 제외)
     let bookerOperator: Operator | null = null;
     if (isB2B) {
-      bookerOperator = await this.operatorRepo.findOne({
-        where: { ownerUserId: userId, status: 'APPROVED' },
-      });
+      bookerOperator = await this.operatorsService.findApprovedInstitution(userId);
       if (!bookerOperator) {
         throw new ForbiddenException('기관 대상(B2B) 프로그램은 승인된 기관 회원만 신청할 수 있습니다');
       }

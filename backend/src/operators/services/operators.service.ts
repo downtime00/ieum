@@ -389,11 +389,19 @@ export class OperatorsService {
     return qb.getMany();
   }
 
-  /** B2B 프로그램 목록 — 승인된 기관 회원만 조회 가능 */
-  async listB2bPrograms(operatorId: number, userId: number): Promise<OperatorProgram[]> {
-    const requester = await this.operatorRepo.findOne({
+  /** 승인된 '기관' 유형 operator 조회 — B2B 프로그램 열람/신청 자격 판별용 */
+  async findApprovedInstitution(userId: number): Promise<Operator | null> {
+    const op = await this.operatorRepo.findOne({
       where: { ownerUserId: userId, status: 'APPROVED' },
     });
+    if (!op) return null;
+    const orgType = await this.orgTypeRepo.findOne({ where: { name: op.orgType } });
+    return orgType?.group === 'institution' ? op : null;
+  }
+
+  /** B2B 프로그램 목록 — 승인된 기관 회원만 조회 가능 */
+  async listB2bPrograms(operatorId: number, userId: number): Promise<OperatorProgram[]> {
+    const requester = await this.findApprovedInstitution(userId);
     if (!requester) {
       throw new ForbiddenException('승인된 기관 회원만 기관 대상 프로그램을 볼 수 있습니다');
     }
