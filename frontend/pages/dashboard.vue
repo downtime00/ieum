@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-stone-50 flex flex-col">
-    <div class="container mx-auto px-4 pt-8 pb-28 flex-1 flex flex-col">
+    <div class="container mx-auto px-4 py-8 flex-1 flex flex-col">
       <!-- 통합 대시보드 패널 -->
       <div class="ieum-panel rounded-3xl p-4 sm:p-6 mb-6 flex-1 flex flex-col">
       <!-- 날씨 타일 -->
