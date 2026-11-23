@@ -85,6 +85,8 @@
     "medHospitalDirections": "병원 가는 길 찾기",
     "tilePrograms": "공연·강의 예약",
     "tileBookings": "내 예약",
+    "tileMedManage": "약·병원 관리",
+    "tileMedManageDesc": "복용 약·병원 예약",
     "tileOperator": "기관 관리",
     "tileCareServices": "요양·간병 서비스",
     "notices": "공지사항"
@@ -212,6 +214,8 @@
     "vibrationOff": "진동 꺼짐",
     "testVibration": "진동 테스트",
     "vibrationUnsupported": "이 브라우저/기기에서는 진동을 지원하지 않습니다",
+    "shortcuts": "바로가기",
+    "shortcutsDesc": "콜택시와 길찾기를 바로 사용할 수 있어요",
     "account": "계정",
     "loggedIn": "로그인되어 있습니다",
     "notLoggedIn": "로그인되어 있지 않습니다",

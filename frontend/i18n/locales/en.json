@@ -85,6 +85,8 @@
     "medHospitalDirections": "Directions to hospital",
     "tilePrograms": "Events/Lectures",
     "tileBookings": "My bookings",
+    "tileMedManage": "Medications",
+    "tileMedManageDesc": "Meds & clinics",
     "tileOperator": "Operator",
     "tileCareServices": "Care services",
     "notices": "Announcements"
@@ -212,6 +214,8 @@
     "vibrationOff": "Vibration off",
     "testVibration": "Test vibration",
     "vibrationUnsupported": "Vibration is not supported on this browser/device",
+    "shortcuts": "Shortcuts",
+    "shortcutsDesc": "Quick access to taxi calls and directions",
     "account": "Account",
     "loggedIn": "You are logged in",
     "notLoggedIn": "You are not logged in",

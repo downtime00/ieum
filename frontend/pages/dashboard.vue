@@ -283,7 +283,7 @@
 
         <!-- 게시판 글 타일 -->
         <NuxtLink
-          v-for="p in boardPosts.slice(0, 4)"
+          v-for="p in boardPosts.slice(0, 3)"
           :key="`p-${p.id}`"
           :to="`/board?post=${p.id}`"
           class="relative overflow-hidden bg-amber-600/90 hover:bg-amber-500 rounded-xl p-3 flex flex-col justify-between min-h-[72px] transition"
@@ -301,7 +301,7 @@
 
         <!-- 문화 정보 타일 -->
         <NuxtLink
-          v-for="c in cultureItems.slice(0, 4)"
+          v-for="c in cultureItems.slice(0, 3)"
           :key="`c-${c.id}`"
           :to="`/culture/${c.id}`"
           class="relative overflow-hidden bg-sky-600/90 hover:bg-sky-500 rounded-xl p-3 flex flex-col justify-between min-h-[72px] transition"
@@ -313,6 +313,23 @@
             }}</span>
             <span class="block text-[10px] text-white/70 mt-0.5">{{
               [fmtDate(c.eventDate), c.location].filter(Boolean).join(" · ")
+            }}</span>
+          </span>
+        </NuxtLink>
+
+        <!-- 약·병원 관리 바로가기: 바로가기 타일에서 내려온 유일한 진입점 -->
+        <NuxtLink
+          v-if="isLoggedIn"
+          to="/medications"
+          class="relative overflow-hidden bg-emerald-700 hover:bg-emerald-600 rounded-xl p-3 flex flex-col justify-between min-h-[72px] transition"
+        >
+          <span class="absolute -bottom-3 -right-2 text-5xl opacity-25 select-none pointer-events-none">💊</span>
+          <span class="relative">
+            <span class="block text-xs font-semibold text-white">{{
+              $t("dashboard.tileMedManage")
+            }}</span>
+            <span class="block text-[10px] text-white/70 mt-0.5">{{
+              $t("dashboard.tileMedManageDesc")
             }}</span>
           </span>
         </NuxtLink>
@@ -377,22 +394,6 @@
         >
           <span class="text-xs font-semibold text-white text-center leading-tight">{{
             seniorEnabled ? $t("senior.disable") : $t("senior.enable")
-          }}</span>
-        </button>
-        <button
-          @click="showTaxiModal = true"
-          class="bg-amber-500 hover:bg-amber-400 rounded-xl p-3 min-h-[64px] flex items-center justify-center transition"
-        >
-          <span class="text-xs font-semibold text-white text-center leading-tight">{{
-            $t("dashboard.callTaxi")
-          }}</span>
-        </button>
-        <button
-          @click="showDirModal = true"
-          class="bg-indigo-500 hover:bg-indigo-400 rounded-xl p-3 min-h-[64px] flex items-center justify-center transition"
-        >
-          <span class="text-xs font-semibold text-white text-center leading-tight">{{
-            $t("dashboard.directions")
           }}</span>
         </button>
         <NuxtLink
@@ -469,118 +470,12 @@
       </div>
     </div>
 
-    <!-- 길찾기 모달 -->
-    <div
-      v-if="showDirModal"
-      class="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center p-4"
-      @click.self="showDirModal = false"
-    >
-      <div class="bg-white rounded-3xl p-6 w-full max-w-sm">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-xl font-bold text-slate-800">
-            {{ $t("directions.title") }}
-          </h3>
-          <button
-            @click="showDirModal = false"
-            class="text-slate-400 hover:text-slate-600 text-2xl leading-none px-2"
-            aria-label="닫기"
-          >
-            ×
-          </button>
-        </div>
-        <p class="text-sm text-slate-500 mb-4">{{ $t("directions.hint") }}</p>
-        <div class="flex gap-2">
-          <input
-            v-model="dirDest"
-            type="text"
-            :placeholder="$t('directions.placeholder')"
-            class="flex-1 min-w-0 px-4 py-3.5 border border-slate-300 rounded-2xl text-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-            @keyup.enter="goDirections"
-          />
-          <button
-            v-if="dirVoice.supported.value"
-            type="button"
-            @click="dirVoice.toggle"
-            class="flex items-center justify-center self-stretch gap-1.5 px-4 rounded-xl font-semibold text-sm whitespace-nowrap transition shrink-0 border"
-            :class="
-              dirVoice.listening.value
-                ? 'bg-red-500 border-red-500 text-white animate-pulse'
-                : 'bg-blue-50 border-blue-200 text-blue-800 hover:bg-blue-100'
-            "
-            :title="$t('directions.voice')"
-            :aria-label="$t('directions.voice')"
-          >
-            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5-3c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
-            <span>{{
-              dirVoice.listening.value
-                ? $t("common.listening")
-                : $t("common.mic")
-            }}</span>
-          </button>
-        </div>
-        <p
-          v-if="dirVoice.listening.value"
-          class="text-sm text-red-500 mt-2"
-        >
-          {{ $t("directions.listening") }}
-        </p>
-        <p v-if="dirVoice.error.value" class="text-sm text-red-500 mt-2">
-          {{ voiceErrorText(dirVoice.error.value) }}
-        </p>
-        <p v-if="dirError" class="text-sm text-red-500 mt-3">{{ dirError }}</p>
-        <button
-          @click="goDirections"
-          :disabled="dirLoading || !dirDest.trim()"
-          class="mt-5 w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-300 text-white font-bold text-lg rounded-2xl py-4 transition"
-        >
-          {{ dirLoading ? $t("common.loading") : $t("directions.submit") }}
-        </button>
-      </div>
-    </div>
-
-    <!-- 콜택시 모달 -->
-    <div
-      v-if="showTaxiModal"
-      class="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center p-4"
-      @click.self="showTaxiModal = false"
-    >
-      <div class="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-lg">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-2xl font-bold text-slate-800">
-            {{ $t("taxi.title") }}
-          </h3>
-          <button
-            @click="showTaxiModal = false"
-            class="text-slate-400 hover:text-slate-600 text-3xl leading-none px-3"
-            aria-label="닫기"
-          >
-            ×
-          </button>
-        </div>
-        <p class="text-base text-slate-500 mb-6">{{ $t("taxi.note") }}</p>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <a
-            v-for="svc in visibleTaxiServices"
-            :key="svc.tel"
-            :href="`tel:${svc.tel}`"
-            class="relative rounded-2xl py-5 px-4 text-center transition"
-            :class="[svc.cls, isMyTaxi(svc) && 'ring-4 ring-white/70']"
-          >
-            <span
-              v-if="isMyTaxi(svc)"
-              class="absolute -top-2.5 left-1/2 -translate-x-1/2 text-sm font-bold bg-white text-slate-800 px-3 py-1 rounded-full whitespace-nowrap shadow"
-              >{{ $t("taxi.myRegion") }}</span
-            >
-            <span class="block text-white font-bold text-xl leading-tight">{{
-              $t(svc.nameKey)
-            }}</span>
-            <span class="block text-white/95 text-lg font-semibold mt-1.5">{{
-              svc.display
-            }}</span>
-          </a>
-        </div>
-      </div>
-    </div>
+    <!-- 길찾기 모달 (약·병원 예약에서 진입) -->
+    <DirectionsModal
+      :open="showDirModal"
+      :initial-dest="dirInitialDest"
+      @close="showDirModal = false"
+    />
 
     <!-- 공지사항 상세 모달 -->
     <div
@@ -619,162 +514,9 @@ const router = useRouter();
 const { locale, t } = useI18n();
 const { enabled: seniorEnabled, toggle: toggleSenior } = useSeniorMode();
 const { enabled: voiceEnabled, toggle: toggleVoice, speak } = useSpeech();
-const showTaxiModal = ref(false);
-
-// 지역별 콜택시 대표번호
-const taxiServices = [
-  { nameKey: "taxi.nationwide", tel: "02114", display: "02-114", cls: "bg-sky-500 hover:bg-sky-400" },
-  { nameKey: "taxi.seoul", tel: "15884388", display: "1588-4388", cls: "bg-sky-700 hover:bg-sky-600" },
-  { nameKey: "taxi.gyeonggi", tel: "16660420", display: "1666-0420", cls: "bg-emerald-600 hover:bg-emerald-500" },
-  { nameKey: "taxi.incheon", tel: "15770320", display: "1577-0320", cls: "bg-amber-500 hover:bg-amber-400" },
-  { nameKey: "taxi.gangwon", tel: "15772014", display: "1577-2014", cls: "bg-teal-600 hover:bg-teal-500" },
-  { nameKey: "taxi.busan", tel: "15551114", display: "1555-1114", cls: "bg-rose-600 hover:bg-rose-500" },
-  { nameKey: "taxi.chungbuk", tel: "15330220", display: "1533-0220", cls: "bg-violet-600 hover:bg-violet-500" },
-  { nameKey: "taxi.chungnam", tel: "16445588", display: "1644-5588", cls: "bg-indigo-600 hover:bg-indigo-500" },
-  { nameKey: "taxi.daegu", tel: "15776776", display: "1577-6776", cls: "bg-cyan-600 hover:bg-cyan-500" },
-  { nameKey: "taxi.jeonbuk", tel: "0632270002", display: "063-227-0002", cls: "bg-orange-600 hover:bg-orange-500" },
-  { nameKey: "taxi.jeonnam", tel: "18991110", display: "1899-1110", cls: "bg-lime-600 hover:bg-lime-500" },
-  { nameKey: "taxi.daejeon", tel: "0426121050", display: "042-612-1050", cls: "bg-fuchsia-600 hover:bg-fuchsia-500" },
-  { nameKey: "taxi.sejong", tel: "18999042", display: "1899-9042", cls: "bg-pink-600 hover:bg-pink-500" },
-  { nameKey: "taxi.gyeongbuk", tel: "18997770", display: "1899-7770", cls: "bg-blue-700 hover:bg-blue-600" },
-  { nameKey: "taxi.gyeongnam", tel: "15664488", display: "1566-4488", cls: "bg-red-600 hover:bg-red-500" },
-  { nameKey: "taxi.gwangju", tel: "16682222", display: "1668-2222", cls: "bg-yellow-600 hover:bg-yellow-500" },
-  { nameKey: "taxi.ulsan", tel: "0522928253", display: "052-292-8253", cls: "bg-stone-600 hover:bg-stone-500" },
-  { nameKey: "taxi.jeju", tel: "18996888", display: "1899-6888", cls: "bg-slate-700 hover:bg-slate-600" },
-];
-
-// 내 위치 기준 지역 콜택시 자동 선택 (역지오코딩)
-const taxiRegionKey = ref<string | null>(null);
-
-const normRegion = (s: string) =>
-  s
-    .replace(/[\s()]/g, "")
-    .replace(/(특별자치도|특별자치시|특별시|광역시|도|시)+$/, "");
-
-// API가 구 명칭(전라북도 등)을 반환할 때 대비 별칭
-const REGION_ALIASES: Record<string, string[]> = {
-  jeonbuk: ["전라북"],
-  jeonnam: ["전라남"],
-  chungbuk: ["충북"],
-  chungnam: ["충남"],
-  gyeongbuk: ["경북"],
-  gyeongnam: ["경남"],
-};
-
-const isMyTaxi = (svc: (typeof taxiServices)[number]) =>
-  taxiRegionKey.value != null && svc.nameKey === `taxi.${taxiRegionKey.value}`;
-
-// 전국(114) + 내 지역 2개만 표시
-const visibleTaxiServices = computed(() => {
-  const nationwide = taxiServices.filter((s) => s.nameKey === "taxi.nationwide");
-  const mine = taxiServices.filter(isMyTaxi);
-  return [...nationwide, ...mine];
-});
-
-const detectTaxiRegion = async () => {
-  const pos = geoPosition.value;
-  if (!pos || taxiRegionKey.value) return;
-  try {
-    const res = await fetch(
-      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${pos.latitude}&longitude=${pos.longitude}&localityLanguage=ko`,
-    );
-    if (!res.ok) return;
-    const data = await res.json();
-    const target = normRegion(String(data.principalSubdivision || data.city || ""));
-    if (!target) return;
-    for (const svc of taxiServices) {
-      const key = svc.nameKey.replace("taxi.", "");
-      const names = [normRegion(t(svc.nameKey)), ...(REGION_ALIASES[key] || [])];
-      if (names.includes(target)) {
-        taxiRegionKey.value = key;
-        return;
-      }
-    }
-  } catch {
-    /* 위치→지역 변환 실패 시 전체 목록 그대로 */
-  }
-};
-
-watch(showTaxiModal, (open) => {
-  if (open) detectTaxiRegion();
-});
-
-// 길찾기: 목적지 입력/음성 → 주소→좌표 변환 → 네이버 지도 길찾기
+// 길찾기 모달 — 콜택시/길찾기는 설정 페이지로 이동, 여기는 약 병원 길찾기 진입용
 const showDirModal = ref(false);
-const dirDest = ref("");
-const dirLoading = ref(false);
-const dirError = ref("");
-const dirVoice = useVoiceInput(dirDest);
-const voiceErrorText = (code: string) => {
-  if (code === "microphone_permission" || code === "service-not-allowed")
-    return t("board.voiceErrorPermission");
-  if (code === "network") return t("board.voiceErrorNetwork");
-  return t("board.voiceErrorGeneric");
-};
-
-const geocodeAddress = async (
-  address: string,
-): Promise<{ lat: number; lng: number; name: string } | null> => {
-  try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=ko&q=${encodeURIComponent(address)}`,
-    );
-    const data = await res.json();
-    if (!Array.isArray(data) || !data.length) return null;
-    return {
-      lat: parseFloat(data[0].lat),
-      lng: parseFloat(data[0].lon),
-      name: data[0].display_name || address,
-    };
-  } catch {
-    return null;
-  }
-};
-
-const getCurrentPosition = (): Promise<{ latitude: number; longitude: number } | null> =>
-  new Promise((resolve) => {
-    if (!import.meta.client || !navigator.geolocation) {
-      resolve(null);
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) =>
-        resolve({
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-        }),
-      () => resolve(null),
-      { timeout: 8000 },
-    );
-  });
-
-const goDirections = async () => {
-  const dest = dirDest.value.trim();
-  if (!dest || dirLoading.value) return;
-  dirLoading.value = true;
-  dirError.value = "";
-  // 출발지는 항상 현재 GPS 위치 (실패 시 도착지만 지정)
-  const geoPromise = geocodeAddress(dest);
-  const origin = await getCurrentPosition();
-  const geo = await geoPromise;
-  if (!geo) {
-    // 좌표 변환 실패 시 네이버 지도 검색으로 폴백
-    window.open(
-      `https://map.naver.com/p/search/${encodeURIComponent(dest)}`,
-      "_blank",
-      "noopener",
-    );
-    showDirModal.value = false;
-    dirLoading.value = false;
-    return;
-  }
-  const url = origin
-    ? `https://map.naver.com/index.nhn?slat=${origin.latitude}&slng=${origin.longitude}&stext=${encodeURIComponent(t("directions.fromHere"))}&elat=${geo.lat}&elng=${geo.lng}&etext=${encodeURIComponent(dest)}&menu=route&pathType=1`
-    : `https://map.naver.com/index.nhn?elat=${geo.lat}&elng=${geo.lng}&etext=${encodeURIComponent(dest)}&menu=route&pathType=1`;
-  window.open(url, "_blank", "noopener");
-  showDirModal.value = false;
-  dirLoading.value = false;
-};
+const dirInitialDest = ref("");
 
 // 영역 바로가기 타일 — 기관 보유 여부로 자동 구성, 관리자가 menuKeys로 override 가능
 const TILE_CATALOG: Record<
@@ -799,7 +541,7 @@ const autoMenuKeys = computed<string[]>(() => {
       ? ["operator", "bookings", "programs"]
       : ["operator", "bookings", "programs"];
   }
-  return ["medications", "culture", "board", "programs", "bookings"];
+  return ["culture", "board", "programs", "bookings"];
 });
 
 const shortcutTiles = computed(() => {
@@ -889,10 +631,10 @@ const sortedNotifications = computed(() =>
         Number(a.isRead) - Number(b.isRead) ||
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     )
-    .slice(0, 4),
+    .slice(0, 2),
 );
 
-// 약·병원: 다음 복용 시간 가까운 순, 최대 4개
+// 약·병원: 다음 복용 시간 가까운 순, 최대 3개
 const medNextMinutes = (m: {
   reminderTimes?: string | null;
   timesPerDay?: number;
@@ -957,7 +699,7 @@ const sortedMeds = computed(() =>
   medItems.value
     .filter(isWithin24h)
     .sort((a, b) => medNextMinutes(a) - medNextMinutes(b))
-    .slice(0, 4),
+    .slice(0, 3),
 );
 
 // 다음 복용 시간 라벨 (24시간제 "HH:MM")
@@ -1072,8 +814,7 @@ const goHospitalDirections = () => {
   const m = medActionMed.value;
   if (!m) return;
   // 예약 메모(병원명/주소)를 목적지로 길찾기 모달 오픈
-  dirDest.value = m.appointmentNote || m.name;
-  dirError.value = "";
+  dirInitialDest.value = m.appointmentNote || m.name;
   medActionMed.value = null;
   showDirModal.value = true;
 };
