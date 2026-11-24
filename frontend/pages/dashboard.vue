@@ -536,6 +536,7 @@
 
 <script setup lang="ts">
 import { apiFetch } from "~/utils/auth";
+import { playNotifySound } from "~/utils/sound";
 const router = useRouter();
 const { locale, t } = useI18n();
 const { enabled: seniorEnabled, toggle: toggleSenior } = useSeniorMode();
@@ -865,23 +866,29 @@ const formatDate = (dateString: string) => {
 };
 
 const VIBRATION_KEY = "ieum_vibration";
+const SOUND_KEY = "ieum_sound";
 const LAST_NOTIF_CHECK_KEY = "ieum:lastNotifCheck";
 const VIBRATION_PATTERN = [200, 100, 200];
 
-// 앱 내 새 알림 감지 시 진동 (설정의 진동 토글과 동일 키 사용)
-const vibrateForNewNotifications = (list: any[]) => {
-  if (typeof navigator === "undefined" || !("vibrate" in navigator)) return;
-  if (localStorage.getItem(VIBRATION_KEY) === "0") return;
+// 앱 내 새 알림 감지 시 소리(기본) + 진동(지원 기기) 알림
+const alertForNewNotifications = (list: any[]) => {
+  if (typeof navigator === "undefined") return;
   const lastCheck = Number(localStorage.getItem(LAST_NOTIF_CHECK_KEY) || 0);
   const now = Date.now();
   localStorage.setItem(LAST_NOTIF_CHECK_KEY, String(now));
-  // 첫 실행(기준선 없음)은 진동 없이 기준만 설정
+  // 첫 실행(기준선 없음)은 알림 없이 기준만 설정
   if (!lastCheck) return;
   const hasNew = list.some(
     (n) =>
       !n.isRead && n.createdAt && new Date(n.createdAt).getTime() > lastCheck,
   );
-  if (hasNew) navigator.vibrate(VIBRATION_PATTERN);
+  if (!hasNew) return;
+  if (localStorage.getItem(SOUND_KEY) !== "0") playNotifySound();
+  if (
+    "vibrate" in navigator &&
+    localStorage.getItem(VIBRATION_KEY) !== "0"
+  )
+    navigator.vibrate(VIBRATION_PATTERN);
 };
 
 const loadNotifications = async () => {
@@ -892,7 +899,7 @@ const loadNotifications = async () => {
     if (listRes.ok) {
       const list = await listRes.json();
       notifications.value = list;
-      vibrateForNewNotifications(Array.isArray(list) ? list : []);
+      alertForNewNotifications(Array.isArray(list) ? list : []);
     }
   } catch (e) {
     console.error("알림 로딩 실패:", e);

@@ -82,7 +82,7 @@ self.addEventListener('push', (event) => {
         if (prefOff) vibrate = undefined
       } catch {}
 
-      return self.registration.showNotification(title, {
+      const shown = await self.registration.showNotification(title, {
         body: data.body || '',
         icon: `${base}icons/icon-192.png`,
         badge: `${base}icons/icon-192.png`,
@@ -91,6 +91,13 @@ self.addEventListener('push', (event) => {
         vibrate,
         data: { url: data.url || '/' },
       })
+      // 앱이 열려 있으면 차임음 재생을 위해 클라이언트에 알림
+      const clients = await self.clients.matchAll({
+        type: 'window',
+        includeUncontrolled: true,
+      })
+      clients.forEach((c) => c.postMessage({ type: 'IEUM_PUSH', data }))
+      return shown
     })(),
   )
 })

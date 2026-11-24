@@ -77,6 +77,40 @@
         </p>
       </section>
 
+      <!-- 알림 소리 -->
+      <section class="bg-white/10 rounded-2xl p-6 mb-4">
+        <h2 class="font-semibold text-white mb-1">
+          {{ $t("settings.sound") }}
+        </h2>
+        <p class="text-sm text-white/60 mb-5">
+          {{ $t("settings.soundDesc") }}
+        </p>
+        <div class="flex flex-wrap items-center gap-3">
+          <button
+            @click="toggleSound"
+            :class="
+              soundOn
+                ? 'bg-sky-500 text-white'
+                : 'bg-white/10 text-white/70'
+            "
+            class="font-semibold py-3 px-8 rounded-xl transition text-lg"
+          >
+            {{
+              soundOn
+                ? $t("settings.soundOn")
+                : $t("settings.soundOff")
+            }}
+          </button>
+          <button
+            v-if="soundOn"
+            @click="testSound"
+            class="bg-white/10 text-sky-300 border border-sky-400/40 font-semibold py-3 px-6 rounded-xl hover:bg-white/20 transition"
+          >
+            {{ $t("settings.testSound") }}
+          </button>
+        </div>
+      </section>
+
       <!-- 알림 표시 개수 -->
       <section class="bg-white/10 rounded-2xl p-6 mb-4">
         <h2 class="font-semibold text-white mb-1">
@@ -426,12 +460,14 @@
 
 <script setup lang="ts">
 import { apiFetch } from "~/utils/auth";
+import { playNotifySound } from "~/utils/sound";
 
 const router = useRouter();
 const runtimeConfig = useRuntimeConfig();
 const apiBase = runtimeConfig.public.apiBase as string;
 const STORAGE_KEY = "notificationDisplayCount";
 const VIBRATION_KEY = "ieum_vibration";
+const SOUND_KEY = "ieum_sound";
 const DEFAULT_COUNT = 2;
 const MAX_COUNT = 10;
 
@@ -493,6 +529,13 @@ const toggleVibration = () => {
 const testVibrate = () => {
   if (canVibrate.value) navigator.vibrate(VIBRATION_PATTERN);
 };
+
+const soundOn = ref(true);
+const toggleSound = () => {
+  soundOn.value = !soundOn.value;
+  localStorage.setItem(SOUND_KEY, soundOn.value ? "1" : "0");
+};
+const testSound = () => playNotifySound();
 
 const selectCount = (n: number) => {
   count.value = n;
@@ -666,5 +709,9 @@ onMounted(() => {
   }
   applyVibrationCookie(vibrationOn.value);
   canVibrate.value = typeof navigator !== "undefined" && "vibrate" in navigator;
+
+  // 알림 소리 설정 복원 (기본 켬)
+  const soundSaved = localStorage.getItem(SOUND_KEY);
+  soundOn.value = soundSaved !== "0";
 });
 </script>
