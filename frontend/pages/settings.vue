@@ -143,6 +143,79 @@
         </p>
       </section>
 
+      <!-- 내 지역 설정 -->
+      <section class="bg-white/10 rounded-2xl p-6 mb-4">
+        <h2 class="font-semibold text-white mb-1">
+          {{ $t("settings.region") }}
+        </h2>
+        <p class="text-sm text-white/60 mb-5">
+          {{ $t("settings.regionDesc") }}
+        </p>
+        <p class="text-sm text-white/60 mb-3">
+          {{ $t("settings.regionLabel") }}:
+          <span class="text-white font-semibold">{{
+            displayRegion || $t("settings.regionNone")
+          }}</span>
+        </p>
+        <div class="flex gap-2 mb-3">
+          <input
+            v-model="regionQuery"
+            type="text"
+            :placeholder="$t('location.manualPlaceholder')"
+            class="flex-1 min-w-0 bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 text-base focus:outline-none focus:border-sky-400"
+            @keyup.enter="searchRegion"
+          />
+          <button
+            @click="searchRegion"
+            :disabled="regionLoading || !regionQuery.trim()"
+            class="bg-sky-500 text-white font-semibold py-3 px-5 rounded-xl hover:bg-sky-400 transition text-sm disabled:opacity-40 whitespace-nowrap"
+          >
+            {{ regionLoading ? "..." : $t("location.search") }}
+          </button>
+        </div>
+        <ul v-if="regionResults.length" class="space-y-1 mb-3">
+          <li v-for="r in regionResults" :key="`${r.lat},${r.lng}`">
+            <button
+              @click="applyRegion(r)"
+              class="w-full text-left bg-white/5 hover:bg-white/15 rounded-xl px-4 py-3 transition"
+            >
+              <span class="block text-white font-semibold text-sm">{{
+                r.name
+              }}</span>
+              <span class="block text-white/50 text-xs mt-0.5 break-all">{{
+                r.address
+              }}</span>
+            </button>
+          </li>
+        </ul>
+        <p
+          v-if="regionSearched && !regionResults.length"
+          class="text-sm text-white/50 mb-3"
+        >
+          {{ $t("location.noResult") }}
+        </p>
+        <div class="flex gap-2">
+          <button
+            @click="useGpsRegion"
+            :disabled="geoStatus === 'requesting'"
+            class="bg-blue-800 text-white font-semibold py-3 px-6 rounded-xl hover:bg-blue-900 transition text-sm disabled:opacity-40"
+          >
+            {{
+              geoStatus === "requesting"
+                ? $t("location.requesting")
+                : $t("settings.regionUseGps")
+            }}
+          </button>
+          <button
+            v-if="hasRegion"
+            @click="clearRegion"
+            class="bg-white/10 text-white/70 font-semibold py-3 px-6 rounded-xl hover:bg-white/20 transition text-sm"
+          >
+            {{ $t("location.delete") }}
+          </button>
+        </div>
+      </section>
+
       <!-- 시스템 점검 -->
       <section class="bg-white/10 rounded-2xl p-6 mb-4">
         <h2 class="font-semibold text-white mb-1">
@@ -448,6 +521,83 @@ const countOptions = Array.from({ length: MAX_COUNT - 1 }, (_, i) => i + 2); // 
 
 const count = ref(DEFAULT_COUNT);
 
+// 내 지역 설정 — 대시보드 위치 카드와 동일한 저장소(userLocation) 사용
+const REGION_LABEL_KEY = "ieum:locationLabel";
+const {
+  status: geoStatus,
+  position: geoPosition,
+  loadStoredPosition,
+  requestLocation,
+  clearLocation,
+  setManualPosition,
+} = useGeolocation();
+const regionQuery = ref("");
+const regionResults = ref<
+  { name: string; address: string; lat: number | null; lng: number | null }[]
+>([]);
+const regionLoading = ref(false);
+const regionSearched = ref(false);
+const regionLabel = ref("");
+
+const hasRegion = computed(() => !!geoPosition.value);
+const displayRegion = computed(() => {
+  if (regionLabel.value) return regionLabel.value;
+  const p = geoPosition.value;
+  return p ? `${p.latitude.toFixed(4)}, ${p.longitude.toFixed(4)}` : "";
+});
+
+const searchRegion = async () => {
+  const q = regionQuery.value.trim();
+  if (!q) return;
+  regionLoading.value = true;
+  regionSearched.value = false;
+  try {
+    const res = await apiFetch(
+      apiBase,
+      `/contents/geocode?query=${encodeURIComponent(q)}`,
+    );
+    regionResults.value = res.ok ? await res.json() : [];
+  } catch {
+    regionResults.value = [];
+  }
+  regionSearched.value = true;
+  regionLoading.value = false;
+};
+
+const applyRegion = (r: {
+  name: string;
+  address: string;
+  lat: number | null;
+  lng: number | null;
+}) => {
+  if (r.lat == null || r.lng == null) return;
+  setManualPosition({
+    latitude: r.lat,
+    longitude: r.lng,
+    accuracy: 0,
+    timestamp: Date.now(),
+  });
+  regionLabel.value = r.name || r.address || "";
+  localStorage.setItem(REGION_LABEL_KEY, regionLabel.value);
+  regionQuery.value = "";
+  regionResults.value = [];
+};
+
+const useGpsRegion = async () => {
+  const pos = await requestLocation();
+  if (pos) {
+    // GPS 좌표는 주소명이 없으므로 라벨 제거 → 좌표 표시
+    regionLabel.value = "";
+    localStorage.removeItem(REGION_LABEL_KEY);
+  }
+};
+
+const clearRegion = () => {
+  clearLocation();
+  regionLabel.value = "";
+  localStorage.removeItem(REGION_LABEL_KEY);
+};
+
 // 웹 푸시 구독
 const {
   supported: pushSupported,
@@ -684,5 +834,9 @@ onMounted(() => {
   // 알림 소리 설정 복원 (기본 켬)
   const soundSaved = localStorage.getItem(SOUND_KEY);
   soundOn.value = soundSaved !== "0";
+
+  // 저장된 지역 복원
+  loadStoredPosition();
+  regionLabel.value = localStorage.getItem(REGION_LABEL_KEY) || "";
 });
 </script>
