@@ -68,7 +68,8 @@ export default defineNuxtConfig({
         { name: 'description', content: '지역 주민이 자신이 관심 있는 지역기관의 공지, 행사, 프로그램, 문화정보 등을 한곳에서 확인할 수 있는 지역생활 정보 플랫폼' },
       ],
       link: [
-        { rel: 'icon', type: 'image/x-icon', href: `${base}favicon.ico` },
+        { rel: 'icon', type: 'image/png', sizes: '192x192', href: `${base}icons/icon-192.png` },
+        { rel: 'apple-touch-icon', href: `${base}icons/icon-192.png` },
         { rel: 'manifest', href: `${base}manifest.webmanifest` },
       ],
     },
