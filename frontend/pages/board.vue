@@ -353,6 +353,16 @@
         </article>
       </div>
       </div>
+
+      <!-- 하단 바로가기: 공연·강의 예약 -->
+      <div class="mt-6 pt-4 border-t border-slate-200 flex justify-center">
+        <NuxtLink
+          to="/operators"
+          class="inline-flex items-center gap-2 bg-blue-800 text-white font-semibold py-3 px-6 rounded-xl hover:bg-blue-900 transition text-base"
+        >
+          {{ $t("board.goPrograms") }} →
+        </NuxtLink>
+      </div>
     </div>
 
     <!-- 게시글 상세 모달 -->

@@ -95,6 +95,16 @@
             </div>
           </button>
         </div>
+
+        <!-- 하단 바로가기: 가족·그룹 게시판 -->
+        <div class="mt-6 pt-4 border-t border-white/10 flex justify-center">
+          <NuxtLink
+            to="/board"
+            class="inline-flex items-center gap-2 bg-white/10 text-white font-semibold py-3 px-6 rounded-xl hover:bg-white/20 transition text-base"
+          >
+            ← {{ $t("board.title") }}
+          </NuxtLink>
+        </div>
       </div>
     </div>
 
