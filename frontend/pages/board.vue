@@ -471,12 +471,12 @@
             {{ $t("board.commentsDisabled") }}
           </p>
         </div>
-        <div v-else class="p-4 border-t border-slate-100 flex gap-2">
+        <div v-else class="p-4 border-t border-slate-100 flex flex-wrap gap-2">
           <input
             v-model="commentInput"
             @keyup.enter="addComment"
             :placeholder="$t('board.commentPlaceholder')"
-            class="flex-1 min-w-0 h-11 border border-slate-300 rounded-full px-4 text-base focus:outline-none focus:border-blue-400"
+            class="flex-1 min-w-[140px] h-11 border border-slate-300 rounded-full px-4 text-base focus:outline-none focus:border-blue-400"
           />
           <button
             v-if="commentVoice.supported"
