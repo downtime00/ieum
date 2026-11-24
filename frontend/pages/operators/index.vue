@@ -58,11 +58,12 @@
           등록된 기관이 없습니다.
         </div>
         <div v-else class="space-y-3">
-          <NuxtLink
+          <button
             v-for="op in operators"
             :key="op.id"
-            :to="`/operators/${op.id}`"
-            class="block bg-white/10 hover:bg-white/15 rounded-2xl p-5 transition"
+            type="button"
+            @click="selectedOperatorId = op.id"
+            class="block w-full text-left bg-white/10 hover:bg-white/15 rounded-2xl p-5 transition"
           >
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
@@ -92,10 +93,15 @@
               </div>
               <span class="text-white/40 text-lg flex-shrink-0">›</span>
             </div>
-          </NuxtLink>
+          </button>
         </div>
       </div>
     </div>
+
+    <OperatorDetailModal
+      :operator-id="selectedOperatorId"
+      @close="selectedOperatorId = null"
+    />
   </div>
 </template>
 
@@ -124,6 +130,7 @@ const loading = ref(false);
 const keyword = ref("");
 const orgType = ref("");
 const isOperator = ref(false);
+const selectedOperatorId = ref<string | null>(null);
 
 const getUserId = (): number | null => {
   try {
