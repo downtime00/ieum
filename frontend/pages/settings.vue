@@ -546,6 +546,38 @@ const displayRegion = computed(() => {
   return p ? `${p.latitude.toFixed(4)}, ${p.longitude.toFixed(4)}` : "";
 });
 
+// 좌표 → 주소 역지오코딩 (bigdatacloud 무료 API, TaxiModal과 동일)
+const reverseGeocode = async (
+  lat: number,
+  lng: number,
+): Promise<string> => {
+  try {
+    const res = await fetch(
+      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=ko`,
+    );
+    if (!res.ok) return "";
+    const d = await res.json();
+    return (
+      [d.city, d.locality, d.principalSubdivision].filter(Boolean).join(" ") ||
+      d.principalSubdivision ||
+      ""
+    );
+  } catch {
+    return "";
+  }
+};
+
+// 라벨 없이 좌표만 저장된 경우 주소를 역지오코딩해 표시·저장
+const resolveRegionLabel = async () => {
+  const p = geoPosition.value;
+  if (!p || regionLabel.value) return;
+  const addr = await reverseGeocode(p.latitude, p.longitude);
+  if (addr) {
+    regionLabel.value = addr;
+    localStorage.setItem(REGION_LABEL_KEY, addr);
+  }
+};
+
 const searchRegion = async () => {
   const q = regionQuery.value.trim();
   if (!q) return;
@@ -577,7 +609,8 @@ const applyRegion = (r: {
     accuracy: 0,
     timestamp: Date.now(),
   });
-  regionLabel.value = r.name || r.address || "";
+  // 주소지 우선으로 라벨 저장 (지역명은 보조)
+  regionLabel.value = r.address || r.name || "";
   localStorage.setItem(REGION_LABEL_KEY, regionLabel.value);
   regionQuery.value = "";
   regionResults.value = [];
@@ -586,9 +619,10 @@ const applyRegion = (r: {
 const useGpsRegion = async () => {
   const pos = await requestLocation();
   if (pos) {
-    // GPS 좌표는 주소명이 없으므로 라벨 제거 → 좌표 표시
+    // GPS 좌표는 주소명이 없으므로 역지오코딩으로 주소 표시
     regionLabel.value = "";
     localStorage.removeItem(REGION_LABEL_KEY);
+    await resolveRegionLabel();
   }
 };
 
@@ -838,5 +872,6 @@ onMounted(() => {
   // 저장된 지역 복원
   loadStoredPosition();
   regionLabel.value = localStorage.getItem(REGION_LABEL_KEY) || "";
+  void resolveRegionLabel();
 });
 </script>
