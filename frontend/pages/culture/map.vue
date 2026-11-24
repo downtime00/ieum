@@ -72,6 +72,18 @@
       <div class="relative flex-1 bg-stone-200 min-h-[320px]">
 
         <div ref="mapEl" class="w-full h-full"></div>
+        <!-- 지도 로딩 오버레이: 타일 로드 전까지 표시 -->
+        <div
+          v-if="mapLoading"
+          class="absolute inset-0 z-[900] flex items-center justify-center bg-stone-200"
+        >
+          <div class="text-center">
+            <div
+              class="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"
+            ></div>
+            <p class="text-slate-500 font-medium">{{ $t("common.loading") }}</p>
+          </div>
+        </div>
         <!-- 큰 줌 버튼 (어르신용 상시 노출) -->
         <div class="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
           <button
@@ -204,6 +216,7 @@ declare global {
 
 const mapEl = ref<HTMLElement | null>(null);
 const mapError = ref("");
+const mapLoading = ref(true);
 const visibleCount = ref(0);
 const visibleItems = ref<MapContent[]>([]);
 const MAX_KM = 5;
@@ -350,21 +363,40 @@ onMounted(async () => {
 
   try {
     await loadNaverMaps(config.public.naverMapsClientId);
+    if (!window.naver?.maps) throw new Error("naver.maps를 초기화하지 못했습니다.");
   } catch (e: any) {
     mapError.value = e.message || "지도를 불러올 수 없습니다.";
+    mapLoading.value = false;
     return;
   }
 
-  if (!mapEl.value) return;
+  if (!mapEl.value) {
+    mapLoading.value = false;
+    return;
+  }
 
-  // 지도 초기화 (한국 중심)
-  map = new (naver().maps.Map)(mapEl.value, {
-    center: new (naver().maps.LatLng)(36.5, 127.8),
-    zoom: 7,
-  });
+  try {
+    // 지도 초기화 (한국 중심)
+    map = new (naver().maps.Map)(mapEl.value, {
+      center: new (naver().maps.LatLng)(36.5, 127.8),
+      zoom: 7,
+    });
 
-  // 줌 레벨에 따라 마커 크기 자동 조절
-  naver().maps.Event.addListener(map, "zoom_changed", () => renderMarkers());
+    // 타일이 처음 그려지면 로딩 오버레이 제거
+    naver().maps.Event.addListener(map, "idle", () => {
+      mapLoading.value = false;
+    });
+    // idle 이벤트가 안 오는 환경 대비 타임아웃
+    setTimeout(() => (mapLoading.value = false), 8000);
+
+    // 줌 레벨에 따라 마커 크기 자동 조절
+    naver().maps.Event.addListener(map, "zoom_changed", () => renderMarkers());
+  } catch (e: any) {
+    console.error("지도 초기화 실패:", e);
+    mapError.value = "지도를 초기화하지 못했습니다.";
+    mapLoading.value = false;
+    return;
+  }
 
   // 콘텐츠 로드
   try {
