@@ -377,13 +377,13 @@
         <div
           class="p-6 border-b border-slate-100 flex items-start justify-between gap-3"
         >
-          <div>
+          <div class="min-w-0 flex-1">
             <span
               v-if="selectedPost.isNotice"
               class="text-xs font-bold bg-red-500 text-white px-2.5 py-1 rounded-full"
               >{{ $t("board.noticeBadge") }}</span
             >
-            <h2 class="text-xl font-bold text-slate-900 mt-1">
+            <h2 class="text-xl font-bold text-slate-900 mt-1 break-words">
               {{ selectedPost.title }}
             </h2>
             <p class="text-sm text-slate-400 mt-1">
@@ -398,7 +398,7 @@
             <button
               v-if="canDeletePost()"
               @click="deletePost(selectedPost)"
-              class="text-xs text-red-300 hover:text-red-200"
+              class="text-xs text-red-600 hover:text-red-700 font-semibold shrink-0"
             >
               {{ $t("board.delete") }}
             </button>
@@ -438,7 +438,7 @@
                 <button
                   v-if="canDeleteComment(c)"
                   @click="deleteComment(c)"
-                  class="text-xs text-red-300 hover:text-red-200"
+                  class="text-xs text-red-600 hover:text-red-700 font-semibold"
                 >
                   {{ $t("board.delete") }}
                 </button>
@@ -476,7 +476,7 @@
             v-model="commentInput"
             @keyup.enter="addComment"
             :placeholder="$t('board.commentPlaceholder')"
-            class="flex-1 h-11 border border-slate-300 rounded-full px-4 text-base focus:outline-none focus:border-blue-400"
+            class="flex-1 min-w-0 h-11 border border-slate-300 rounded-full px-4 text-base focus:outline-none focus:border-blue-400"
           />
           <button
             v-if="commentVoice.supported"
@@ -1280,16 +1280,28 @@ const openPost = async (p: Post) => {
 const roleInFamily = (familyId: string | number) =>
   families.value.find((f) => Number(f.id) === Number(familyId))?.role;
 
-const canDeletePost = () =>
-  !!selectedPost.value &&
-  (String(selectedPost.value.authorUserId) === String(userId.value) ||
-    roleInFamily(selectedPost.value.familyId) === "HEAD");
+// 삭제 가능 여부: 해당 그룹의 멤버인 경우에만 판별 (탈퇴/비멤버는 무조건 불가)
+const canDeletePost = () => {
+  const p = selectedPost.value;
+  if (!p) return false;
+  const role = roleInFamily(p.familyId);
+  if (!role) return false;
+  return (
+    String(p.authorUserId) === String(userId.value) || role === "HEAD"
+  );
+};
 
-const canDeleteComment = (c: Comment) =>
-  String(c.authorUserId) === String(userId.value) ||
-  String(selectedPost.value?.authorUserId) === String(userId.value) ||
-  (!!selectedPost.value &&
-    roleInFamily(selectedPost.value.familyId) === "HEAD");
+const canDeleteComment = (c: Comment) => {
+  const p = selectedPost.value;
+  if (!p) return false;
+  const role = roleInFamily(p.familyId);
+  if (!role) return false;
+  return (
+    String(c.authorUserId) === String(userId.value) ||
+    String(p.authorUserId) === String(userId.value) ||
+    role === "HEAD"
+  );
+};
 
 const openPostForm = () => {
   postForm.title = "";
