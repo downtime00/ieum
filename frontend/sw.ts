@@ -66,13 +66,20 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     (async () => {
       // 진동 설정 확인 (쿠키 ieum_vibration=0 이면 끔, 기본 켬)
+      // cookieStore 미지원 환경 대비 Cache API(ieum-prefs)도 함께 확인
       let vibrate: number[] | undefined = [200, 100, 200]
       try {
+        let prefOff = false
         const cookieStore = (self as unknown as { cookieStore?: { get(name: string): Promise<{ value: string } | undefined> } }).cookieStore
-        if (cookieStore) {
-          const cookie = await cookieStore.get('ieum_vibration')
-          if (cookie && cookie.value === '0') vibrate = undefined
+        const cookie = cookieStore ? await cookieStore.get('ieum_vibration') : undefined
+        if (cookie) {
+          prefOff = cookie.value === '0'
+        } else {
+          const cache = await caches.open('ieum-prefs')
+          const res = await cache.match('/__prefs/vibration')
+          if (res && (await res.text()) === '0') prefOff = true
         }
+        if (prefOff) vibrate = undefined
       } catch {}
 
       return self.registration.showNotification(title, {

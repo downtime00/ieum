@@ -477,6 +477,11 @@ const VIBRATION_PATTERN = [200, 100, 200];
 
 const applyVibrationCookie = (on: boolean) => {
   document.cookie = `${VIBRATION_KEY}=${on ? 1 : 0};path=/;max-age=31536000;SameSite=Lax`;
+  // SW가 쿠키 대신 읽을 수 있도록 Cache API에도 저장 (cookieStore 미지원 대비)
+  caches
+    .open("ieum-prefs")
+    .then((c) => c.put("/__prefs/vibration", new Response(on ? "1" : "0")))
+    .catch(() => {});
 };
 
 const toggleVibration = () => {

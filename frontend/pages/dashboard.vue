@@ -864,12 +864,36 @@ const formatDate = (dateString: string) => {
   }
 };
 
+const VIBRATION_KEY = "ieum_vibration";
+const LAST_NOTIF_CHECK_KEY = "ieum:lastNotifCheck";
+const VIBRATION_PATTERN = [200, 100, 200];
+
+// 앱 내 새 알림 감지 시 진동 (설정의 진동 토글과 동일 키 사용)
+const vibrateForNewNotifications = (list: any[]) => {
+  if (typeof navigator === "undefined" || !("vibrate" in navigator)) return;
+  if (localStorage.getItem(VIBRATION_KEY) === "0") return;
+  const lastCheck = Number(localStorage.getItem(LAST_NOTIF_CHECK_KEY) || 0);
+  const now = Date.now();
+  localStorage.setItem(LAST_NOTIF_CHECK_KEY, String(now));
+  // 첫 실행(기준선 없음)은 진동 없이 기준만 설정
+  if (!lastCheck) return;
+  const hasNew = list.some(
+    (n) =>
+      !n.isRead && n.createdAt && new Date(n.createdAt).getTime() > lastCheck,
+  );
+  if (hasNew) navigator.vibrate(VIBRATION_PATTERN);
+};
+
 const loadNotifications = async () => {
   if (!userId.value) return;
   try {
     const listRes = await apiFetch(config.public.apiBase, `/notifications/user/${userId.value}?limit=${notificationLimit.value}`,
     );
-    if (listRes.ok) notifications.value = await listRes.json();
+    if (listRes.ok) {
+      const list = await listRes.json();
+      notifications.value = list;
+      vibrateForNewNotifications(Array.isArray(list) ? list : []);
+    }
   } catch (e) {
     console.error("알림 로딩 실패:", e);
   }
@@ -1282,6 +1306,16 @@ onMounted(async () => {
   loadCulturePreview();
   loadBoardPreview();
   loadNotices();
+
+  // 탭 복귀 시 알림 재조회 — 새 알림이 있으면 진동
+  const onVisible = () => {
+    if (document.visibilityState === "visible" && userId.value)
+      loadNotifications();
+  };
+  document.addEventListener("visibilitychange", onVisible);
+  onUnmounted(() =>
+    document.removeEventListener("visibilitychange", onVisible),
+  );
 });
 
 // 관리자 공지사항 — 공개 공지만, 고정 우선 정렬(백엔드 orderBy)
