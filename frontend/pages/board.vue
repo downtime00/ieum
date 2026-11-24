@@ -107,6 +107,13 @@
           ⚙ {{ $t("board.manage") }}
         </button>
         <button
+          v-if="!guestMode && currentFamily && currentFamily.role !== 'GUEST'"
+          @click="openPollForm"
+          class="bg-emerald-500 text-white font-semibold py-2.5 px-4 rounded-xl hover:bg-emerald-400 transition text-sm"
+        >
+          📊 {{ $t("board.pollWrite") }}
+        </button>
+        <button
           v-if="currentFamily && currentFamily.role !== 'GUEST'"
           @click="openPostForm()"
           class="bg-sky-500 text-white font-semibold py-2.5 px-5 rounded-xl hover:bg-sky-400 transition text-sm"
@@ -245,6 +252,81 @@
             </button>
           </span>
         </div>
+      </div>
+
+      <!-- 투표 목록 (선택한 그룹에서만) -->
+      <div
+        v-if="currentFamily && !viewAll && polls.length > 0"
+        class="flex flex-col gap-3 mb-4"
+      >
+        <article
+          v-for="poll in polls"
+          :key="poll.id"
+          class="bg-white/10 rounded-2xl p-5"
+        >
+          <div class="flex items-start justify-between gap-3 mb-3">
+            <div class="min-w-0">
+              <span
+                class="text-xs font-bold bg-emerald-500 text-white px-2.5 py-1 rounded-full"
+                >📊 {{ $t("board.poll") }}</span
+              >
+              <h3 class="font-semibold text-white mt-1.5 break-words">
+                {{ poll.question }}
+              </h3>
+            </div>
+            <button
+              v-if="poll.canDelete"
+              @click="deletePoll(poll)"
+              class="text-xs text-red-300 hover:text-red-200 font-semibold shrink-0"
+            >
+              {{ $t("board.delete") }}
+            </button>
+          </div>
+          <div class="flex flex-col gap-2">
+            <button
+              v-for="(opt, i) in poll.options"
+              :key="i"
+              type="button"
+              :disabled="!poll.canVote"
+              @click="votePoll(poll, i)"
+              class="relative w-full text-left rounded-xl px-4 py-3 border overflow-hidden transition"
+              :class="
+                poll.myVote === i
+                  ? 'border-emerald-300 bg-emerald-400/20'
+                  : poll.canVote
+                    ? 'border-white/15 bg-white/5 hover:bg-white/15 cursor-pointer'
+                    : 'border-white/10 bg-white/5'
+              "
+            >
+              <!-- 득표율 바 -->
+              <span
+                v-if="poll.totalVotes > 0"
+                class="absolute inset-y-0 left-0 bg-emerald-400/20"
+                :style="{ width: pollPercent(poll, i) + '%' }"
+              ></span>
+              <span class="relative flex items-center justify-between gap-2">
+                <span class="text-sm font-medium text-white">
+                  {{ opt }}
+                  <span
+                    v-if="poll.myVote === i"
+                    class="ml-1 text-emerald-300 text-xs font-semibold"
+                    >✓ {{ $t("board.pollMyVote") }}</span
+                  >
+                </span>
+                <span
+                  v-if="poll.totalVotes > 0"
+                  class="text-xs text-white/60 shrink-0"
+                >
+                  {{ poll.counts[i] }}표 · {{ pollPercent(poll, i) }}%
+                </span>
+              </span>
+            </button>
+          </div>
+          <p class="text-xs text-white/40 mt-2.5">
+            {{ poll.authorName }} · {{ formatDate(poll.createdAt) }} ·
+            {{ $t("board.pollTotal", { count: poll.totalVotes }) }}
+          </p>
+        </article>
       </div>
 
       <!-- 게시글 목록 -->
@@ -633,6 +715,74 @@
       </div>
     </div>
 
+    <!-- 투표 만들기 모달 -->
+    <div
+      v-if="showPollForm"
+      class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+      @click.self="showPollForm = false"
+    >
+      <div class="bg-white rounded-2xl w-full max-w-xl p-6 max-h-[85vh] overflow-y-auto">
+        <h2 class="text-xl font-bold text-slate-900 mb-4">
+          {{ $t("board.pollWrite") }}
+        </h2>
+        <input
+          v-model="pollForm.question"
+          :placeholder="$t('board.pollQuestion')"
+          maxlength="300"
+          class="w-full border border-slate-300 rounded-xl px-4 py-3 mb-3 focus:outline-none focus:border-blue-400"
+        />
+        <div class="flex flex-col gap-2 mb-2">
+          <div
+            v-for="(opt, i) in pollForm.options"
+            :key="i"
+            class="flex gap-2"
+          >
+            <input
+              v-model="pollForm.options[i]"
+              :placeholder="$t('board.pollOption', { n: i + 1 })"
+              maxlength="100"
+              class="flex-1 min-w-0 border border-slate-300 rounded-xl px-4 py-2.5 focus:outline-none focus:border-blue-400"
+            />
+            <button
+              v-if="pollForm.options.length > 2"
+              type="button"
+              @click="pollForm.options.splice(i, 1)"
+              class="shrink-0 w-10 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition text-lg"
+              :aria-label="$t('board.delete')"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+        <button
+          v-if="pollForm.options.length < 10"
+          type="button"
+          @click="pollForm.options.push('')"
+          class="text-sm text-blue-700 font-semibold hover:text-blue-800 mb-4"
+        >
+          + {{ $t("board.pollAddOption") }}
+        </button>
+        <div class="flex gap-2 justify-end">
+          <button
+            @click="showPollForm = false"
+            class="h-11 px-5 rounded-xl text-base text-slate-600 hover:bg-slate-100 transition"
+          >
+            {{ $t("board.cancel") }}
+          </button>
+          <button
+            @click="submitPoll"
+            :disabled="
+              !pollForm.question.trim() ||
+              pollForm.options.filter((o) => o.trim()).length < 2
+            "
+            class="h-11 bg-emerald-600 text-white font-semibold px-6 rounded-xl text-base hover:bg-emerald-500 disabled:opacity-40 transition"
+          >
+            {{ $t("board.submit") }}
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- 가족 만들기/참가 모달 -->
     <div
       v-if="showFamilyModal"
@@ -934,6 +1084,24 @@ const allSentinel = ref<HTMLElement | null>(null);
 let allObserver: IntersectionObserver | null = null;
 const posts = ref<Post[]>([]);
 const loading = ref(false);
+
+// 가족 투표
+interface Poll {
+  id: string;
+  familyId: number;
+  question: string;
+  authorName: string;
+  createdAt: string;
+  options: string[];
+  counts: number[];
+  totalVotes: number;
+  myVote: number | null;
+  canVote: boolean;
+  canDelete: boolean;
+}
+const polls = ref<Poll[]>([]);
+const showPollForm = ref(false);
+const pollForm = reactive({ question: "", options: ["", ""] as string[] });
 const members = ref<Member[]>([]);
 const showMembers = ref(false);
 const showManage = ref(false);
@@ -1076,6 +1244,7 @@ const selectAll = async () => {
   currentFamily.value = null;
   members.value = [];
   posts.value = [];
+  polls.value = [];
   allPosts.value = [];
   allPage.value = 1;
   allHasMore.value = false;
@@ -1153,7 +1322,67 @@ const selectFamily = async (f: Family) => {
   currentFamily.value = f;
   showMembers.value = false;
   showManage.value = false;
-  await Promise.all([loadPosts(), loadMembers()]);
+  await Promise.all([loadPosts(), loadMembers(), loadPolls()]);
+};
+
+// ── 투표 ──
+const loadPolls = async () => {
+  if (!currentFamily.value || viewAll.value) {
+    polls.value = [];
+    return;
+  }
+  const res = await fetch(
+    api(`/board/polls?familyId=${currentFamily.value.id}&userId=${userId.value}`),
+  );
+  polls.value = res.ok ? await res.json() : [];
+};
+
+const pollPercent = (poll: Poll, i: number) =>
+  poll.totalVotes > 0 ? Math.round((poll.counts[i] / poll.totalVotes) * 100) : 0;
+
+const openPollForm = () => {
+  pollForm.question = "";
+  pollForm.options = ["", ""];
+  showPollForm.value = true;
+};
+
+const submitPoll = async () => {
+  if (!currentFamily.value) return;
+  const res = await fetch(api("/board/polls"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      familyId: currentFamily.value.id,
+      userId: userId.value,
+      question: pollForm.question.trim(),
+      options: pollForm.options.map((o) => o.trim()).filter(Boolean),
+    }),
+  });
+  if (res.ok) {
+    showPollForm.value = false;
+    await loadPolls();
+  } else {
+    const err = await res.json().catch(() => ({}));
+    alert(err?.message || "등록에 실패했습니다.");
+  }
+};
+
+const votePoll = async (poll: Poll, optionIndex: number) => {
+  if (!poll.canVote || poll.myVote === optionIndex) return;
+  const res = await fetch(api(`/board/polls/${poll.id}/vote`), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId: userId.value, optionIndex }),
+  });
+  if (res.ok) await loadPolls();
+};
+
+const deletePoll = async (poll: Poll) => {
+  if (!confirm("삭제하시겠습니까?")) return;
+  await fetch(api(`/board/polls/${poll.id}?userId=${userId.value}`), {
+    method: "DELETE",
+  });
+  await loadPolls();
 };
 
 const loadMembers = async () => {
@@ -1203,6 +1432,7 @@ const leaveFamily = async () => {
     currentFamily.value = null;
     members.value = [];
     posts.value = [];
+    polls.value = [];
     await loadFamilies();
   } else {
     const err = await res.json().catch(() => ({}));
@@ -1433,8 +1663,9 @@ const viewGroup = async (g: GroupResult) => {
   currentFamily.value = { id: g.id, name: g.name, role: "GUEST", isPublic: true };
   members.value = [];
   posts.value = [];
+  polls.value = [];
   showGroupSearch.value = false;
-  await loadPosts();
+  await Promise.all([loadPosts(), loadPolls()]);
 };
 
 const joinGroup = async (g: GroupResult) => {
