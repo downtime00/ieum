@@ -24,8 +24,12 @@ export const useVoiceInput = (target: Ref<string> | (() => Ref<string>)) => {
       recognition.start();
       listening.value = true;
       error.value = "";
-    } catch {
-      // 이미 시작된 상태 등 — onend/onerror에서 정리됨
+    } catch (e: any) {
+      // 이미 시작된 상태(InvalidStateError)는 정상 — onend/onerror에서 정리됨
+      if (e?.name === "InvalidStateError") return;
+      listening.value = false;
+      wantListening = false;
+      error.value = "start_failed";
     }
   };
 
@@ -70,7 +74,20 @@ export const useVoiceInput = (target: Ref<string> | (() => Ref<string>)) => {
     };
   });
 
-  const toggle = () => {
+  // PWA/설치형 환경에서는 SpeechRecognition이 마이크 권한을 스스로 요청하지 않는
+  // 경우가 있어, 시작 전에 getUserMedia로 명시적으로 권한을 얻는다
+  const ensureMicPermission = async (): Promise<boolean> => {
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) return true; // API 없으면 Speech API에 맡김
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((t) => t.stop());
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const toggle = async () => {
     if (!recognition) return;
     if (wantListening) {
       wantListening = false;
@@ -84,6 +101,12 @@ export const useVoiceInput = (target: Ref<string> | (() => Ref<string>)) => {
     } else {
       wantListening = true;
       error.value = "";
+      const granted = await ensureMicPermission();
+      if (!granted) {
+        wantListening = false;
+        error.value = "microphone_permission";
+        return;
+      }
       startRecognition();
     }
   };
