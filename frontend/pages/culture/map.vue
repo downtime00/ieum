@@ -414,6 +414,41 @@ const clusterItems = (items: MapContent[]): Cluster[] => {
   }));
 };
 
+// 마커 아래에 상시 표시되는 제목 라벨 (줌 충분히 확대 + 마커 적을 때만)
+const LABEL_ZOOM = 12;
+const LABEL_MAX_ITEMS = 25;
+
+// naver.maps 로드 후에만 호출 — OverlayView를 호출 시점에 상속
+const createLabelOverlay = (latlng: any, text: string) => {
+  const Base = (window.naver as any).maps.OverlayView;
+  class LabelOverlay extends Base {
+    private el: HTMLElement;
+    private latlng: any;
+    constructor(l: any, t: string) {
+      super();
+      this.latlng = l;
+      this.el = document.createElement("div");
+      this.el.textContent = t;
+      this.el.style.cssText =
+        "position:absolute;transform:translate(-50%,0);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" +
+        "background:rgba(255,255,255,.94);border:1px solid rgba(15,23,42,.15);border-radius:999px;" +
+        "padding:3px 10px;font-size:12px;font-weight:600;color:#1e293b;box-shadow:0 1px 4px rgba(0,0,0,.18);pointer-events:none;";
+    }
+    onAdd() {
+      this.getPanes().overlayLayer.appendChild(this.el);
+    }
+    draw() {
+      const point = this.getProjection().fromCoordToOffset(this.latlng);
+      this.el.style.left = `${Math.round(point.x)}px`;
+      this.el.style.top = `${Math.round(point.y) + 8}px`;
+    }
+    onRemove() {
+      this.el.remove();
+    }
+  }
+  return new LabelOverlay(latlng, text);
+};
+
 const renderMarkers = () => {
   if (!map) return;
   overlays.forEach((o) => o.setMap(null));
@@ -462,7 +497,8 @@ const renderMarkers = () => {
       maxLng = Math.max(maxLng, c.lng);
     }
   } else {
-    // 줌 인: 개별 마커
+    // 줌 인: 개별 마커 — 충분히 확대되고 마커가 적으면 제목 라벨 상시 표시
+    const showLabels = zoom >= LABEL_ZOOM && items.length <= LABEL_MAX_ITEMS;
     for (const item of items) {
       const lat = Number(item.latitude);
       const lng = Number(item.longitude);
@@ -480,6 +516,14 @@ const renderMarkers = () => {
         },
       });
       overlays.push(marker);
+      if (showLabels) {
+        const label = createLabelOverlay(
+          new (naver().maps.LatLng)(lat, lng),
+          item.title,
+        );
+        label.setMap(map);
+        overlays.push(label);
+      }
 
       // 클릭 시 카드형 정보창
       naver().maps.Event.addListener(marker, "click", () => {
