@@ -22,7 +22,7 @@
           </button>
           <NuxtLink
             to="/culture/map"
-            class="bg-sky-500 text-white font-semibold py-2.5 px-5 rounded-xl hover:bg-sky-400 transition text-sm"
+            class="inline-flex items-center bg-sky-500 text-white font-semibold py-2.5 px-5 rounded-xl hover:bg-sky-400 transition text-sm leading-none"
           >
             {{ $t("culture.mapTitle") }}
           </NuxtLink>
