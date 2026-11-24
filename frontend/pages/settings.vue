@@ -523,6 +523,8 @@ const count = ref(DEFAULT_COUNT);
 
 // 내 지역 설정 — 대시보드 위치 카드와 동일한 저장소(userLocation) 사용
 const REGION_LABEL_KEY = "ieum:locationLabel";
+// 라벨이 역지오코딩으로 자동 생성됐는지 여부 (수동 검색 주소와 구분)
+const REGION_LABEL_AUTO_KEY = "ieum:locationLabelAuto";
 const {
   status: geoStatus,
   position: geoPosition,
@@ -557,24 +559,31 @@ const reverseGeocode = async (
     );
     if (!res.ok) return "";
     const d = await res.json();
-    return (
-      [d.city, d.locality, d.principalSubdivision].filter(Boolean).join(" ") ||
-      d.principalSubdivision ||
-      ""
-    );
+    // city/locality/subdivision이 중복되면(서울특별시 … 서울특별시) 제거
+    const norm = (s: string) => s.replace(/\s+/g, "");
+    const parts: string[] = [];
+    for (const p of [d.city, d.locality, d.principalSubdivision].filter(Boolean)) {
+      const n = norm(p);
+      if (!parts.some((q) => norm(q).includes(n) || n.includes(norm(q)))) {
+        parts.push(p);
+      }
+    }
+    return parts.join(" ") || d.principalSubdivision || "";
   } catch {
     return "";
   }
 };
 
 // 라벨 없이 좌표만 저장된 경우 주소를 역지오코딩해 표시·저장
-const resolveRegionLabel = async () => {
+// force=true면 기존 자동 라벨도 다시 생성 (주소 포맷 개선 시 구 라벨 교정용)
+const resolveRegionLabel = async (force = false) => {
   const p = geoPosition.value;
-  if (!p || regionLabel.value) return;
+  if (!p || (regionLabel.value && !force)) return;
   const addr = await reverseGeocode(p.latitude, p.longitude);
   if (addr) {
     regionLabel.value = addr;
     localStorage.setItem(REGION_LABEL_KEY, addr);
+    localStorage.setItem(REGION_LABEL_AUTO_KEY, "1");
   }
 };
 
@@ -612,6 +621,7 @@ const applyRegion = (r: {
   // 주소지 우선으로 라벨 저장 (지역명은 보조)
   regionLabel.value = r.address || r.name || "";
   localStorage.setItem(REGION_LABEL_KEY, regionLabel.value);
+  localStorage.removeItem(REGION_LABEL_AUTO_KEY);
   regionQuery.value = "";
   regionResults.value = [];
 };
@@ -622,6 +632,7 @@ const useGpsRegion = async () => {
     // GPS 좌표는 주소명이 없으므로 역지오코딩으로 주소 표시
     regionLabel.value = "";
     localStorage.removeItem(REGION_LABEL_KEY);
+    localStorage.removeItem(REGION_LABEL_AUTO_KEY);
     await resolveRegionLabel();
   }
 };
@@ -630,6 +641,7 @@ const clearRegion = () => {
   clearLocation();
   regionLabel.value = "";
   localStorage.removeItem(REGION_LABEL_KEY);
+  localStorage.removeItem(REGION_LABEL_AUTO_KEY);
 };
 
 // 웹 푸시 구독
@@ -872,6 +884,14 @@ onMounted(() => {
   // 저장된 지역 복원
   loadStoredPosition();
   regionLabel.value = localStorage.getItem(REGION_LABEL_KEY) || "";
-  void resolveRegionLabel();
+  // 자동 생성된 라벨은 최신 포맷으로 재생성해 교정 (수동 검색 주소는 유지)
+  if (localStorage.getItem(REGION_LABEL_AUTO_KEY) === "1") {
+    void resolveRegionLabel(true);
+  } else {
+    // 플래그 도입 전 저장된 라벨 중 토큰이 중복된 경우(서울특별시 … 서울특별시)도 교정
+    const toks = regionLabel.value.split(/\s+/).filter(Boolean);
+    const hasDup = new Set(toks).size !== toks.length;
+    void resolveRegionLabel(hasDup);
+  }
 });
 </script>
