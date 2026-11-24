@@ -338,6 +338,19 @@ const selectRegion = (r: {
   map?.setZoom(12);
 };
 
+// 마커가 첫 렌더(드로우)되기 전 클릭 리스너를 달면 네이버 내부에서
+// 아이콘 요소가 아직 없어 TypeError(cursor)가 발생할 수 있어 지연 등록한다.
+const addMarkerClickListener = (marker: any, fn: () => void, retries = 10) => {
+  const tryAdd = () => {
+    try {
+      naver().maps.Event.addListener(marker, "click", fn);
+    } catch {
+      if (retries > 0) setTimeout(tryAdd, 100);
+    }
+  };
+  setTimeout(tryAdd, 0);
+};
+
 const addUserMarker = (lat: number, lng: number) => {
   if (!map) return;
   if (userMarker) userMarker.setMap(null);
@@ -355,7 +368,12 @@ const addUserMarker = (lat: number, lng: number) => {
   const infoWindow = new (naver().maps.InfoWindow)({
     content: `<div style="padding:12px 16px;font-size:16px;font-weight:700;color:#0f172a">📍 ${escapeHtml(t("culture.youAreHere"))}</div>`,
   });
-  infoWindow.open(map, userMarker);
+  // 마커가 화면에 그려진 뒤 정보창 오픈 (즉시 open 시 내부 cursor 설정 오류 가능)
+  setTimeout(() => {
+    try {
+      infoWindow.open(map, userMarker);
+    } catch {}
+  }, 400);
 };
 
 onMounted(async () => {
@@ -518,7 +536,7 @@ const renderMarkers = () => {
       });
       overlays.push(marker);
 
-      naver().maps.Event.addListener(marker, "click", () => {
+      addMarkerClickListener(marker, () => {
         map.setCenter(new (naver().maps.LatLng)(c.lat, c.lng));
         map.setZoom(CLUSTER_ZOOM + 2);
       });
@@ -558,7 +576,7 @@ const renderMarkers = () => {
       }
 
       // 클릭 시 카드형 정보창
-      naver().maps.Event.addListener(marker, "click", () => {
+      addMarkerClickListener(marker, () => {
         const dateStr = item.eventDate
           ? new Date(item.eventDate).toLocaleDateString("ko-KR", {
               year: "numeric",
