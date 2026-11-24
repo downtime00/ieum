@@ -27,7 +27,24 @@ export const joinFamilySchema = z.object({
   code: z.string().min(1, '초대 코드는 필수입니다').max(20),
 });
 
+export const createPollSchema = z.object({
+  familyId: z.number().int().positive(),
+  userId: z.number().int().positive(),
+  question: z.string().min(1, '질문은 필수입니다').max(300),
+  options: z
+    .array(z.string().min(1, '선택지를 입력하세요').max(100))
+    .min(2, '선택지는 2개 이상 필요합니다')
+    .max(10, '선택지는 최대 10개까지 가능합니다'),
+});
+
+export const votePollSchema = z.object({
+  userId: z.number().int().positive(),
+  optionIndex: z.number().int().min(0),
+});
+
 export type CreatePostDto = z.infer<typeof createPostSchema>;
 export type CreateCommentDto = z.infer<typeof createCommentSchema>;
 export type CreateBoardFamilyDto = z.infer<typeof createFamilySchema>;
 export type JoinFamilyDto = z.infer<typeof joinFamilySchema>;
+export type CreatePollDto = z.infer<typeof createPollSchema>;
+export type VotePollDto = z.infer<typeof votePollSchema>;

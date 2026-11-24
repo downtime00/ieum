@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { FamilyPost } from './entities/family-post.entity';
 import { FamilyPostComment } from './entities/family-post-comment.entity';
+import { FamilyPoll } from './entities/family-poll.entity';
+import { FamilyPollVote } from './entities/family-poll-vote.entity';
 import { FamilyMember } from '../family/entities/family-member.entity';
 import { Family } from '../family/entities/family.entity';
 import { BoardService } from './services/board.service';
@@ -10,7 +12,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([FamilyPost, FamilyPostComment, FamilyMember, Family]),
+    TypeOrmModule.forFeature([FamilyPost, FamilyPostComment, FamilyPoll, FamilyPollVote, FamilyMember, Family]),
     NotificationsModule,
   ],
   controllers: [BoardController],

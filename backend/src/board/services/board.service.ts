@@ -3,10 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { FamilyPost } from '../entities/family-post.entity';
 import { FamilyPostComment } from '../entities/family-post-comment.entity';
+import { FamilyPoll } from '../entities/family-poll.entity';
+import { FamilyPollVote } from '../entities/family-poll-vote.entity';
 import { FamilyMember, MemberRole } from '../../family/entities/family-member.entity';
 import { Family } from '../../family/entities/family.entity';
 import { NotificationService } from '../../notifications/services/notification.service';
-import type { CreatePostDto, CreateCommentDto, CreateBoardFamilyDto, JoinFamilyDto } from '../dto/board.dto';
+import type { CreatePostDto, CreateCommentDto, CreateBoardFamilyDto, JoinFamilyDto, CreatePollDto, VotePollDto } from '../dto/board.dto';
 
 @Injectable()
 export class BoardService {
@@ -15,6 +17,10 @@ export class BoardService {
     private readonly postRepo: Repository<FamilyPost>,
     @InjectRepository(FamilyPostComment)
     private readonly commentRepo: Repository<FamilyPostComment>,
+    @InjectRepository(FamilyPoll)
+    private readonly pollRepo: Repository<FamilyPoll>,
+    @InjectRepository(FamilyPollVote)
+    private readonly pollVoteRepo: Repository<FamilyPollVote>,
     @InjectRepository(FamilyMember)
     private readonly memberRepo: Repository<FamilyMember>,
     @InjectRepository(Family)
@@ -443,5 +449,133 @@ export class BoardService {
     const isHead = member.role === MemberRole.HEAD;
     if (!isAuthor && !isHead) throw new ForbiddenException('삭제 권한이 없습니다');
     await this.commentRepo.delete({ id: comment.id });
+  }
+
+  // ── 투표 ──────────────────────────────────────────────
+
+  /** 가족 투표 목록 — 열람은 멤버 또는 공개 그룹, 참여/생성은 멤버만 */
+  async listPolls(familyId: number, userId: number) {
+    await this.assertReadable(familyId, userId);
+    const member = await this.memberRepo.findOne({ where: { familyId, userId } });
+    const polls = await this.pollRepo.find({
+      where: { familyId },
+      order: { createdAt: 'DESC' },
+      take: 50,
+    });
+    if (polls.length === 0) return [];
+    const pollIds = polls.map((p) => p.id);
+    const votes = await this.pollVoteRepo.find({
+      where: { pollId: In(pollIds.map(Number)), userId },
+    });
+    const myVoteMap = new Map(votes.map((v) => [String(v.pollId), Number(v.optionIndex)]));
+    const counts = await this.pollVoteRepo
+      .createQueryBuilder('v')
+      .select('v.poll_id', 'pollId')
+      .addSelect('v.option_index', 'optionIndex')
+      .addSelect('COUNT(*)', 'count')
+      .where('v.poll_id IN (:...ids)', { ids: pollIds.map(Number) })
+      .groupBy('v.poll_id')
+      .addGroupBy('v.option_index')
+      .getRawMany();
+    const countMap = new Map(
+      counts.map((c) => [`${c.pollId}:${c.optionIndex}`, Number(c.count)]),
+    );
+    return polls.map((p) => {
+      const pid = String(p.id);
+      const options = Array.isArray(p.options) ? p.options : [];
+      const countsArr = options.map((_, i) => countMap.get(`${pid}:${i}`) || 0);
+      const totalVotes = countsArr.reduce((a, b) => a + b, 0);
+      return {
+        id: p.id,
+        familyId: p.familyId,
+        question: p.question,
+        authorName: p.authorName,
+        createdAt: p.createdAt,
+        options,
+        counts: countsArr,
+        totalVotes,
+        myVote: myVoteMap.has(pid) ? myVoteMap.get(pid)! : null,
+        canVote: !!member,
+        canDelete:
+          !!member &&
+          (Number(p.authorUserId) === userId || member.role === MemberRole.HEAD),
+      };
+    });
+  }
+
+  /** 투표 생성 — 멤버만 */
+  async createPoll(data: CreatePollDto) {
+    const member = await this.assertMember(data.familyId, data.userId);
+    const options = data.options.map((o) => o.trim()).filter(Boolean);
+    if (options.length < 2) throw new BadRequestException('선택지는 2개 이상 필요합니다');
+    const poll = this.pollRepo.create({
+      familyId: data.familyId,
+      authorUserId: data.userId,
+      authorName: this.authorName(member, data.userId),
+      question: data.question.trim(),
+      options: options.slice(0, 10),
+    });
+    const saved = await this.pollRepo.save(poll);
+    this.notifyFamily(
+      data.familyId,
+      [data.userId],
+      '📊 새 투표',
+      `${this.authorName(member, data.userId)}님: ${saved.question}`,
+    ).catch(() => {});
+    return saved;
+  }
+
+  /** 투표 참여/변경 — 멤버만, 1인 1표 (재투표 시 기존 표 갱신) */
+  async votePoll(pollId: number, data: VotePollDto) {
+    const poll = await this.pollRepo.findOne({ where: { id: String(pollId) } });
+    if (!poll) throw new NotFoundException('투표를 찾을 수 없습니다');
+    await this.assertMember(poll.familyId, data.userId);
+    const options = Array.isArray(poll.options) ? poll.options : [];
+    if (data.optionIndex < 0 || data.optionIndex >= options.length) {
+      throw new BadRequestException('올바르지 않은 선택지입니다');
+    }
+    const existing = await this.pollVoteRepo.findOne({
+      where: { pollId: Number(poll.id), userId: data.userId },
+    });
+    const isNewVote = !existing;
+    if (existing) {
+      existing.optionIndex = data.optionIndex;
+      await this.pollVoteRepo.save(existing);
+    } else {
+      await this.pollVoteRepo.save(
+        this.pollVoteRepo.create({
+          pollId: Number(poll.id),
+          userId: data.userId,
+          optionIndex: data.optionIndex,
+        }),
+      );
+    }
+    // 첫 투표일 때만 작성자에게 알림 (재투표는 알림 없음)
+    if (isNewVote && Number(poll.authorUserId) !== data.userId) {
+      this.notificationService
+        .create(
+          Number(poll.authorUserId),
+          '🗳️ 투표에 참여했어요',
+          `"${poll.question}"에 새 투표가 등록되었습니다`,
+          'FAMILY',
+          `board:${poll.familyId}`,
+        )
+        .catch(() => {});
+    }
+    return { success: true };
+  }
+
+  /** 투표 삭제 — 작성자 또는 가족장 */
+  async deletePoll(pollId: number, userId: number) {
+    const poll = await this.pollRepo.findOne({ where: { id: String(pollId) } });
+    if (!poll) throw new NotFoundException('투표를 찾을 수 없습니다');
+    const member = await this.assertMember(poll.familyId, userId);
+    const isAuthor = Number(poll.authorUserId) === userId;
+    if (!isAuthor && member.role !== MemberRole.HEAD) {
+      throw new ForbiddenException('삭제 권한이 없습니다');
+    }
+    await this.pollVoteRepo.delete({ pollId: Number(poll.id) });
+    await this.pollRepo.delete({ id: poll.id });
+    return { success: true };
   }
 }

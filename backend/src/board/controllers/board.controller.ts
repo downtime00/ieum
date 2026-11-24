@@ -1,8 +1,8 @@
 import { Controller, Get, Post, Delete, Body, Param, Query, ParseIntPipe, Header, DefaultValuePipe } from '@nestjs/common';
 import { BoardService } from '../services/board.service';
 import { ZodValidationPipe } from '../../common/validation/zod.validation.pipe';
-import { createPostSchema, createCommentSchema, createFamilySchema, joinFamilySchema } from '../dto/board.dto';
-import type { CreatePostDto, CreateCommentDto, CreateBoardFamilyDto, JoinFamilyDto } from '../dto/board.dto';
+import { createPostSchema, createCommentSchema, createFamilySchema, joinFamilySchema, createPollSchema, votePollSchema } from '../dto/board.dto';
+import type { CreatePostDto, CreateCommentDto, CreateBoardFamilyDto, JoinFamilyDto, CreatePollDto, VotePollDto } from '../dto/board.dto';
 
 @Controller('board')
 export class BoardController {
@@ -130,5 +130,36 @@ export class BoardController {
   @Delete('comments/:id')
   deleteComment(@Param('id', ParseIntPipe) id: number, @Query('userId', ParseIntPipe) userId: number) {
     return this.boardService.deleteComment(id, userId);
+  }
+
+  /** 가족 투표 목록 */
+  @Get('polls')
+  @Header('Cache-Control', 'no-store')
+  listPolls(
+    @Query('familyId', ParseIntPipe) familyId: number,
+    @Query('userId', ParseIntPipe) userId: number,
+  ) {
+    return this.boardService.listPolls(familyId, userId);
+  }
+
+  /** 투표 생성 */
+  @Post('polls')
+  createPoll(@Body(new ZodValidationPipe(createPollSchema)) data: CreatePollDto) {
+    return this.boardService.createPoll(data);
+  }
+
+  /** 투표 참여/변경 (1인 1표) */
+  @Post('polls/:id/vote')
+  votePoll(
+    @Param('id', ParseIntPipe) id: number,
+    @Body(new ZodValidationPipe(votePollSchema)) data: VotePollDto,
+  ) {
+    return this.boardService.votePoll(id, data);
+  }
+
+  /** 투표 삭제 (작성자 또는 가족장) */
+  @Delete('polls/:id')
+  deletePoll(@Param('id', ParseIntPipe) id: number, @Query('userId', ParseIntPipe) userId: number) {
+    return this.boardService.deletePoll(id, userId);
   }
 }

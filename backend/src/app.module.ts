@@ -22,6 +22,8 @@ import { AudioPlayer } from './audio-stream/entities/audio-player.entity';
 import { OperatorsModule } from './operators/operators.module';
 import { FamilyPost } from './board/entities/family-post.entity';
 import { FamilyPostComment } from './board/entities/family-post-comment.entity';
+import { FamilyPoll } from './board/entities/family-poll.entity';
+import { FamilyPollVote } from './board/entities/family-poll-vote.entity';
 import { HealthController } from './common/controllers/health.controller';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
 
@@ -95,6 +97,8 @@ import { RedisModule } from './common/redis/redis.module';
         MedicationReminderLog,
         FamilyPost,
         FamilyPostComment,
+        FamilyPoll,
+        FamilyPollVote,
         Family,
         FamilyMember,
         FamilyInviteCode,
