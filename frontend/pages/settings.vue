@@ -391,30 +391,6 @@
         </ul>
       </section>
 
-      <!-- 바로가기: 콜택시 / 길찾기 -->
-      <section class="bg-white/10 rounded-2xl p-6 mb-4">
-        <h2 class="font-semibold text-white mb-1">
-          {{ $t("settings.shortcuts") }}
-        </h2>
-        <p class="text-sm text-white/60 mb-5">
-          {{ $t("settings.shortcutsDesc") }}
-        </p>
-        <div class="grid grid-cols-2 gap-3">
-          <button
-            @click="showTaxiModal = true"
-            class="bg-amber-500 hover:bg-amber-400 text-white font-semibold py-4 px-4 rounded-xl transition text-base"
-          >
-            {{ $t("dashboard.callTaxi") }}
-          </button>
-          <button
-            @click="showDirModal = true"
-            class="bg-indigo-500 hover:bg-indigo-400 text-white font-semibold py-4 px-4 rounded-xl transition text-base"
-          >
-            {{ $t("dashboard.directions") }}
-          </button>
-        </div>
-      </section>
-
       <!-- 계정 / 로그아웃 -->
       <section class="bg-white/10 rounded-2xl p-6 mb-4">
         <h2 class="font-semibold text-white mb-1">
@@ -452,9 +428,6 @@
       </div>
       </div>
     </div>
-
-    <TaxiModal :open="showTaxiModal" @close="showTaxiModal = false" />
-    <DirectionsModal :open="showDirModal" @close="showDirModal = false" />
   </div>
 </template>
 
@@ -474,8 +447,6 @@ const MAX_COUNT = 10;
 const countOptions = Array.from({ length: MAX_COUNT - 1 }, (_, i) => i + 2); // 2~10
 
 const count = ref(DEFAULT_COUNT);
-const showTaxiModal = ref(false);
-const showDirModal = ref(false);
 
 // 웹 푸시 구독
 const {
