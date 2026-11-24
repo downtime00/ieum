@@ -42,8 +42,11 @@ registerRoute(
 )
 
 // 외부 이미지(문화 포스터 등) — 캐시 우선, 오래된 것 자동 삭제
+// 네이버 지도 타일 등 지도 CDN 도메인은 제외 — SW 경유 시 타일 로딩 지연/실패 방지
 registerRoute(
-  /\.(png|jpe?g|webp|gif|svg)(\?.*)?$/,
+  ({ url }) =>
+    /\.(png|jpe?g|webp|gif|svg)(\?.*)?$/.test(url.href) &&
+    !/(naver|pstatic|navercorp)/.test(url.hostname),
   new CacheFirst({
     cacheName: 'external-images',
     plugins: [
