@@ -281,12 +281,11 @@ const escapeHtml = (s: string) =>
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 
-// 핀 모양 마커 SVG (data URI) — 너비 w, 높이 h
+// 핀 모양 마커 — 반드시 HTML 콘텐츠로 전달해야 함.
+// data:image/svg+xml URI로 주면 네이버가 이미지 아이콘으로 처리해
+// _icon_loaded 내부 cursor 설정에서 TypeError가 발생한다.
 const pinIcon = (color: string, w: number, h: number) =>
-  "data:image/svg+xml;charset=utf-8," +
-  encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 36 48"><path d="M18 1C8.7 1 1 8.7 1 18c0 13.4 17 29 17 29s17-15.6 17-29C35 8.7 27.3 1 18 1z" fill="${color}" stroke="#ffffff" stroke-width="2.5"/><circle cx="18" cy="17.5" r="6.5" fill="#ffffff"/></svg>`,
-  );
+  `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 36 48" style="display:block;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))"><path d="M18 1C8.7 1 1 8.7 1 18c0 13.4 17 29 17 29s17-15.6 17-29C35 8.7 27.3 1 18 1z" fill="${color}" stroke="#ffffff" stroke-width="2.5"/><circle cx="18" cy="17.5" r="6.5" fill="#ffffff"/></svg>`;
 
 const locateMe = async () => {
   searchCenter.value = null;
