@@ -254,11 +254,26 @@ const distanceKm = (lat: number, lng: number): number | null => {
 const zoomIn = () => map?.setZoom(map.getZoom() + 1);
 const zoomOut = () => map?.setZoom(map.getZoom() - 1);
 
-// 줌 레벨에 따라 마커 지름 자동 조절 (20~52px)
+// 줌 레벨에 따라 마커 지름 자동 조절 (24~56px 너비)
 const markerSize = () => {
   const z = map?.getZoom() ?? 10;
-  return Math.min(52, Math.max(20, Math.round(z * 3.2)));
+  return Math.min(56, Math.max(24, Math.round(z * 3.6)));
 };
+
+// InfoWindow/마커 HTML에 삽입할 문자열 이스케이프
+const escapeHtml = (s: string) =>
+  s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
+// 핀 모양 마커 SVG (data URI) — 너비 w, 높이 h
+const pinIcon = (color: string, w: number, h: number) =>
+  "data:image/svg+xml;charset=utf-8," +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 36 48"><path d="M18 1C8.7 1 1 8.7 1 18c0 13.4 17 29 17 29s17-15.6 17-29C35 8.7 27.3 1 18 1z" fill="${color}" stroke="#ffffff" stroke-width="2.5"/><circle cx="18" cy="17.5" r="6.5" fill="#ffffff"/></svg>`,
+  );
 
 const locateMe = async () => {
   searchCenter.value = null;
@@ -313,13 +328,19 @@ const selectRegion = (r: {
 const addUserMarker = (lat: number, lng: number) => {
   if (!map) return;
   if (userMarker) userMarker.setMap(null);
+  const w = 40;
+  const h = 54;
   userMarker = new (naver().maps.Marker)({
     position: new (naver().maps.LatLng)(lat, lng),
     map,
     title: t("culture.youAreHere"),
+    icon: {
+      content: pinIcon("#0ea5e9", w, h),
+      anchor: new (naver().maps.Point)(w / 2, h),
+    },
   });
   const infoWindow = new (naver().maps.InfoWindow)({
-    content: `<div style="padding:8px;font-size:16px"><b> ${t("culture.youAreHere")}</b></div>`,
+    content: `<div style="padding:12px 16px;font-size:16px;font-weight:700;color:#0f172a">📍 ${escapeHtml(t("culture.youAreHere"))}</div>`,
   });
   infoWindow.open(map, userMarker);
 };
@@ -447,25 +468,34 @@ const renderMarkers = () => {
       const lng = Number(item.longitude);
       if (isNaN(lat) || isNaN(lng)) continue;
 
-      const size = markerSize();
+      const w = markerSize();
+      const h = Math.round(w * 1.34);
       const marker = new (naver().maps.Marker)({
         map,
         position: new (naver().maps.LatLng)(lat, lng),
+        title: item.title,
         icon: {
-          content: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:#f59e0b;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);box-sizing:border-box"></div>`,
-          anchor: new (naver().maps.Point)(size / 2, size / 2),
+          content: pinIcon("#f59e0b", w, h),
+          anchor: new (naver().maps.Point)(w / 2, h),
         },
       });
       overlays.push(marker);
 
-      // 클릭 시 정보창
+      // 클릭 시 카드형 정보창
       naver().maps.Event.addListener(marker, "click", () => {
+        const dateStr = item.eventDate
+          ? new Date(item.eventDate).toLocaleDateString("ko-KR", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })
+          : "";
         infoWindow.setContent(
-          `<div style="width:240px;padding:4px;word-break:keep-all;line-height:1.5">
-<b style="font-size:17px">${item.title}</b><br/>
-          ${item.location ? ` ${item.location}<br/>` : ""}
-          ${item.eventDate ? ` ${new Date(item.eventDate).toLocaleDateString("ko-KR")}<br/>` : ""}
-<a href="/culture/${item.id}" style="color:#2563eb;font-weight:600">${t("culture.viewDetail")} →</a>
+          `<div style="width:270px;padding:14px 16px 16px;font-family:inherit;line-height:1.5">
+<div style="font-size:17px;font-weight:700;color:#1e293b;margin-bottom:6px;word-break:keep-all">${escapeHtml(item.title)}</div>
+${item.location ? `<div style="font-size:14px;color:#475569;margin-bottom:4px;word-break:keep-all">📍 ${escapeHtml(item.location)}</div>` : ""}
+${dateStr ? `<div style="display:inline-block;font-size:13px;font-weight:600;color:#0369a1;background:#e0f2fe;border-radius:999px;padding:3px 10px;margin-top:2px">${dateStr}</div>` : ""}
+<a href="/culture/${item.id}" style="display:block;margin-top:12px;text-align:center;font-size:15px;font-weight:700;color:#fff;background:#1d4ed8;border-radius:10px;padding:9px 0;text-decoration:none">${escapeHtml(t("culture.viewDetail"))} →</a>
 </div>`,
         );
         infoWindow.setPosition(new (naver().maps.LatLng)(lat, lng));
