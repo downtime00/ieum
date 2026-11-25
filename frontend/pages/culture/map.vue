@@ -226,6 +226,7 @@ const overlays: any[] = [];
 let allItems: MapContent[] = [];
 let didFitBounds = false;
 let lastCenterKey = '';
+let onResizeRef: (() => void) | null = null;
 
 // 지역 검색
 const searchQuery = ref("");
@@ -400,11 +401,35 @@ onMounted(async () => {
     });
 
     // 타일이 처음 그려지면 로딩 오버레이 제거
+    let idleFired = false;
     naver().maps.Event.addListener(map, "idle", () => {
+      idleFired = true;
       mapLoading.value = false;
     });
-    // idle 이벤트가 안 오는 환경 대비 타임아웃
-    setTimeout(() => (mapLoading.value = false), 8000);
+    // idle 이벤트가 안 오는 환경 대비 타임아웃 — 1회 refresh 후 재시도,
+    // 그래도 안 되면 네트워크 문제로 안내
+    setTimeout(() => {
+      if (idleFired || !map) return;
+      try {
+        map.refresh();
+      } catch {}
+      setTimeout(() => {
+        if (!idleFired) {
+          mapLoading.value = false;
+          mapError.value =
+            "지도를 불러오지 못했습니다. 네트워크 연결을 확인해주세요.";
+        }
+      }, 5000);
+    }, 8000);
+
+    // 화면 회전/리사이즈 시 지도 재렌더 (회색 잔상 방지)
+    onResizeRef = () => {
+      try {
+        map?.refresh();
+      } catch {}
+    };
+    window.addEventListener("resize", onResizeRef);
+    window.addEventListener("orientationchange", onResizeRef);
 
     // 줌 레벨에 따라 마커 크기 자동 조절
     naver().maps.Event.addListener(map, "zoom_changed", () => renderMarkers());
@@ -635,6 +660,10 @@ ${dateStr ? `<div style="display:inline-block;font-size:13px;font-weight:600;col
 };
 
 onBeforeUnmount(() => {
+  if (onResizeRef) {
+    window.removeEventListener("resize", onResizeRef);
+    window.removeEventListener("orientationchange", onResizeRef);
+  }
   if (userMarker) userMarker.setMap(null);
   overlays.forEach((o) => o.setMap(null));
   map = null;
