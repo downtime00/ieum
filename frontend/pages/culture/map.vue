@@ -405,6 +405,16 @@ onMounted(async () => {
     naver().maps.Event.addListener(map, "idle", () => {
       idleFired = true;
       mapLoading.value = false;
+      // idle 이후에도 타일 이미지가 하나도 없으면 회색 화면 상태 — 진단 표시
+      setTimeout(() => {
+        const tileImgs = mapEl.value?.querySelectorAll("img").length ?? 0;
+        if (tileImgs === 0 && !mapError.value) {
+          const tileReqs = performance
+            .getEntriesByType("resource")
+            .filter((r) => /naver|pstatic|navercorp/.test(r.name)).length;
+          mapError.value = `지도를 불러오지 못했습니다. 네트워크 연결을 확인해주세요. (진단: 타일요청=${tileReqs}건)`;
+        }
+      }, 2000);
     });
     // idle 이벤트가 안 오는 환경 대비 타임아웃 — 1회 refresh 후 재시도,
     // 그래도 안 되면 네트워크 문제로 안내
@@ -416,8 +426,11 @@ onMounted(async () => {
       setTimeout(() => {
         if (!idleFired) {
           mapLoading.value = false;
-          mapError.value =
-            "지도를 불러오지 못했습니다. 네트워크 연결을 확인해주세요.";
+          // 진단: 타일 리소스 요청이 발생했는지 확인
+          const tileReqs = performance
+            .getEntriesByType("resource")
+            .filter((r) => /naver|pstatic|navercorp/.test(r.name)).length;
+          mapError.value = `지도를 불러오지 못했습니다. 네트워크 연결을 확인해주세요. (진단: 지도API=${!!window.naver?.maps ? "OK" : "FAIL"}, 타일요청=${tileReqs}건)`;
         }
       }, 5000);
     }, 8000);
