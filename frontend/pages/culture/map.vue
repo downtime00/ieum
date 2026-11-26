@@ -71,7 +71,7 @@
     <div class="flex-1 flex flex-col min-h-0">
       <div class="relative flex-1 bg-stone-200 min-h-[320px]">
 
-        <div ref="mapEl" class="w-full h-full"></div>
+        <div ref="mapEl" class="absolute inset-0"></div>
         <!-- 지도 로딩 오버레이: 타일 로드 전까지 표시 -->
         <div
           v-if="mapLoading"
@@ -436,14 +436,21 @@ onMounted(async () => {
       }, 5000);
     }, 8000);
 
-    // 화면 회전/리사이즈 시 지도 재렌더 (회색 잔상 방지)
-    onResizeRef = () => {
+    // 레이아웃 확정 후 크기 재계산 — 모바일 동적 툴바/폰트 로딩으로
+    // 초기화 시점 높이가 틀어지면 회색 화면이 되므로 상세 페이지와 동일하게 refresh
+    const refreshMap = () => {
       try {
         map?.refresh();
       } catch {}
     };
+    setTimeout(refreshMap, 400);
+    setTimeout(refreshMap, 1500);
+
+    // 화면 회전/리사이즈/모바일 주소창 표시 변화 시 지도 재렌더 (회색 잔상 방지)
+    onResizeRef = refreshMap;
     window.addEventListener("resize", onResizeRef);
     window.addEventListener("orientationchange", onResizeRef);
+    window.visualViewport?.addEventListener("resize", onResizeRef);
 
     // 줌 레벨에 따라 마커 크기 자동 조절
     naver().maps.Event.addListener(map, "zoom_changed", () => renderMarkers());
@@ -677,6 +684,7 @@ onBeforeUnmount(() => {
   if (onResizeRef) {
     window.removeEventListener("resize", onResizeRef);
     window.removeEventListener("orientationchange", onResizeRef);
+    window.visualViewport?.removeEventListener("resize", onResizeRef);
   }
   if (userMarker) userMarker.setMap(null);
   overlays.forEach((o) => o.setMap(null));
