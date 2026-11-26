@@ -71,19 +71,7 @@
     <div class="flex-1 flex flex-col min-h-0">
       <div class="relative flex-1 bg-stone-200 min-h-[320px]">
 
-        <div ref="mapEl" class="absolute inset-0"></div>
-        <!-- 지도 로딩 오버레이: 타일 로드 전까지 표시 -->
-        <div
-          v-if="mapLoading"
-          class="absolute inset-0 z-[900] flex items-center justify-center bg-stone-200"
-        >
-          <div class="text-center">
-            <div
-              class="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"
-            ></div>
-            <p class="text-slate-500 font-medium">{{ $t("common.loading") }}</p>
-          </div>
-        </div>
+        <div ref="mapEl" class="w-full h-full"></div>
         <!-- 큰 줌 버튼 (어르신용 상시 노출) -->
         <div class="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
           <button
@@ -216,7 +204,6 @@ declare global {
 
 const mapEl = ref<HTMLElement | null>(null);
 const mapError = ref("");
-const mapLoading = ref(true);
 const visibleCount = ref(0);
 const visibleItems = ref<MapContent[]>([]);
 const MAX_KM = 5;
@@ -226,7 +213,6 @@ const overlays: any[] = [];
 let allItems: MapContent[] = [];
 let didFitBounds = false;
 let lastCenterKey = '';
-let onResizeRef: (() => void) | null = null;
 
 // 지역 검색
 const searchQuery = ref("");
@@ -268,25 +254,11 @@ const distanceKm = (lat: number, lng: number): number | null => {
 const zoomIn = () => map?.setZoom(map.getZoom() + 1);
 const zoomOut = () => map?.setZoom(map.getZoom() - 1);
 
-// 줌 레벨에 따라 마커 지름 자동 조절 (24~56px 너비)
+// 줌 레벨에 따라 마커 지름 자동 조절 (20~52px)
 const markerSize = () => {
   const z = map?.getZoom() ?? 10;
-  return Math.min(56, Math.max(24, Math.round(z * 3.6)));
+  return Math.min(52, Math.max(20, Math.round(z * 3.2)));
 };
-
-// InfoWindow/마커 HTML에 삽입할 문자열 이스케이프
-const escapeHtml = (s: string) =>
-  s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-
-// 핀 모양 마커 — 반드시 HTML 콘텐츠로 전달해야 함.
-// data:image/svg+xml URI로 주면 네이버가 이미지 아이콘으로 처리해
-// _icon_loaded 내부 cursor 설정에서 TypeError가 발생한다.
-const pinIcon = (color: string, w: number, h: number) =>
-  `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 36 48" style="display:block;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))"><path d="M18 1C8.7 1 1 8.7 1 18c0 13.4 17 29 17 29s17-15.6 17-29C35 8.7 27.3 1 18 1z" fill="${color}" stroke="#ffffff" stroke-width="2.5"/><circle cx="18" cy="17.5" r="6.5" fill="#ffffff"/></svg>`;
 
 const locateMe = async () => {
   searchCenter.value = null;
@@ -338,42 +310,18 @@ const selectRegion = (r: {
   map?.setZoom(12);
 };
 
-// 마커가 첫 렌더(드로우)되기 전 클릭 리스너를 달면 네이버 내부에서
-// 아이콘 요소가 아직 없어 TypeError(cursor)가 발생할 수 있어 지연 등록한다.
-const addMarkerClickListener = (marker: any, fn: () => void, retries = 10) => {
-  const tryAdd = () => {
-    try {
-      naver().maps.Event.addListener(marker, "click", fn);
-    } catch {
-      if (retries > 0) setTimeout(tryAdd, 100);
-    }
-  };
-  setTimeout(tryAdd, 0);
-};
-
 const addUserMarker = (lat: number, lng: number) => {
   if (!map) return;
   if (userMarker) userMarker.setMap(null);
-  const w = 40;
-  const h = 54;
   userMarker = new (naver().maps.Marker)({
     position: new (naver().maps.LatLng)(lat, lng),
     map,
     title: t("culture.youAreHere"),
-    icon: {
-      content: pinIcon("#0ea5e9", w, h),
-      anchor: new (naver().maps.Point)(w / 2, h),
-    },
   });
   const infoWindow = new (naver().maps.InfoWindow)({
-    content: `<div style="padding:12px 16px;font-size:16px;font-weight:700;color:#0f172a">📍 ${escapeHtml(t("culture.youAreHere"))}</div>`,
+    content: `<div style="padding:8px;font-size:16px"><b> ${t("culture.youAreHere")}</b></div>`,
   });
-  // 마커가 화면에 그려진 뒤 정보창 오픈 (즉시 open 시 내부 cursor 설정 오류 가능)
-  setTimeout(() => {
-    try {
-      infoWindow.open(map, userMarker);
-    } catch {}
-  }, 400);
+  infoWindow.open(map, userMarker);
 };
 
 onMounted(async () => {
@@ -381,85 +329,21 @@ onMounted(async () => {
 
   try {
     await loadNaverMaps(config.public.naverMapsClientId);
-    if (!window.naver?.maps) throw new Error("naver.maps를 초기화하지 못했습니다.");
   } catch (e: any) {
     mapError.value = e.message || "지도를 불러올 수 없습니다.";
-    mapLoading.value = false;
     return;
   }
 
-  if (!mapEl.value) {
-    mapLoading.value = false;
-    return;
-  }
+  if (!mapEl.value) return;
 
-  try {
-    // 지도 초기화 (한국 중심)
-    map = new (naver().maps.Map)(mapEl.value, {
-      center: new (naver().maps.LatLng)(36.5, 127.8),
-      zoom: 7,
-    });
+  // 지도 초기화 (한국 중심)
+  map = new (naver().maps.Map)(mapEl.value, {
+    center: new (naver().maps.LatLng)(36.5, 127.8),
+    zoom: 7,
+  });
 
-    // 타일이 처음 그려지면 로딩 오버레이 제거
-    let idleFired = false;
-    naver().maps.Event.addListener(map, "idle", () => {
-      idleFired = true;
-      mapLoading.value = false;
-      // idle 이후에도 타일 이미지가 하나도 없으면 회색 화면 상태 — 진단 표시
-      setTimeout(() => {
-        const imgs = [...(mapEl.value?.querySelectorAll("img") ?? [])];
-        const loaded = imgs.filter((i) => i.complete && i.naturalWidth > 0).length;
-        if (loaded === 0 && !mapError.value) {
-          const tileReqs = performance
-            .getEntriesByType("resource")
-            .filter((r) => /naver|pstatic|navercorp/.test(r.name)).length;
-          mapError.value = `지도를 불러오지 못했습니다. 네트워크 연결을 확인해주세요. (진단: 타일로딩=${loaded}/${imgs.length}, 타일요청=${tileReqs}건)`;
-        }
-      }, 2000);
-    });
-    // idle 이벤트가 안 오는 환경 대비 타임아웃 — 1회 refresh 후 재시도,
-    // 그래도 안 되면 네트워크 문제로 안내
-    setTimeout(() => {
-      if (idleFired || !map) return;
-      try {
-        map.refresh();
-      } catch {}
-      setTimeout(() => {
-        if (!idleFired) {
-          mapLoading.value = false;
-          // 진단: 타일 리소스 요청이 발생했는지 확인
-          const tileReqs = performance
-            .getEntriesByType("resource")
-            .filter((r) => /naver|pstatic|navercorp/.test(r.name)).length;
-          mapError.value = `지도를 불러오지 못했습니다. 네트워크 연결을 확인해주세요. (진단: 지도API=${!!window.naver?.maps ? "OK" : "FAIL"}, 타일요청=${tileReqs}건)`;
-        }
-      }, 5000);
-    }, 8000);
-
-    // 레이아웃 확정 후 크기 재계산 — 모바일 동적 툴바/폰트 로딩으로
-    // 초기화 시점 높이가 틀어지면 회색 화면이 되므로 상세 페이지와 동일하게 refresh
-    const refreshMap = () => {
-      try {
-        map?.refresh();
-      } catch {}
-    };
-    setTimeout(refreshMap, 400);
-    setTimeout(refreshMap, 1500);
-
-    // 화면 회전/리사이즈/모바일 주소창 표시 변화 시 지도 재렌더 (회색 잔상 방지)
-    onResizeRef = refreshMap;
-    window.addEventListener("resize", onResizeRef);
-    window.addEventListener("orientationchange", onResizeRef);
-    window.visualViewport?.addEventListener("resize", onResizeRef);
-
-    // 줌 레벨에 따라 마커 크기 자동 조절
-    naver().maps.Event.addListener(map, "zoom_changed", () => renderMarkers());
-  } catch (e: any) {
-    console.error("지도 초기화 실패:", e);
-    mapError.value = "지도를 초기화하지 못했습니다.";
-    mapLoading.value = false;
-    return;
-  }
+  // 줌 레벨에 따라 마커 크기 자동 조절
+  naver().maps.Event.addListener(map, "zoom_changed", () => renderMarkers());
 
   // 콘텐츠 로드
   try {
@@ -509,41 +393,6 @@ const clusterItems = (items: MapContent[]): Cluster[] => {
   }));
 };
 
-// 마커 아래에 상시 표시되는 제목 라벨 (줌 충분히 확대 + 마커 적을 때만)
-const LABEL_ZOOM = 12;
-const LABEL_MAX_ITEMS = 25;
-
-// naver.maps 로드 후에만 호출 — OverlayView를 호출 시점에 상속
-const createLabelOverlay = (latlng: any, text: string) => {
-  const Base = (window.naver as any).maps.OverlayView;
-  class LabelOverlay extends Base {
-    private el: HTMLElement;
-    private latlng: any;
-    constructor(l: any, t: string) {
-      super();
-      this.latlng = l;
-      this.el = document.createElement("div");
-      this.el.textContent = t;
-      this.el.style.cssText =
-        "position:absolute;transform:translate(-50%,0);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" +
-        "background:rgba(255,255,255,.94);border:1px solid rgba(15,23,42,.15);border-radius:999px;" +
-        "padding:3px 10px;font-size:12px;font-weight:600;color:#1e293b;box-shadow:0 1px 4px rgba(0,0,0,.18);pointer-events:none;";
-    }
-    onAdd() {
-      this.getPanes().overlayLayer.appendChild(this.el);
-    }
-    draw() {
-      const point = this.getProjection().fromCoordToOffset(this.latlng);
-      this.el.style.left = `${Math.round(point.x)}px`;
-      this.el.style.top = `${Math.round(point.y) + 8}px`;
-    }
-    onRemove() {
-      this.el.remove();
-    }
-  }
-  return new LabelOverlay(latlng, text);
-};
-
 const renderMarkers = () => {
   if (!map) return;
   overlays.forEach((o) => o.setMap(null));
@@ -581,7 +430,7 @@ const renderMarkers = () => {
       });
       overlays.push(marker);
 
-      addMarkerClickListener(marker, () => {
+      naver().maps.Event.addListener(marker, "click", () => {
         map.setCenter(new (naver().maps.LatLng)(c.lat, c.lng));
         map.setZoom(CLUSTER_ZOOM + 2);
       });
@@ -592,49 +441,31 @@ const renderMarkers = () => {
       maxLng = Math.max(maxLng, c.lng);
     }
   } else {
-    // 줌 인: 개별 마커 — 충분히 확대되고 마커가 적으면 제목 라벨 상시 표시
-    const showLabels = zoom >= LABEL_ZOOM && items.length <= LABEL_MAX_ITEMS;
+    // 줌 인: 개별 마커
     for (const item of items) {
       const lat = Number(item.latitude);
       const lng = Number(item.longitude);
       if (isNaN(lat) || isNaN(lng)) continue;
 
-      const w = markerSize();
-      const h = Math.round(w * 1.34);
+      const size = markerSize();
       const marker = new (naver().maps.Marker)({
         map,
         position: new (naver().maps.LatLng)(lat, lng),
-        title: item.title,
         icon: {
-          content: pinIcon("#f59e0b", w, h),
-          anchor: new (naver().maps.Point)(w / 2, h),
+          content: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:#f59e0b;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);box-sizing:border-box"></div>`,
+          anchor: new (naver().maps.Point)(size / 2, size / 2),
         },
       });
       overlays.push(marker);
-      if (showLabels) {
-        const label = createLabelOverlay(
-          new (naver().maps.LatLng)(lat, lng),
-          item.title,
-        );
-        label.setMap(map);
-        overlays.push(label);
-      }
 
-      // 클릭 시 카드형 정보창
-      addMarkerClickListener(marker, () => {
-        const dateStr = item.eventDate
-          ? new Date(item.eventDate).toLocaleDateString("ko-KR", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })
-          : "";
+      // 클릭 시 정보창
+      naver().maps.Event.addListener(marker, "click", () => {
         infoWindow.setContent(
-          `<div style="width:270px;padding:14px 16px 16px;font-family:inherit;line-height:1.5">
-<div style="font-size:17px;font-weight:700;color:#1e293b;margin-bottom:6px;word-break:keep-all">${escapeHtml(item.title)}</div>
-${item.location ? `<div style="font-size:14px;color:#475569;margin-bottom:4px;word-break:keep-all">📍 ${escapeHtml(item.location)}</div>` : ""}
-${dateStr ? `<div style="display:inline-block;font-size:13px;font-weight:600;color:#0369a1;background:#e0f2fe;border-radius:999px;padding:3px 10px;margin-top:2px">${dateStr}</div>` : ""}
-<a href="/culture/${item.id}" style="display:block;margin-top:12px;text-align:center;font-size:15px;font-weight:700;color:#fff;background:#1d4ed8;border-radius:10px;padding:9px 0;text-decoration:none">${escapeHtml(t("culture.viewDetail"))} →</a>
+          `<div style="width:240px;padding:4px;word-break:keep-all;line-height:1.5">
+<b style="font-size:17px">${item.title}</b><br/>
+          ${item.location ? ` ${item.location}<br/>` : ""}
+          ${item.eventDate ? ` ${new Date(item.eventDate).toLocaleDateString("ko-KR")}<br/>` : ""}
+<a href="/culture/${item.id}" style="color:#2563eb;font-weight:600">${t("culture.viewDetail")} →</a>
 </div>`,
         );
         infoWindow.setPosition(new (naver().maps.LatLng)(lat, lng));
@@ -681,11 +512,6 @@ ${dateStr ? `<div style="display:inline-block;font-size:13px;font-weight:600;col
 };
 
 onBeforeUnmount(() => {
-  if (onResizeRef) {
-    window.removeEventListener("resize", onResizeRef);
-    window.removeEventListener("orientationchange", onResizeRef);
-    window.visualViewport?.removeEventListener("resize", onResizeRef);
-  }
   if (userMarker) userMarker.setMap(null);
   overlays.forEach((o) => o.setMap(null));
   map = null;
